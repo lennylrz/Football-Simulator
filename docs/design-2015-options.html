@@ -1,0 +1,362 @@
+<title>Five Seasons 2015 Era</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Titillium+Web:ital,wght@0,300;0,400;0,600;0,700;0,900;1,700&family=Barlow+Condensed:ital,wght@0,400;0,500;0,600;0,700;0,800;1,700&family=Exo+2:ital,wght@0,400;0,600;0,700;0,800;1,800&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<style>
+/* Layout: a gallery wall of 16:9 "TV screens", one per 2015-era direction, each with notes underneath. */
+:root {
+  --wall: #e9ebee;
+  --ink: #14171c;
+  --muted: #5b626d;
+  --line: #d2d6dc;
+  --plate: #ffffff;
+  --accent: #0a62b8;
+  --f-ui: "Titillium Web", system-ui, sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --wall: #111317; --ink: #edf0f3; --muted: #99a1ad; --line: #292e36; --plate: #191c22; --accent: #74b4ff; color-scheme: dark; }
+}
+:root[data-theme="dark"] { --wall: #111317; --ink: #edf0f3; --muted: #99a1ad; --line: #292e36; --plate: #191c22; --accent: #74b4ff; color-scheme: dark; }
+* { box-sizing: border-box; }
+body { background: var(--wall); color: var(--ink); font-family: var(--f-ui); line-height: 1.5; }
+.wrap { max-width: 1240px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 40px 80px; }
+.intro { max-width: 72ch; display: grid; gap: 10px; }
+.eyebrow { font: 600 12px/1 var(--f-mono); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+h1 { font-size: clamp(30px, 4.5vw, 46px); line-height: 1.05; margin: 0; letter-spacing: -.01em; font-weight: 700; text-wrap: balance; }
+.intro p { margin: 0; color: var(--muted); font-size: 16px; }
+.eras { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 8px; margin-top: 10px; }
+.era { border: 1px solid var(--line); background: var(--plate); border-radius: 10px; padding: 10px 12px; font-size: 13px; }
+.era b { display: block; font: 600 12px var(--f-mono); color: var(--accent); }
+.era.now { border-color: var(--accent); }
+nav.jump { display: flex; flex-wrap: wrap; gap: 6px; margin: 28px 0 8px; position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--wall); padding-block: 10px; }
+nav.jump a { font-weight: 600; font-size: 14px; color: var(--ink); text-decoration: none; padding: 6px 12px; border-radius: 8px; border: 1px solid var(--line); background: var(--plate); }
+nav.jump a:hover, nav.jump a:focus-visible { border-color: var(--accent); color: var(--accent); outline: none; }
+section.dir { margin-top: 56px; display: grid; gap: 16px; scroll-margin-top: 70px; }
+.dir-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 14px; }
+.dir-head h2 { margin: 0; font-size: 28px; font-weight: 700; }
+.dir-head .num { font: 600 13px var(--f-mono); color: var(--muted); }
+.dir-head p { margin: 0; color: var(--muted); flex-basis: 100%; max-width: 78ch; }
+.notes { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px 28px; font-size: 14px; color: var(--muted); }
+.notes h3 { font: 600 11px var(--f-mono); letter-spacing: .12em; text-transform: uppercase; color: var(--ink); margin: 0 0 6px; }
+.notes ul { margin: 0; padding-left: 18px; display: grid; gap: 4px; }
+.notes a { color: var(--accent); }
+button { font: inherit; cursor: pointer; }
+button:focus-visible, a:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
+
+/* A 16:9 screen with a TV bezel on wide windows; flows naturally on phones. */
+.tv { position: relative; border-radius: 14px; overflow: hidden; background: #000; box-shadow: 0 0 0 6px #1b1d21, 0 0 0 7px #3a3d43, 0 30px 50px -28px rgba(0,0,0,.7); max-width: 100%; }
+.screen { position: relative; min-height: 420px; display: flex; flex-direction: column; overflow: hidden; isolation: isolate; }
+@media (min-width: 900px) { .screen { aspect-ratio: 16 / 9; min-height: 0; } }
+
+/* Floodlit stadium, blurred: built from gradients so no image is needed. */
+.stadium::before { content: ""; position: absolute; inset: -40px; z-index: -2; filter: blur(14px) saturate(1.1);
+  background:
+    radial-gradient(circle at 12% 8%, rgba(255,255,240,.9) 0 2%, transparent 7%),
+    radial-gradient(circle at 34% 4%, rgba(255,255,240,.8) 0 1.5%, transparent 6%),
+    radial-gradient(circle at 66% 4%, rgba(255,255,240,.8) 0 1.5%, transparent 6%),
+    radial-gradient(circle at 88% 8%, rgba(255,255,240,.9) 0 2%, transparent 7%),
+    radial-gradient(ellipse 80% 30% at 50% 34%, rgba(150,170,200,.45), transparent 70%),
+    repeating-linear-gradient(90deg, rgba(255,255,255,.04) 0 3px, transparent 3px 9px),
+    linear-gradient(180deg, #121a2c 0%, #1d2a44 28%, #2c3b52 40%, #2f6b3b 52%, #3f8a47 70%, #2f6d38 100%); }
+.stadium::after { content: ""; position: absolute; inset: 0; z-index: -1; background: var(--veil, linear-gradient(180deg, rgba(5,10,20,.55), rgba(5,10,20,.8))); }
+
+/* Keyboard prompt bar, the console-era button legend. */
+.prompts { display: flex; flex-wrap: wrap; gap: 6px 22px; align-items: center; font-size: 14px; }
+.key { display: inline-grid; place-items: center; min-width: 26px; height: 24px; padding: 0 7px; margin-right: 7px; border-radius: 5px; font: 700 11px/1 var(--f-ui); letter-spacing: .03em;
+  background: linear-gradient(180deg, #fdfdfd, #c9cdd3); color: #1b1e23; box-shadow: 0 2px 0 #7d838c, inset 0 1px 0 #fff; vertical-align: middle; }
+
+/* ---------- A · Live Tiles ---------- */
+.a { color: #fff; font-family: "Titillium Web", sans-serif; --veil: linear-gradient(180deg, rgba(4,12,28,.45), rgba(4,12,28,.82)); }
+.a .bar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 28px; padding: 18px 34px 6px; }
+.a .crumb { font-weight: 300; font-size: 15px; letter-spacing: .14em; text-transform: uppercase; color: #b9c8e0; }
+.a .crumb b { font-weight: 700; color: #fff; }
+.a .status { margin-left: auto; display: flex; gap: 26px; font-size: 13px; color: #b9c8e0; text-transform: uppercase; letter-spacing: .08em; }
+.a .status b { display: block; color: #fff; font-size: 20px; letter-spacing: 0; font-weight: 600; }
+.a h3 { margin: 0; padding: 0 34px; font-weight: 300; font-size: clamp(34px, 4.6vw, 58px); line-height: 1; letter-spacing: -.01em; }
+.a .tabs { display: flex; gap: 22px; padding: 10px 34px 14px; font-size: 15px; text-transform: uppercase; letter-spacing: .1em; color: #8ea3c4; }
+.a .tabs .on { color: #fff; font-weight: 700; border-bottom: 3px solid #48c7ff; padding-bottom: 2px; }
+.a .grid { flex: 1; display: grid; grid-template-columns: 2fr 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 10px; padding: 0 34px 16px; min-height: 0; }
+.a .tile { position: relative; overflow: hidden; padding: 14px 16px; display: flex; flex-direction: column; justify-content: space-between; background: var(--t, #1f6fd1); clip-path: polygon(0 0, calc(100% - 18px) 0, 100% 18px, 100% 100%, 0 100%); transition: transform .15s, box-shadow .15s; border: 0; text-align: left; color: #fff; }
+.a .tile:hover, .a .tile.focus { transform: scale(1.025); box-shadow: inset 0 0 0 3px #fff; }
+.a .tile .lbl { font-size: 13px; text-transform: uppercase; letter-spacing: .14em; font-weight: 600; opacity: .85; }
+.a .tile .big { font-size: 46px; font-weight: 300; line-height: 1; }
+.a .tile .sub { font-size: 14px; opacity: .9; }
+.a .tile.hero { grid-row: span 2; background: linear-gradient(135deg, #0b5fbf, #0a3d84); }
+.a .hero .list { display: grid; gap: 6px; margin: 10px 0; }
+.a .hero .p { display: grid; grid-template-columns: 44px 1fr auto; align-items: center; gap: 10px; background: rgba(255,255,255,.1); padding: 6px 10px; }
+.a .hero .p .r { font-size: 24px; font-weight: 700; }
+.a .hero .p .n { font-weight: 600; font-size: 16px; line-height: 1.1; }
+.a .hero .p .n small { display: block; font-weight: 400; font-size: 12px; opacity: .8; }
+.a .hero .p .f { font-weight: 600; }
+.a .tile .ghost { position: absolute; right: -10px; bottom: -14px; width: 120px; opacity: .14; }
+.a .foot { display: flex; padding: 10px 34px 16px; background: linear-gradient(0deg, rgba(0,0,0,.45), transparent); }
+@media (max-width: 760px) { .a .grid { grid-template-columns: 1fr 1fr; grid-template-rows: auto; } .a .tile.hero { grid-column: 1 / -1; grid-row: auto; } .a .status { margin-left: 0; } }
+
+/* ---------- B · Career Inbox ---------- */
+.b { color: #e9edf2; font-family: "Titillium Web", sans-serif; --veil: linear-gradient(90deg, rgba(8,10,14,.86), rgba(8,10,14,.7)); }
+.b .top { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 20px; padding: 16px 26px; border-bottom: 1px solid rgba(255,255,255,.12); }
+.b .club { font-weight: 700; font-size: 20px; letter-spacing: .04em; text-transform: uppercase; display: flex; gap: 10px; align-items: center; }
+.b .club i { width: 14px; height: 22px; background: linear-gradient(90deg, #034694 60%, #fff 60%); display: inline-block; }
+.b .cal { display: flex; gap: 2px; margin-left: auto; }
+.b .cal span { width: 42px; text-align: center; padding: 4px 0; background: rgba(255,255,255,.06); font-size: 11px; text-transform: uppercase; color: #9aa6b6; line-height: 1.15; }
+.b .cal span b { display: block; font-size: 16px; color: #fff; }
+.b .cal .today { background: #c6e83a; color: #1b2200; }
+.b .cal .today b { color: #1b2200; }
+.b .cal .dl { box-shadow: inset 0 -3px 0 #ff5a3c; }
+.b .adv { background: linear-gradient(180deg, #d6f24f, #a9cc1c); color: #1b2200; border: 0; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; padding: 8px 16px; clip-path: polygon(0 0, 100% 0, 100% 100%, 10px 100%); }
+.b .cols { flex: 1; display: grid; grid-template-columns: 180px minmax(0, 1fr) minmax(0, 1.45fr); min-height: 0; }
+.b .menu { display: grid; align-content: start; padding: 14px 0; gap: 2px; border-right: 1px solid rgba(255,255,255,.1); }
+.b .menu span { padding: 9px 22px; font-size: 15px; text-transform: uppercase; letter-spacing: .08em; color: #9aa6b6; }
+.b .menu .on { color: #fff; font-weight: 700; background: linear-gradient(90deg, rgba(198,232,58,.25), transparent); box-shadow: inset 4px 0 0 #c6e83a; }
+.b .inbox { border-right: 1px solid rgba(255,255,255,.1); overflow: hidden; }
+.b .inbox h4 { margin: 0; padding: 12px 18px; font-size: 12px; text-transform: uppercase; letter-spacing: .14em; color: #9aa6b6; font-weight: 600; }
+.b .mail { padding: 10px 18px; border-top: 1px solid rgba(255,255,255,.06); display: grid; grid-template-columns: 10px 1fr; gap: 0 10px; }
+.b .mail .u { width: 8px; height: 8px; border-radius: 50%; background: #c6e83a; margin-top: 7px; }
+.b .mail .u.read { background: transparent; box-shadow: inset 0 0 0 1px #56606e; }
+.b .mail b { font-size: 14px; }
+.b .mail small { display: block; color: #9aa6b6; font-size: 12px; grid-column: 2; }
+.b .mail.on { background: rgba(255,255,255,.08); box-shadow: inset 3px 0 0 #fff; }
+.b .pane { padding: 16px 22px; display: grid; gap: 10px; align-content: start; }
+.b .pane .from { font-size: 12px; color: #9aa6b6; text-transform: uppercase; letter-spacing: .1em; }
+.b .pane h5 { margin: 0; font-size: 22px; font-weight: 600; line-height: 1.15; }
+.b .pane p { margin: 0; font-size: 14px; color: #c3cad4; }
+.b table { width: 100%; border-collapse: collapse; font-size: 14px; color: inherit; }
+.b th { text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: .12em; color: #9aa6b6; font-weight: 600; padding: 4px 6px; border-bottom: 1px solid rgba(255,255,255,.18); }
+.b td { padding: 7px 6px; border-bottom: 1px solid rgba(255,255,255,.07); font-variant-numeric: tabular-nums; }
+.b tr.on td { background: rgba(198,232,58,.12); }
+.b td.r { text-align: right; }
+.b .ovr { display: inline-block; min-width: 30px; text-align: center; font-weight: 700; background: #fff; color: #10141a; padding: 1px 0; }
+.b .sign { border: 1px solid #c6e83a; background: transparent; color: #c6e83a; font-weight: 700; font-size: 12px; text-transform: uppercase; padding: 3px 9px; letter-spacing: .06em; }
+.b .foot { display: flex; padding: 10px 26px 14px; border-top: 1px solid rgba(255,255,255,.12); }
+@media (max-width: 860px) { .b .cols { grid-template-columns: 1fr; } .b .menu { display: flex; overflow-x: auto; padding: 6px; } .b .menu span { white-space: nowrap; } .b .cal { margin-left: 0; } .b .inbox, .b .menu { border-right: 0; } }
+
+/* ---------- C · Floodlight Glass ---------- */
+.c { color: #0f1620; font-family: "Barlow Condensed", "Arial Narrow", sans-serif; --veil: radial-gradient(ellipse at 50% 0%, rgba(255,255,255,.75), rgba(230,236,244,.86) 55%, rgba(205,214,226,.92)); }
+.c .top { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 8px 24px; padding: 20px 34px 8px; }
+.c h3 { margin: 0; font-weight: 800; font-style: italic; font-size: clamp(36px, 5vw, 64px); line-height: .9; text-transform: uppercase; letter-spacing: -.01em; }
+.c h3 span { color: #e8402a; }
+.c .money { margin-left: auto; display: flex; gap: 24px; font-size: 15px; text-transform: uppercase; letter-spacing: .06em; font-weight: 600; color: #4a5566; }
+.c .money b { display: block; font-size: 28px; color: #0f1620; letter-spacing: 0; font-weight: 700; }
+.c .tabs { display: flex; align-items: center; gap: 4px; padding: 6px 34px 18px; flex-wrap: wrap; }
+.c .tabs span { font-weight: 700; font-size: 17px; text-transform: uppercase; letter-spacing: .06em; padding: 6px 18px; background: rgba(15,22,32,.08); clip-path: polygon(10px 0, 100% 0, calc(100% - 10px) 100%, 0 100%); color: #4a5566; }
+.c .tabs .on { background: #0f1620; color: #fff; }
+.c .tabs .key { margin: 0 6px; }
+.c .row { flex: 1; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; padding: 0 34px 18px; align-items: center; min-height: 0; }
+.c .pc { position: relative; background: linear-gradient(180deg, rgba(255,255,255,.92), rgba(255,255,255,.7)); backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,.95); box-shadow: 0 18px 30px -18px rgba(15,22,32,.45); padding: 14px; display: grid; gap: 6px; transition: transform .2s; height: 88%; align-content: start; }
+.c .pc.focus { transform: scale(1.06); box-shadow: 0 0 0 3px #e8402a, 0 24px 40px -20px rgba(15,22,32,.6); }
+.c .pc .r { font-size: 56px; font-weight: 800; line-height: .9; font-style: italic; }
+.c .pc .pos { font-weight: 700; font-size: 16px; color: #e8402a; letter-spacing: .06em; }
+.c .pc .face { height: 34%; min-height: 70px; background: linear-gradient(180deg, #dfe6ef, #c4cfdc); display: grid; place-items: end center; overflow: hidden; }
+.c .pc .face svg { width: 60%; color: #8796ab; }
+.c .pc .n { font-size: 24px; font-weight: 700; text-transform: uppercase; line-height: 1; }
+.c .pc .cl { font-size: 15px; color: #4a5566; font-weight: 500; }
+.c .pc .fee { display: flex; justify-content: space-between; align-items: baseline; border-top: 2px solid #0f1620; padding-top: 6px; font-weight: 700; font-size: 20px; }
+.c .pc .fee small { font-size: 13px; letter-spacing: .08em; text-transform: uppercase; color: #4a5566; }
+.c .foot { display: flex; padding: 10px 34px 16px; background: #0f1620; color: #e7ecf2; }
+@media (max-width: 760px) { .c .row { grid-template-columns: 1fr 1fr; } .c .money { margin-left: 0; } .c .pc { height: auto; } }
+
+/* ---------- D · Team Management ---------- */
+.d { color: #eef2f8; font-family: "Exo 2", system-ui, sans-serif; --veil: linear-gradient(180deg, rgba(9,14,32,.82), rgba(9,14,32,.92)); }
+.d .top { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 22px; padding: 16px 28px; background: linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,0)); border-bottom: 2px solid #ff8a00; }
+.d .top h3 { margin: 0; font-size: 22px; font-weight: 800; font-style: italic; text-transform: uppercase; letter-spacing: .04em; }
+.d .top .meta { margin-left: auto; display: flex; gap: 22px; font-size: 12px; text-transform: uppercase; letter-spacing: .1em; color: #93a0bd; }
+.d .top .meta b { display: block; color: #fff; font-size: 18px; letter-spacing: 0; }
+.d .meter { display: flex; align-items: center; gap: 8px; }
+.d .meter i { display: block; width: 90px; height: 8px; background: rgba(255,255,255,.12); position: relative; }
+.d .meter i::after { content: ""; position: absolute; inset: 0 14% 0 0; background: linear-gradient(90deg, #ff8a00, #ffd000); }
+.d .main { flex: 1; display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 16px; padding: 14px 28px; min-height: 0; }
+.d .pitchwrap { perspective: 1100px; display: grid; place-items: center; min-height: 260px; }
+.d .pitch { position: relative; width: 100%; aspect-ratio: 1.15; max-width: 100%; transform: rotateX(38deg); transform-origin: 50% 70%; background: repeating-linear-gradient(180deg, #2e7d3b 0 10%, #348a42 10% 20%); border: 3px solid rgba(255,255,255,.7); box-shadow: 0 40px 50px -20px rgba(0,0,0,.8); }
+.d .pitch::before { content: ""; position: absolute; left: 0; right: 0; top: 50%; border-top: 2px solid rgba(255,255,255,.6); }
+.d .pitch::after { content: ""; position: absolute; left: 50%; top: 50%; width: 22%; aspect-ratio: 1; border: 2px solid rgba(255,255,255,.6); border-radius: 50%; transform: translate(-50%, -50%); }
+.d .plate { position: absolute; transform: translate(-50%, -50%) rotateX(-38deg); display: grid; justify-items: center; font-size: 13px; font-weight: 700; text-transform: uppercase; white-space: nowrap; z-index: 2; }
+.d .plate b { background: #0b1330; border: 1px solid rgba(255,255,255,.5); padding: 2px 8px; font-size: 16px; }
+.d .plate span { background: rgba(11,19,48,.85); padding: 0 5px; margin-top: 1px; }
+.d .plate.new b { background: #ff8a00; color: #1a0e00; border-color: #ffd000; animation: pulse 1.6s ease-in-out infinite; }
+@keyframes pulse { 50% { box-shadow: 0 0 0 6px rgba(255,138,0,.25); } }
+.d .side { display: grid; gap: 8px; align-content: start; }
+.d .side h4 { margin: 0; font-size: 13px; text-transform: uppercase; letter-spacing: .14em; color: #93a0bd; display: flex; justify-content: space-between; }
+.d .tg { display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 8px 10px; background: rgba(255,255,255,.05); border-left: 4px solid transparent; }
+.d .tg.on { background: linear-gradient(90deg, rgba(255,138,0,.28), rgba(255,138,0,.05)); border-left-color: #ff8a00; }
+.d .tg .r { font-size: 24px; font-weight: 800; font-style: italic; text-align: center; }
+.d .tg .n { font-weight: 700; line-height: 1.1; }
+.d .tg .n small { display: block; font-weight: 400; font-size: 12px; color: #93a0bd; }
+.d .tg .f { font-weight: 700; font-size: 15px; }
+.d .tg .fit { grid-column: 2 / -1; display: flex; gap: 8px; align-items: center; font-size: 11px; color: #93a0bd; text-transform: uppercase; letter-spacing: .08em; }
+.d .tg .fit i { flex: 1; height: 5px; background: rgba(255,255,255,.12); position: relative; }
+.d .tg .fit i::after { content: ""; position: absolute; inset: 0 var(--gap) 0 0; background: #ffd000; }
+.d .foot { display: flex; padding: 10px 28px 14px; border-top: 1px solid rgba(255,255,255,.12); background: rgba(0,0,0,.25); }
+@media (max-width: 860px) { .d .main { grid-template-columns: 1fr; } .d .top .meta { margin-left: 0; } }
+
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+</style>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="sil" viewBox="0 0 100 90"><circle cx="50" cy="28" r="18" fill="currentColor"/><path d="M12 90c2-26 18-40 38-40s36 14 38 40z" fill="currentColor"/></symbol>
+</svg>
+
+<div class="wrap">
+  <header class="intro">
+    <div class="eyebrow">Five Seasons · the 2015 era · option set 2</div>
+    <h1>Four ways to make 2015 feel like 2015</h1>
+    <p>All four borrow the language of the console football games of 2012 to 2015: floodlit stadium blur behind every menu, big tiles, a career inbox, slanted tabs and a button-prompt bar along the bottom. Here the prompts are keyboard keys, because this is a laptop game. They are built to look deliberately of their time, without any real logos, typefaces or branding.</p>
+    <div class="eras" aria-label="Era plan">
+      <div class="era"><b>2000 start</b>Desktop sim (Manager '01)</div>
+      <div class="era"><b>2005 start</b>To design</div>
+      <div class="era now"><b>2015 to 2018</b>One of the four below</div>
+      <div class="era"><b>2019 onwards</b>Clean and modern</div>
+    </div>
+  </header>
+
+  <nav class="jump" aria-label="Options">
+    <a href="#tiles">A Live Tiles</a>
+    <a href="#inbox">B Career Inbox</a>
+    <a href="#glass">C Floodlight Glass</a>
+    <a href="#team">D Team Management</a>
+  </nav>
+
+  <!-- A -->
+  <section class="dir" id="tiles">
+    <div class="dir-head"><span class="num">A</span><h2>Live Tiles</h2>
+      <p>The tile-grid hub of 2013 and 2014. Every tile is a live summary (offers, bids, squad, the league) and the selected one is outlined as if picked with a controller. Light-weight type, big numbers, a dimmed floodlit stadium behind.</p></div>
+    <div class="tv"><div class="screen stadium a">
+      <div class="bar">
+        <span class="crumb">Career <b>· Chelsea</b> · Transfers</span>
+        <div class="status"><div>Date<b>15 Aug 2015</b></div><div>Budget<b>€120.0m</b></div><div>Squad<b>23 / 26</b></div></div>
+      </div>
+      <h3>Transfer Window</h3>
+      <div class="tabs"><span>Squad</span><span class="on">Offers</span><span>Bids</span><span>Team</span></div>
+      <div class="grid">
+        <button class="tile hero focus">
+          <span class="lbl">Players available to you</span>
+          <span class="list">
+            <span class="p"><span class="r">83</span><span class="n">A. Griezmann<small>Atlético de Madrid · ST · 24</small></span><span class="f">€36.0m</span></span>
+            <span class="p"><span class="r">78</span><span class="n">P. Dybala<small>Juventus · ST · 21</small></span><span class="f">€15.5m</span></span>
+            <span class="p"><span class="r">70</span><span class="n">L. Sané<small>FC Schalke 04 · LM · 19</small></span><span class="f">€2.5m</span></span>
+            <span class="p"><span class="r">78</span><span class="n">K. Koulibaly<small>Napoli · CB · 24</small></span><span class="f">€11.0m</span></span>
+          </span>
+          <span class="sub">Rivals are watching. Deadline day in 16 days.</span>
+        </button>
+        <button class="tile" style="--t:#0c8f7a"><span class="lbl">Bids received</span><span class="big">3</span><span class="sub">Napoli want John Terry</span><svg class="ghost" viewBox="0 0 100 90"><use href="#sil"/></svg></button>
+        <button class="tile" style="--t:#b8432f"><span class="lbl">Around the league</span><span class="big">10</span><span class="sub">Biggest deals of the summer</span></button>
+        <button class="tile" style="--t:#5a3fb0"><span class="lbl">Your squad</span><span class="big">84.7</span><span class="sub">Best XI rating, 1st in the league</span></button>
+        <button class="tile" style="--t:#2b3c58"><span class="lbl">Hall of Fame</span><span class="big">0</span><span class="sub">Trophies won. The treble awaits.</span></button>
+      </div>
+      <div class="foot"><div class="prompts"><span><span class="key">Enter</span>Select</span><span><span class="key">Esc</span>Back</span><span><span class="key">Q</span><span class="key">E</span>Switch tab</span><span><span class="key">Space</span>Continue to deadline day</span></div></div>
+    </div></div>
+    <div class="notes">
+      <div><h3>Signature details</h3><ul><li>Each tile shows live info, so the hub is the summary of the whole window</li><li>Arrow keys move a focus outline between tiles, like a controller</li><li>Tiles slide in with a slight stagger when a screen opens</li></ul></div>
+      <div><h3>Fits the plan because</h3><ul><li>The hub structure carries into the modern era: same tiles, flatter style</li><li>Big numbers suit the new four-step window</li></ul></div>
+    </div>
+  </section>
+
+  <!-- B -->
+  <section class="dir" id="inbox">
+    <div class="dir-head"><span class="num">B</span><h2>Career Inbox</h2>
+      <p>Career mode in 2012 and 2013 was run from an inbox: the chief scout, the board and other clubs all wrote to you, and a calendar strip showed the days to the next event. Offers arrive as a scout report and bids as emails. The most "you are the manager" of the four.</p></div>
+    <div class="tv"><div class="screen stadium b">
+      <div class="top">
+        <span class="club"><i></i>Chelsea</span>
+        <div class="cal" aria-label="Calendar">
+          <span class="today">Sat<b>15</b></span><span>Sun<b>16</b></span><span>Mon<b>17</b></span><span>Tue<b>18</b></span><span>Wed<b>19</b></span><span class="dl">Mon<b>31</b></span>
+        </div>
+        <button class="adv">Advance</button>
+      </div>
+      <div class="cols">
+        <div class="menu"><span>Central</span><span>Squad</span><span class="on">Transfers</span><span>Calendar</span><span>Hall of Fame</span></div>
+        <div class="inbox">
+          <h4>Inbox · 4 unread</h4>
+          <div class="mail on"><span class="u"></span><b>Chief Scout</b><small>Four players are available this summer</small></div>
+          <div class="mail"><span class="u"></span><b>SSC Napoli</b><small>Bid for John Terry: €16.0m</small></div>
+          <div class="mail"><span class="u"></span><b>Manchester City</b><small>Bid for Pedro: €37.5m</small></div>
+          <div class="mail"><span class="u"></span><b>The Board</b><small>Summer budget confirmed: €120.0m</small></div>
+          <div class="mail"><span class="u read"></span><b>League news</b><small>Biggest deals of the summer so far</small></div>
+        </div>
+        <div class="pane">
+          <span class="from">From: Chief Scout · 15 Aug 2015</span>
+          <h5>Four players we can get this summer</h5>
+          <p>Boss, these are the players whose clubs will sell to us. Others are watching them, so don't wait for deadline day.</p>
+          <table>
+            <thead><tr><th>Player</th><th>Pos</th><th>Age</th><th class="r">Ovr</th><th class="r">Fee</th><th></th></tr></thead>
+            <tbody>
+              <tr class="on"><td>A. Griezmann</td><td>ST</td><td>24</td><td class="r"><span class="ovr">83</span></td><td class="r">€36.0m</td><td class="r"><button class="sign">Sign</button></td></tr>
+              <tr><td>P. Dybala</td><td>ST</td><td>21</td><td class="r"><span class="ovr">78</span></td><td class="r">€15.5m</td><td class="r"><button class="sign">Sign</button></td></tr>
+              <tr><td>L. Sané</td><td>LM</td><td>19</td><td class="r"><span class="ovr">70</span></td><td class="r">€2.5m</td><td class="r"><button class="sign">Sign</button></td></tr>
+              <tr><td>K. Koulibaly</td><td>CB</td><td>24</td><td class="r"><span class="ovr">78</span></td><td class="r">€11.0m</td><td class="r"><button class="sign">Sign</button></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="foot"><div class="prompts"><span><span class="key">Enter</span>Open</span><span><span class="key">Esc</span>Back</span><span><span class="key">S</span>Sign</span><span><span class="key">Space</span>Advance</span></div></div>
+    </div></div>
+    <div class="notes">
+      <div><h3>Signature details</h3><ul><li>"Advance" moves the calendar to deadline day; emails about who signed where arrive overnight</li><li>Season results arrive as a board email with the final table</li><li>Unread dots and a ping sound make each step feel eventful</li></ul></div>
+      <div><h3>Fits the plan because</h3><ul><li>Turns the four-step window into a natural story</li><li>Lots of room later for scouting, board demands and press</li></ul></div>
+    </div>
+  </section>
+
+  <!-- C -->
+  <section class="dir" id="glass">
+    <div class="dir-head"><span class="num">C</span><h2>Floodlight Glass</h2>
+      <p>The bright, white-panelled menus of the early 2010s: frosted glass panels under floodlights, heavy italic condensed headings, slanted tabs switched with Q and E, and a big focused card that steps forward when selected.</p></div>
+    <div class="tv"><div class="screen stadium c">
+      <div class="top">
+        <h3>Transfer <span>offers</span></h3>
+        <div class="money"><div>Budget<b>€120.0m</b></div><div>Squad<b>23 / 26</b></div><div>Season<b>2015/16</b></div></div>
+      </div>
+      <div class="tabs"><span class="key">Q</span><span>Squad</span><span class="on">Offers</span><span>Bids</span><span>Team</span><span class="key">E</span></div>
+      <div class="row">
+        <div class="pc focus"><span class="pos">ST</span><span class="r">83</span><div class="face"><svg viewBox="0 0 100 90"><use href="#sil"/></svg></div><span class="n">Griezmann</span><span class="cl">Atlético de Madrid · 24</span><div class="fee"><small>Fee</small>€36.0m</div></div>
+        <div class="pc"><span class="pos">ST</span><span class="r">78</span><div class="face"><svg viewBox="0 0 100 90"><use href="#sil"/></svg></div><span class="n">Dybala</span><span class="cl">Juventus · 21</span><div class="fee"><small>Fee</small>€15.5m</div></div>
+        <div class="pc"><span class="pos">LM</span><span class="r">70</span><div class="face"><svg viewBox="0 0 100 90"><use href="#sil"/></svg></div><span class="n">Sané</span><span class="cl">FC Schalke 04 · 19</span><div class="fee"><small>Fee</small>€2.5m</div></div>
+        <div class="pc"><span class="pos">CB</span><span class="r">78</span><div class="face"><svg viewBox="0 0 100 90"><use href="#sil"/></svg></div><span class="n">Koulibaly</span><span class="cl">Napoli · 24</span><div class="fee"><small>Fee</small>€11.0m</div></div>
+      </div>
+      <div class="foot"><div class="prompts"><span><span class="key">←</span><span class="key">→</span>Browse</span><span><span class="key">Enter</span>Sign</span><span><span class="key">T</span>Around the league</span><span><span class="key">Space</span>Deadline day</span></div></div>
+    </div></div>
+    <div class="notes">
+      <div><h3>Signature details</h3><ul><li>Cards glide left and right with the arrow keys</li><li>Lens flare drifts slowly across the floodlights</li><li>The same white glass is used for the league table and results</li></ul></div>
+      <div><h3>Fits the plan because</h3><ul><li>Light theme makes the later switch to the modern era a gentle step</li><li>Large cards are very readable on a laptop</li></ul></div>
+    </div>
+  </section>
+
+  <!-- D -->
+  <section class="dir" id="team">
+    <div class="dir-head"><span class="num">D</span><h2>Team Management</h2>
+      <p>The squad screen of that era: a tilted 3D pitch with name plates on the left, a list on the right, and orange highlights. Offers are shown as transfer targets, and the selected one appears on the pitch where he would play, with his position fit.</p></div>
+    <div class="tv"><div class="screen stadium d">
+      <div class="top">
+        <h3>Transfer targets</h3>
+        <div class="meta"><div>Budget<b>€120.0m</b></div><div>Squad<b>23 / 26</b></div><div class="meter">Team chemistry<i></i></div></div>
+      </div>
+      <div class="main">
+        <div class="pitchwrap"><div class="pitch">
+          <div class="plate" style="left:50%;top:92%"><b>86</b><span>Courtois</span></div>
+          <div class="plate" style="left:14%;top:74%"><b>82</b><span>Azpilicueta</span></div>
+          <div class="plate" style="left:38%;top:78%"><b>85</b><span>Terry</span></div>
+          <div class="plate" style="left:62%;top:78%"><b>83</b><span>Cahill</span></div>
+          <div class="plate" style="left:86%;top:74%"><b>84</b><span>Ivanović</span></div>
+          <div class="plate" style="left:38%;top:56%"><b>84</b><span>Matić</span></div>
+          <div class="plate" style="left:62%;top:56%"><b>87</b><span>Fàbregas</span></div>
+          <div class="plate" style="left:18%;top:32%"><b>89</b><span>Hazard</span></div>
+          <div class="plate" style="left:50%;top:36%"><b>84</b><span>Oscar</span></div>
+          <div class="plate" style="left:82%;top:32%"><b>82</b><span>Willian</span></div>
+          <div class="plate" style="left:50%;top:12%"><b>86</b><span>Costa</span></div>
+          <div class="plate new" style="left:72%;top:16%"><b>83</b><span>Griezmann?</span></div>
+        </div></div>
+        <div class="side">
+          <h4><span>Available to you</span><span>4</span></h4>
+          <div class="tg on"><span class="r">83</span><span class="n">A. Griezmann<small>Atlético de Madrid · ST · 24</small></span><span class="f">€36.0m</span><span class="fit">Fit as ST<i style="--gap:0%"></i></span></div>
+          <div class="tg"><span class="r">78</span><span class="n">P. Dybala<small>Juventus · ST · 21</small></span><span class="f">€15.5m</span></div>
+          <div class="tg"><span class="r">70</span><span class="n">L. Sané<small>FC Schalke 04 · LM · 19</small></span><span class="f">€2.5m</span></div>
+          <div class="tg"><span class="r">78</span><span class="n">K. Koulibaly<small>Napoli · CB · 24</small></span><span class="f">€11.0m</span></div>
+        </div>
+      </div>
+      <div class="foot"><div class="prompts"><span><span class="key">↑</span><span class="key">↓</span>Browse</span><span><span class="key">Enter</span>Sign</span><span><span class="key">F</span>Compare</span><span><span class="key">Space</span>Deadline day</span></div></div>
+    </div></div>
+    <div class="notes">
+      <div><h3>Signature details</h3><ul><li>Selecting a target drops his plate onto the pitch where he would start</li><li>The same tilted pitch is the lineup screen, with drag and drop</li><li>Orange glow on anything new or changed</li></ul></div>
+      <div><h3>Fits the plan because</h3><ul><li>Every decision is shown on the pitch, which makes transfers easier to judge</li><li>The tilted pitch can become a flat one in the modern era</li></ul></div>
+    </div>
+  </section>
+</div>
