@@ -3,7 +3,7 @@ import type { GameData } from './data';
 import {
   autoSeason, closeWindow, EXTERNAL, endSeason, type GameState, goToDeadline, MIN_SQUAD, newGame, simulate,
 } from './game';
-import { acceptBid, bidsFor, buyOffer } from './market';
+import { acceptIncomingBid, buyOffer } from './market';
 import { loadTestData } from './testData';
 
 let data: GameData;
@@ -58,11 +58,12 @@ describe('game flow', () => {
     expect(user.cash).toBe(cash - s.offers[i].fee);
     expect(user.squad).toContain(s.offers[i].player);
 
-    const seller = user.squad[user.squad.length - 1];
-    const bids = bidsFor(s, data, seller);
-    expect(bids.length).toBeGreaterThan(0);
-    expect(acceptBid(s, data, seller, bids[0])).toBeNull();
+    expect(s.bids.length).toBeGreaterThanOrEqual(2);
+    expect(s.bids.every((b) => user.squad.includes(b.player))).toBe(true);
+    const seller = s.bids[0].player;
+    expect(acceptIncomingBid(s, data, 0)).toBeNull();
     expect(user.squad).not.toContain(seller);
+    expect(s.bids.filter((b) => b.player === seller && b.status === 'open')).toHaveLength(0);
     goToDeadline(s, data);
     closeWindow(s, data);
     checkInvariants(s);
@@ -90,5 +91,32 @@ describe('game flow', () => {
     expect(Math.abs(mean)).toBeLessThan(0.3);
     expect(sd).toBeGreaterThan(1.8);
     expect(sd).toBeLessThan(3.5);
+  });
+});
+
+describe('incoming bids', () => {
+  it('favour the best players and stay around market value', () => {
+    let total = 0;
+    let topHalf = 0;
+    const ratios: number[] = [];
+    for (let seed = 0; seed < 40; seed++) {
+      const s = newGame(data, 3, seed);
+      const squad = s.clubs[3].squad.map((id) => s.players[id]).sort((a, b) => b.ovr - a.ovr);
+      const top = new Set(squad.slice(0, Math.ceil(squad.length / 2)).map((p) => p.id));
+      const players = new Set(s.bids.map((b) => b.player));
+      expect(players.size).toBeGreaterThanOrEqual(1);
+      expect(players.size).toBeLessThanOrEqual(4);
+      for (const id of players) {
+        total++;
+        if (top.has(id)) topHalf++;
+      }
+      for (const b of s.bids) ratios.push(b.fee / s.players[b.player].value);
+    }
+    expect(topHalf / total).toBeGreaterThan(0.6);
+    ratios.sort((a, b) => a - b);
+    const median = ratios[Math.floor(ratios.length / 2)];
+    expect(median).toBeGreaterThan(0.9);
+    expect(median).toBeLessThan(1.15);
+    expect(ratios[ratios.length - 1]).toBeGreaterThan(1.25);
   });
 });

@@ -3,7 +3,7 @@
 // the market (or a smaller rival), within budget and within what their
 // reputation can attract, and sell surplus players.
 import { BIG_SIX, capacity } from './clubs';
-import type { GameData } from './data';
+import { type GameData, SEASON_YEARS } from './data';
 import {
   type ClubState, EXTERNAL, type GameState, MAX_SQUAD, MIN_SQUAD, lite, marketPool, type PlayerState, squadOf, transfer,
 } from './game';
@@ -11,6 +11,11 @@ import { pickXI } from './lineup';
 import { AREA, FORMATIONS, parsePositions, type Position, positionFit } from './positions';
 import { type Rng, normal, shuffle, stream } from './rng';
 import { roundFee } from './valuation';
+
+/** Rating gain over the current starter a signing must bring. */
+const MIN_GAIN = 3;
+/** Each club signs at most one player this good per window. */
+const STAR = 83;
 
 /** AI clubs keep their squads at or below this size. */
 const AI_SQUAD_TARGET = 24;
@@ -28,6 +33,12 @@ export function joinChance(ovr: number, rep: number, bigClub: boolean): number {
 
 function isBig(state: GameState, data: GameData, club: number): boolean {
   return BIG_SIX.includes(data.meta.gameClubs[club]) || state.clubs[club].rep >= 88;
+}
+
+/** Clubs abroad whose best XI is rated 83 or more that season. */
+function eliteClubs(state: GameState, data: GameData): Set<string> {
+  const teams = data.teams[String(SEASON_YEARS[state.season])];
+  return new Set(teams.europe.filter((t) => t[2] >= 83).map((t) => t[0]));
 }
 
 /** Name of a club abroad where players of this level play. */
@@ -85,20 +96,22 @@ function tryBuy(state: GameState, data: GameData, c: ClubState, rng: Rng): boole
   const cap = capacity(c.rep);
   const user = state.user;
 
+  const hasStar = state.transfers.some((t) => t.season === state.season && t.to === c.id && t.ovr >= STAR);
   type Cand = { p: PlayerState; fee: number; score: number };
   const cands: Cand[] = [];
   const consider = (p: PlayerState, fee: number) => {
-    if (p.ovr < need.eff + 2 || p.ovr > cap + 4 || p.age > 32 || fee > c.cash) return;
+    if (p.ovr < need.eff + MIN_GAIN || p.ovr > cap + 4 || p.age > 32 || fee > c.cash) return;
     const fit = positionFit(parsePositions(p.pos), need.slot);
     if (fit < 0.95 || p.age > 32) return;
     const eff = p.ovr * fit;
-    if (eff < need.eff + 2 || fee > c.cash) return;
+    if (eff < need.eff + MIN_GAIN || fee > c.cash) return;
+    if (p.ovr >= STAR && hasStar) return;
     if (p.ovr > cap + 4) return;
     const score = eff - need.eff + (p.age <= 23 ? (p.pot - p.ovr) * 0.3 : 0) - Math.max(0, p.age - 29) * 0.7 + normal(rng, 0, 1.5);
     cands.push({ p, fee, score });
   };
   for (const p of marketPool(state, data)) {
-    if (p.ovr >= need.eff + 2 && p.ovr <= cap + 4) consider(p, roundFee(p.value * Math.exp(normal(rng, 0.05, 0.12))));
+    if (p.ovr >= need.eff + MIN_GAIN && p.ovr <= cap + 4) consider(p, roundFee(p.value * Math.exp(normal(rng, 0.05, 0.12))));
   }
   // Players at smaller rivals, who would sell for a premium.
   for (const other of state.clubs) {
@@ -109,8 +122,14 @@ function tryBuy(state: GameState, data: GameData, c: ClubState, rng: Rng): boole
     }
   }
   cands.sort((a, b) => b.score - a.score);
+  const elite = eliteClubs(state, data);
+  const rows = data.seasons[state.season];
   for (const { p, fee } of cands.slice(0, 8)) {
-    if (rng() > joinChance(p.ovr, c.rep, big)) continue;
+    let chance = joinChance(p.ovr, c.rep, big);
+    // Europe's elite rarely sell, and stars rarely move at all.
+    if (p.club === EXTERNAL && elite.has(data.meta.clubNames[rows[p.id]?.[6] ?? 0])) chance *= 0.15;
+    if (p.ovr >= 85) chance *= 0.4;
+    if (rng() > chance) continue;
     transfer(state, data, p.id, c.id, fee);
     if (c.squad.length > AI_SQUAD_TARGET) {
       const out = surplus(state, c, AREA[need.slot]) ?? surplus(state, c);
@@ -134,13 +153,13 @@ export function aiWindow(state: GameState, data: GameData, phase: 'open' | 'dead
         sellAbroad(state, data, out, rng, 0.7 + rng() * 0.3);
       }
       // Clubs abroad sometimes poach the best player of a smaller club.
-      const poach = big ? 0.04 : 0.12;
+      const poach = big ? 0.02 : 0.06;
       if (rng() < poach) {
         const best = squadOf(state, c.id).sort((a, b) => b.ovr - a.ovr)[0];
         if (best && best.ovr >= 80 && best.age <= 30) sellAbroad(state, data, best, rng, 1.05 + rng() * 0.3);
       }
     }
-    const attempts = phase === 'open' ? (big ? 3 : 2) : rng() < 0.5 ? 1 : 0;
+    const attempts = phase === 'open' ? (big ? 2 : 1) : rng() < 0.25 ? 1 : 0;
     for (let k = 0; k < attempts; k++) {
       if (!tryBuy(state, data, c, rng)) break;
     }

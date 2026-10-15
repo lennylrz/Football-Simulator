@@ -7,7 +7,7 @@ import {
 import { type GameData, NUM_SEASONS, SEASON_YEARS } from './data';
 import { developPlayer, retireChance } from './development';
 import { autoLineup, BENCH_SIZE, pickBench, pickXI, type PlayerLite } from './lineup';
-import { generateOffers, type Offer } from './market';
+import { generateIncomingBids, generateOffers, type IncomingBid, type Offer } from './market';
 import { FORMATIONS, type Formation, parsePositions, positionFit } from './positions';
 import { stream } from './rng';
 import { type PlayerSeasonStats, type SeasonResult, simulateSeason, type TableRow } from './season';
@@ -95,6 +95,7 @@ export interface DevChange {
 }
 
 export type Stage = 'window' | 'lineup' | 'results' | 'summary';
+export type WindowStep = 'squad' | 'offers' | 'bids';
 
 export interface GameState {
   v: 1;
@@ -105,6 +106,10 @@ export interface GameState {
   stage: Stage;
   /** 'open' before deadline day, 'deadline' after the AI's last round of deals */
   windowPhase: 'open' | 'deadline';
+  /** step of the user's transfer window */
+  step: WindowStep;
+  /** bids for the user's players this window */
+  bids: IncomingBid[];
   players: Record<number, PlayerState>;
   clubs: ClubState[];
   offers: Offer[];
@@ -182,6 +187,8 @@ export function newGame(data: GameData, user: number, seed: number): GameState {
     season: 0,
     stage: 'window',
     windowPhase: 'open',
+    step: 'squad',
+    bids: [],
     players: {},
     clubs: [],
     offers: [],
@@ -265,8 +272,10 @@ export function seasonIncome(rep: number, finish: number | null): number {
 function openWindow(state: GameState, data: GameData): void {
   state.stage = 'window';
   state.windowPhase = 'open';
+  state.step = 'squad';
   state.news = [];
   state.offers = [];
+  state.bids = [];
   state.result = null;
   if (state.season > 0) {
     advancePlayers(state, data);
@@ -280,7 +289,27 @@ function openWindow(state: GameState, data: GameData): void {
   }
   for (const p of Object.values(state.players)) if (!p.retired) refreshValue(state, data, p);
   aiWindow(state, data, 'open');
-  if (state.user >= 0) state.offers = generateOffers(state, data);
+  if (state.user >= 0) {
+    state.offers = generateOffers(state, data);
+    state.bids = generateIncomingBids(state, data);
+  }
+}
+
+/** Moves the user's window on: squad -> offers -> (deadline day) -> bids -> lineup. */
+export function nextWindowStep(state: GameState, data: GameData): void {
+  if (state.step === 'squad') state.step = 'offers';
+  else if (state.step === 'offers') {
+    goToDeadline(state, data);
+    state.step = 'bids';
+  } else closeWindow(state, data);
+}
+
+/** The biggest deals of a season, by fee. */
+export function topTransfers(state: GameState, season: number, n = 10): TransferRecord[] {
+  return state.transfers
+    .filter((t) => t.season === season && t.fee > 0)
+    .sort((a, b) => b.fee - a.fee || a.player - b.player)
+    .slice(0, n);
 }
 
 /** Deadline day: the AI clubs' last round of deals. */

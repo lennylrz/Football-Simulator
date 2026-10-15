@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { career } from './career';
 import { closeWindow, endSeason, newGame, simulate } from './game';
-import { acceptBid, bidsFor, buyOffer } from './market';
+import { acceptIncomingBid, buyOffer } from './market';
 import { loadTestData } from './testData';
 
 describe('career', () => {
@@ -14,9 +14,8 @@ describe('career', () => {
       s.offers.forEach((o, i) => {
         if (o.fee <= s.clubs[8].cash && buyOffer(s, data, i) === null) bought += o.fee;
       });
-      const seller = s.clubs[8].squad[s.clubs[8].squad.length - 1];
-      const bid = bidsFor(s, data, seller)[0];
-      if (bid && acceptBid(s, data, seller, bid) === null) sold += bid.fee;
+      const bid = s.bids[0];
+      if (bid && acceptIncomingBid(s, data, 0) === null) sold += bid.fee;
       closeWindow(s, data);
       simulate(s, data);
       endSeason(s, data);

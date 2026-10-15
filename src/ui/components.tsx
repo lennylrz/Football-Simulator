@@ -174,7 +174,7 @@ export function PlayerLine({ data, p, right, onClick }: { data: GameData; p: Pla
       <span className="min-w-0 flex-1">
         <span className="block truncate text-sm font-medium">{playerName(data, p.id)}</span>
         <span className="block truncate text-xs text-slate-400">
-          {p.age} · {p.pos.replaceAll(',', ', ')} · pot {p.pot}
+          {p.age} · {p.pos.replaceAll(',', ', ')}
         </span>
       </span>
       {right}

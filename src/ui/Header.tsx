@@ -7,17 +7,14 @@ import { formatMoney } from '../game/valuation';
 import { clubInfo, useScrollLock } from './components';
 import { useGame } from './context';
 
-const STEPS = [
-  { stage: 'window', label: 'Transfers' },
-  { stage: 'lineup', label: 'Team' },
-  { stage: 'results', label: 'Season' },
-] as const;
+const STEPS = ['Squad', 'Offers', 'Bids', 'Team', 'Season'];
 
 export function Header() {
   const { data, game, quit } = useGame();
   const club = game.clubs[game.user];
   const info = clubInfo(data, game.user);
-  const step = STEPS.findIndex((s) => s.stage === game.stage);
+  const step =
+    game.stage === 'window' ? ['squad', 'offers', 'bids'].indexOf(game.step) : game.stage === 'lineup' ? 3 : 4;
   const [hall, setHall] = useState(false);
   const [confirmQuit, setConfirmQuit] = useState(false);
   return (
@@ -72,10 +69,10 @@ export function Header() {
         <ol className="mx-auto flex max-w-6xl border-t border-slate-800 text-xs lg:text-sm">
           {STEPS.map((s, i) => (
             <li
-              key={s.stage}
+              key={s}
               className={`flex-1 py-1.5 text-center ${i === step ? 'font-semibold text-emerald-400' : i < step ? 'text-slate-400' : 'text-slate-600'}`}
             >
-              {i + 1}. {s.label}
+              {i + 1}. {s}
             </li>
           ))}
         </ol>
