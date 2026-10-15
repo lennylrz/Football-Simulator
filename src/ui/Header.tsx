@@ -4,7 +4,7 @@ import { HallOfFameContent } from '../screens/HallOfFame';
 import { NUM_SEASONS } from '../game/data';
 import { seasonLabel } from '../game/game';
 import { formatMoney } from '../game/valuation';
-import { clubInfo } from './components';
+import { clubInfo, useScrollLock } from './components';
 import { useGame } from './context';
 
 const STEPS = [
@@ -25,9 +25,12 @@ export function Header() {
       <div className="h-1.5" style={{ background: `linear-gradient(90deg, ${info.primary} 0 50%, ${info.secondary} 50% 100%)` }} />
       <div className="flex items-center gap-3 px-3 py-2">
         <div className="min-w-0 flex-1">
-          <div className="truncate font-bold">{info.name}</div>
+          <div className="truncate font-bold">
+            <span className="sm:hidden">{info.short}</span>
+            <span className="hidden sm:inline">{info.name}</span>
+          </div>
           <div className="text-xs text-slate-400">
-            {game.stage === 'summary' ? 'Run complete' : `Season ${game.season + 1} of ${NUM_SEASONS} · ${seasonLabel(game.season)}`}
+            {game.stage === 'summary' ? 'Run complete' : `${seasonLabel(game.season)} · season ${game.season + 1}/${NUM_SEASONS}`}
           </div>
         </div>
         <div className="text-right">
@@ -65,19 +68,24 @@ export function Header() {
         </ol>
       )}
     </header>
-    {hall && (
-      <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-950">
-        <div className="mx-auto max-w-3xl space-y-3 p-3 pb-10">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl font-black">Hall of Fame</h2>
-            <button onClick={() => setHall(false)} className="rounded-md px-3 py-1.5 text-slate-300 hover:bg-slate-800" aria-label="Close">
-              ✕
-            </button>
-          </div>
-          <HallOfFameContent />
-        </div>
-      </div>
-    )}
+    {hall && <HallOverlay onClose={() => setHall(false)} />}
     </>
+  );
+}
+
+function HallOverlay({ onClose }: { onClose: () => void }) {
+  useScrollLock();
+  return (
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-950">
+      <div className="mx-auto max-w-3xl space-y-3 p-3 pb-10">
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl font-black">Hall of Fame</h2>
+          <button onClick={onClose} className="rounded-md px-3 py-1.5 text-slate-300 hover:bg-slate-800" aria-label="Close">
+            ✕
+          </button>
+        </div>
+        <HallOfFameContent />
+      </div>
+    </div>
   );
 }

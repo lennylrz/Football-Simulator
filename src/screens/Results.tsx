@@ -5,6 +5,7 @@ import { endSeason, seasonLabel, trophiesOf } from '../game/game';
 import type { PlayerSeasonStats } from '../game/season';
 import { Button, Card, ClubBadge, clubInfo, EntrantBadge, entrantShort, PosChip, playerName, Tabs } from '../ui/components';
 import { useGame } from '../ui/context';
+import { SeasonReveal } from './SeasonReveal';
 import { BottomBar, ordinal } from './TransferWindow';
 
 type Tab = 'table' | 'fixtures' | 'cups' | 'leaders' | 'squad';
@@ -14,6 +15,7 @@ export const TROPHY_NAMES = { league: 'League title', fa: 'FA Cup', cl: 'Champio
 export function Results() {
   const { data, game, act } = useGame();
   const [tab, setTab] = useState<Tab>('table');
+  const [revealing, setRevealing] = useState(true);
   const h = game.history[game.history.length - 1];
   const finish = h.table.findIndex((r) => r.club === game.user) + 1;
   const last = game.season >= NUM_SEASONS - 1;
@@ -21,6 +23,7 @@ export function Results() {
 
   return (
     <>
+      {revealing && game.result && <SeasonReveal result={game.result} user={game.user} onDone={() => setRevealing(false)} />}
       {won.length === 3 && (
         <div className="rounded-xl bg-gradient-to-r from-amber-300 via-yellow-200 to-amber-400 p-4 text-center text-amber-950 shadow-lg">
           <div className="text-3xl">🏆🏆🏆</div>
@@ -107,14 +110,14 @@ function LeagueTable() {
           <tr>
             <th className="w-6 text-left">#</th>
             <th className="text-left">Club</th>
-            <th>P</th>
-            <th>W</th>
-            <th>D</th>
-            <th>L</th>
+            <th className="hidden px-1 sm:table-cell">P</th>
+            <th className="px-1">W</th>
+            <th className="px-1">D</th>
+            <th className="px-1">L</th>
             <th className="hidden sm:table-cell">GF</th>
             <th className="hidden sm:table-cell">GA</th>
-            <th>GD</th>
-            <th>Pts</th>
+            <th className="px-1">GD</th>
+            <th className="pl-1">Pts</th>
           </tr>
         </thead>
         <tbody>
@@ -130,14 +133,14 @@ function LeagueTable() {
                   <span className="truncate">{clubInfo(data, r.club).short}</span>
                 </span>
               </td>
-              <td>{r.p}</td>
-              <td>{r.w}</td>
-              <td>{r.d}</td>
-              <td>{r.l}</td>
+              <td className="hidden sm:table-cell">{r.p}</td>
+              <td className="px-1">{r.w}</td>
+              <td className="px-1">{r.d}</td>
+              <td className="px-1">{r.l}</td>
               <td className="hidden sm:table-cell">{r.gf}</td>
               <td className="hidden sm:table-cell">{r.ga}</td>
-              <td>{r.gf - r.ga > 0 ? '+' : ''}{r.gf - r.ga}</td>
-              <td className="font-bold">{r.pts}</td>
+              <td className="px-1">{r.gf - r.ga > 0 ? '+' : ''}{r.gf - r.ga}</td>
+              <td className="pl-1 font-bold">{r.pts}</td>
             </tr>
           ))}
         </tbody>

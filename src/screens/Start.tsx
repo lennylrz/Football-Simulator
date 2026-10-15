@@ -33,8 +33,12 @@ export function Start({ data, onStart }: { data: GameData; onStart: (club: numbe
     <div className="mx-auto max-w-3xl px-3 pb-32 pt-6">
       <h1 className="text-3xl font-black tracking-tight">Five Seasons</h1>
       <p className="mt-1 text-slate-400">
-        Take over an English top-flight club in summer 2015 and manage it to 2020. Buy, sell, pick your team, and see how your five
-        years compare with what really happened.
+        Take over an English top-flight club in summer 2015 and manage it to 2020. Buy, sell, pick your team and play each season in
+        one click. Players develop as they really did, give or take.
+      </p>
+      <p className="mt-3 rounded-lg bg-amber-400/10 px-3 py-2 text-sm text-amber-200 ring-1 ring-amber-400/30">
+        🏆🏆🏆 The ultimate goal: <b>the treble</b>. League, FA Cup and Champions League in one season. Hard even with the best
+        squad in the country.
       </p>
 
       <h2 className="mb-2 mt-6 text-sm font-semibold uppercase tracking-wide text-slate-400">Pick your club</h2>
