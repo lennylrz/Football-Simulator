@@ -1,0 +1,10 @@
+node_modules
+dist
+dist-ssr
+*.local
+.venv-kaggle
+data/raw/
+__pycache__/
+.vercel
+.DS_Store
+*.log
