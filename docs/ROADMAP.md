@@ -12,7 +12,7 @@ the run moves through time, roughly every five years.
 |---|---|---|
 | 2000-2004 | Early-2000s desktop management sim: grey bevelled windows, navy title bars, dense tables | "Manager '01" in docs/design-directions.html |
 | 2005-2009 | (to design) | |
-| 2010-2018 | Console football game menus of 2012-2015: live tiles, career inbox, stadium-blur backgrounds, button-prompt bar | docs/design-2015-options.html (pick one) |
+| 2010-2018 | Console football game of 2012-2015 (FIFA 13 era): glossy split bars, grey tiles, bold Arial-style type, calendar strip, breaking news, dark transfer tables, silver prompt bar, results ticker, white shattered-ball main menu | docs/design-2015-console.html (current direction, built from the owner's reference screenshots); earlier attempts in docs/design-2015-options.html |
 | 2019 onwards | Clean and modern minimalist, club colour as the accent | "Clean Sheet" in docs/design-directions.html |
 
 For the current 2015 start: 2015/16, 2016/17 and 2017/18 use the 2015-era

@@ -1,0 +1,439 @@
+<title>Five Seasons 2015 Console</title>
+<style>
+/* Layout: a dark gallery of three 1280x720 "console screens", each scaled to the page width like a TV, with short notes. */
+:root {
+  --wall: #e8e9eb;
+  --ink: #16181b;
+  --muted: #5e646d;
+  --line: #d0d3d8;
+  --plate: #ffffff;
+  --accent: #1d5fa8;
+  --f-page: "Helvetica Neue", Arial, system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --wall: #101113; --ink: #eceef1; --muted: #9ba2ab; --line: #2a2d32; --plate: #191b1f; --accent: #77b3ff; color-scheme: dark; }
+}
+:root[data-theme="dark"] { --wall: #101113; --ink: #eceef1; --muted: #9ba2ab; --line: #2a2d32; --plate: #191b1f; --accent: #77b3ff; color-scheme: dark; }
+* { box-sizing: border-box; }
+body { background: var(--wall); color: var(--ink); font-family: var(--f-page); line-height: 1.5; }
+.wrap { max-width: 1320px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 36px 80px; }
+.intro { max-width: 76ch; display: grid; gap: 10px; }
+.eyebrow { font: 700 12px/1 var(--f-page); letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+h1 { margin: 0; font-size: clamp(28px, 4vw, 42px); line-height: 1.08; letter-spacing: -.01em; text-wrap: balance; }
+.intro p { margin: 0; color: var(--muted); font-size: 16px; }
+section.shot { margin-top: 48px; display: grid; gap: 14px; }
+.shot h2 { margin: 0; font-size: 22px; }
+.shot p.lede { margin: 0; color: var(--muted); max-width: 80ch; }
+.notes { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 10px 28px; font-size: 14px; color: var(--muted); }
+.notes h3 { margin: 0 0 6px; font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--ink); }
+.notes ul { margin: 0; padding-left: 18px; display: grid; gap: 3px; }
+
+/* The TV: a fixed 1280x720 screen scaled to fit. */
+.tv { position: relative; width: 100%; aspect-ratio: 16 / 9; max-width: 100%; background: #000; border-radius: 10px; overflow: hidden; box-shadow: 0 0 0 5px #17181a, 0 0 0 6px #3b3d41, 0 26px 50px -26px rgba(0,0,0,.75); }
+.scr { position: absolute; left: 0; top: 0; width: 1280px; height: 720px; transform-origin: 0 0; transform: scale(var(--s, .75)); overflow: hidden;
+  font-family: Arial, "Helvetica Neue", Helvetica, sans-serif; color: #fff; -webkit-font-smoothing: antialiased; }
+.scr * { box-sizing: border-box; }
+.scr button { font: inherit; color: inherit; border: 0; background: none; padding: 0; cursor: pointer; }
+
+/* ===== Shared console parts ===== */
+/* Dark glossy bar: lighter top half, darker bottom half. */
+.gbar { background: linear-gradient(180deg, #5b5d61 0%, #45474b 49%, #2f3134 50%, #232427 100%); box-shadow: inset 0 1px 0 rgba(255,255,255,.28), 0 1px 0 #000; font-weight: 700; color: #fff; text-shadow: 0 1px 1px #000; }
+/* Light tile body. */
+.ltile { background: linear-gradient(180deg, #f4f4f4 0%, #dcdcdc 60%, #c9c9c9 100%); color: #1d1d1d; box-shadow: inset 0 1px 0 #fff, 0 1px 0 rgba(0,0,0,.6); }
+.glyph { display: inline-grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #fff, #c9ccd1 70%); border: 2px solid #2b2d31; color: #1b1c1f; font: 700 11px/1 Arial, sans-serif; margin-right: 8px; vertical-align: middle; box-shadow: 0 1px 1px rgba(0,0,0,.5); }
+.glyph.sq { border-radius: 6px; width: auto; min-width: 30px; padding: 0 6px; }
+.glyph.green { background: radial-gradient(circle at 35% 30%, #b8f08a, #49a51d 70%); border-color: #1f4d0c; color: #fff; text-shadow: 0 1px 1px #000; }
+.prompt { position: absolute; left: 0; right: 0; bottom: 34px; height: 46px; display: flex; align-items: center; gap: 30px; padding-left: 150px;
+  background: linear-gradient(180deg, #fdfdfd 0%, #e6e7e9 48%, #d0d2d5 52%, #c3c5c9 100%); color: #26282b; font-weight: 700; font-size: 19px; box-shadow: 0 -1px 0 rgba(0,0,0,.4); }
+.prompt .right { margin-left: auto; align-self: stretch; display: flex; align-items: center; padding: 0 28px 0 70px; color: #fff; font-size: 17px; letter-spacing: .02em; text-transform: uppercase;
+  background: linear-gradient(180deg, #4a4c50, #2a2b2e 50%, #1b1c1e 51%, #121314); clip-path: polygon(46px 0, 100% 0, 100% 100%, 0 100%); text-shadow: 0 1px 1px #000; }
+.ticker { position: absolute; left: 0; right: 0; bottom: 0; height: 34px; background: linear-gradient(180deg, #23467d, #142b52); overflow: hidden; display: flex; align-items: center; box-shadow: inset 0 1px 0 rgba(255,255,255,.2); }
+.ticker .tk { display: flex; gap: 56px; padding-left: 230px; white-space: nowrap; font-weight: 700; font-size: 18px; color: #e9f0fb; animation: tick 38s linear infinite; }
+@keyframes tick { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+.disc { position: absolute; left: 22px; bottom: 6px; width: 104px; height: 104px; border-radius: 50%; z-index: 3;
+  background: radial-gradient(circle at 38% 30%, #ffffff 0%, #e4e6ea 45%, #b9bdc4 100%); box-shadow: 0 2px 6px rgba(0,0,0,.6), inset 0 -4px 8px rgba(0,0,0,.18);
+  display: grid; place-items: center; color: #23467d; font: 900 15px/1 Arial, sans-serif; text-align: center; letter-spacing: .02em; }
+.disc small { display: block; font-size: 10px; letter-spacing: .14em; color: #59606b; margin-top: 2px; }
+.shield { display: inline-block; width: 22px; height: 26px; vertical-align: middle; flex: none; }
+.sil { display: block; width: 100%; height: 100%; }
+
+/* ===== Screen 1: main menu ===== */
+.menu { background: radial-gradient(ellipse at 70% 40%, #ffffff 0%, #eef0f3 40%, #d9dde3 100%); color: #1d1f22; }
+.menu canvas { position: absolute; inset: 0; width: 1280px; height: 720px; }
+.menu .title { position: absolute; left: 70px; top: 60px; font: 900 italic 58px/1 Arial, sans-serif; letter-spacing: -.02em; color: #1f3f74; text-shadow: 0 2px 0 #fff, 0 3px 6px rgba(0,0,0,.18); }
+.menu .title span { display: block; font: 700 18px/1.4 Arial, sans-serif; font-style: normal; letter-spacing: .3em; color: #6a717c; text-shadow: none; }
+.menu .desc { position: absolute; left: 300px; top: 368px; width: 300px; background: linear-gradient(180deg, #57595d, #3e4044); color: #f2f2f2; font-size: 17px; line-height: 1.32; padding: 12px 16px 0; box-shadow: 0 3px 8px rgba(0,0,0,.35); transition: left .25s; }
+.menu .desc b.flag { display: block; margin: 12px -16px 0; height: 30px; background: linear-gradient(180deg, #ffe45c, #f2c200); color: #2b2300; font-size: 15px; padding: 6px 16px; text-transform: uppercase; }
+.menu .rail { position: absolute; left: 60px; right: 60px; top: 520px; height: 60px; display: flex; filter: drop-shadow(0 3px 4px rgba(0,0,0,.35)); }
+.menu .tab { position: relative; flex: 1; display: grid; place-items: center; font: 700 22px/1 Arial, sans-serif; text-transform: uppercase; color: #22252a; margin-right: -24px;
+  background: linear-gradient(180deg, #ffffff 0%, #eef0f3 48%, #d7dbe1 52%, #e8ebef 100%); clip-path: polygon(0 0, calc(100% - 24px) 0, 100% 50%, calc(100% - 24px) 100%, 0 100%, 24px 50%); transition: flex .2s; }
+.menu .tab:first-child { clip-path: polygon(0 0, calc(100% - 24px) 0, 100% 50%, calc(100% - 24px) 100%, 0 100%); }
+.menu .tab.on { flex: 1.45; color: #fff; font-size: 26px; text-shadow: 0 1px 2px #000; background: linear-gradient(180deg, #4d8fd6 0%, #23609f 48%, #164a83 52%, #1d5a9b 100%); z-index: 2; }
+.menu .under { position: absolute; left: 60px; right: 60px; top: 588px; height: 40px; background: linear-gradient(180deg, #ffffff, #e3e6ea); box-shadow: 0 2px 4px rgba(0,0,0,.25); display: flex; align-items: center; padding-left: 110px; gap: 28px; font-weight: 700; font-size: 16px; color: #3a3d42; }
+.menu .stamp { position: absolute; right: 70px; top: 66px; text-align: right; color: #6a717c; font-weight: 700; font-size: 16px; letter-spacing: .08em; text-transform: uppercase; }
+.menu .stamp b { display: block; font-size: 28px; color: #1f3f74; letter-spacing: 0; }
+
+/* ===== Screen 2: career hub ===== */
+.hub { background: #0d0d0e radial-gradient(ellipse at 50% 0%, #2c2d30 0%, #111213 60%); }
+.hub .head { position: absolute; left: 40px; right: 40px; top: 34px; height: 44px; display: flex; align-items: center; gap: 12px; padding: 0 18px;
+  background: linear-gradient(180deg, #2f6fc2 0%, #12519f 48%, #063a7c 52%, #0a438b 100%); border-radius: 6px 6px 0 0; box-shadow: inset 0 1px 0 rgba(255,255,255,.35); font-weight: 700; font-size: 25px; text-shadow: 0 1px 2px #000; }
+.hub .head .mgr { margin-left: auto; }
+.hub .col1 { position: absolute; left: 40px; top: 84px; width: 236px; bottom: 96px; display: flex; flex-direction: column; gap: 6px; }
+.hub .date { height: 34px; display: flex; align-items: center; padding: 0 12px; font-size: 20px; }
+.hub .sim { height: 30px; display: flex; align-items: center; padding: 0 10px; font-size: 17px; font-weight: 700; }
+.hub .feed { flex: 1; background: linear-gradient(180deg, #1b1c1e, #111214); box-shadow: inset 0 0 0 1px #2a2b2e; padding: 10px; font-size: 14px; color: #c7c9cc; display: grid; align-content: start; gap: 8px; }
+.hub .feed b { color: #fff; }
+.hub .fixh { height: 34px; display: grid; place-items: center; font-size: 19px; text-transform: uppercase; }
+.hub .fix { display: grid; gap: 6px; }
+.hub .fx .h { background: linear-gradient(180deg, #8bd23c 0%, #5eae17 48%, #4a9a0b 52%, #57a913 100%); font-weight: 700; font-size: 17px; padding: 4px 10px; text-shadow: 0 1px 1px rgba(0,0,0,.6); }
+.hub .fx .b { padding: 6px 10px 8px; font-size: 16px; font-weight: 700; display: grid; grid-template-columns: 1fr auto; gap: 8px 6px; align-items: center; }
+.hub .fx .b em { font-style: normal; font-weight: 400; color: #333; }
+.hub .fx .ha { display: flex; align-items: center; gap: 8px; text-transform: uppercase; }
+.pitchico { display: inline-block; width: 22px; height: 26px; background: linear-gradient(180deg, #5fb33b, #3d8a22); border: 2px solid #fff; outline: 1px solid #2e5f17; position: relative; }
+.pitchico::after { content: ""; position: absolute; left: 0; right: 0; top: 50%; border-top: 2px solid #fff; }
+.hub .cal { position: absolute; left: 282px; top: 84px; width: 714px; height: 92px; display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+.hub .day { display: grid; grid-template-rows: 28px 1fr; }
+.hub .day .dn { display: flex; align-items: center; padding: 0 8px; font-size: 19px; }
+.hub .day .db { position: relative; display: flex; align-items: flex-start; justify-content: space-between; padding: 4px 6px; font-size: 21px; color: #8a8c90; font-weight: 700; }
+.hub .day .db .sw { width: 26px; height: 22px; background: linear-gradient(180deg, #6a6c70, #3b3d40); border-radius: 2px; color: #fff; font-size: 14px; display: grid; place-items: center; }
+.hub .day.today .db { background: linear-gradient(180deg, #ffffff, #f0f0f0); color: #111; }
+.hub .day.match .db { color: #fff; }
+.hub .day.match .db::before { content: ""; position: absolute; left: 0; top: 0; border-style: solid; border-width: 34px 34px 0 0; border-color: #5eae17 transparent transparent transparent; }
+.hub .day.match .db span.n { position: relative; z-index: 1; }
+.hub .day .icons { position: absolute; left: 6px; right: 6px; bottom: 5px; display: flex; justify-content: space-between; align-items: flex-end; }
+.hub .day .icons .pitchico { width: 18px; height: 20px; }
+.hub .news { position: absolute; left: 282px; top: 182px; width: 714px; bottom: 96px; display: grid; grid-template-rows: 32px 1fr; gap: 6px; }
+.hub .bn { display: flex; align-items: center; gap: 4px; padding: 0 10px; font-size: 18px; letter-spacing: .02em; text-transform: uppercase; }
+.hub .bn .dots { margin-left: 12px; display: flex; gap: 3px; }
+.hub .bn .dots i { width: 14px; height: 3px; background: #777; }
+.hub .bn .dots i.on { background: #fff; }
+.hub .story { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; min-height: 0; }
+.hub .feature { display: grid; grid-template-rows: 1fr auto; background: #fff; }
+.hub .pic { position: relative; overflow: hidden; background: repeating-linear-gradient(115deg, #0a2d64 0 26px, #0b3a80 26px 46px, #071f47 46px 90px); display: grid; grid-template-columns: 1fr 1fr; gap: 0; padding: 26px 14px; }
+.hub .pic .frame { background: linear-gradient(180deg, #e9e9e9, #bdbdbd); border: 4px solid #062a5e; outline: 2px solid #4b84cf; display: grid; place-items: end center; overflow: hidden; }
+.hub .pic .frame svg { width: 80%; color: #8c9097; }
+.hub .pic .crestbox { display: grid; place-items: center; background: linear-gradient(180deg, #2a62b1, #08306d); border: 4px solid #062a5e; outline: 2px solid #4b84cf; }
+.hub .pic .crestbox svg { width: 46%; height: auto; }
+.hub .feature .cap { color: #111; font-weight: 700; font-size: 19px; line-height: 1.2; padding: 8px 6px 10px; background: linear-gradient(180deg, #fff, #e5e5e5); }
+.hub .side { display: grid; grid-template-rows: repeat(4, 1fr); gap: 6px; min-height: 0; }
+.hub .item { position: relative; display: grid; place-items: center; text-align: center; padding: 22px 16px 10px; font-weight: 700; font-size: 17px; line-height: 1.22; }
+.hub .item .dt { position: absolute; left: 7px; top: 4px; font-size: 15px; color: #8a8c90; }
+.hub .item .ex { position: absolute; right: 8px; top: 4px; font-size: 15px; color: #d0161d; }
+.hub .item.sel { background: linear-gradient(180deg, #2c2e31, #18191b); color: #fff; box-shadow: inset 0 0 0 1px #4a4c50; }
+.hub .item.sel .dt { color: #e6e6e6; }
+.hub .table { position: absolute; right: 40px; top: 84px; width: 236px; bottom: 96px; display: flex; flex-direction: column; }
+.hub .table .th { height: 34px; display: grid; place-items: center; font-size: 19px; }
+.hub .table .cols { display: flex; justify-content: flex-end; gap: 14px; padding: 4px 12px 4px 0; font-size: 14px; font-weight: 700; background: #0f1012; color: #e4e4e4; }
+.hub .rows { flex: 1; display: grid; grid-template-rows: repeat(20, 1fr); }
+.hub .row { display: grid; grid-template-columns: 24px 22px 1fr 22px 30px; align-items: center; gap: 2px; padding: 0 6px; font-size: 15px; font-weight: 700; background: linear-gradient(180deg, #213a63, #182c4d); border-top: 1px solid rgba(255,255,255,.08); }
+.hub .row:nth-child(even) { background: linear-gradient(180deg, #1c3256, #142643); }
+.hub .row.cl { background: linear-gradient(180deg, #4d8d2a, #3a721c); }
+.hub .row.el { background: linear-gradient(180deg, #4c6c9a, #3a5682); }
+.hub .row.rel { background: linear-gradient(180deg, #6c1e25, #55151b); }
+.hub .row.me { box-shadow: inset 0 0 0 2px #ffd900; }
+.hub .row .r { text-align: right; }
+.hub .row .shield { width: 15px; height: 18px; }
+
+/* ===== Screen 3: transfer list ===== */
+.tl { background: #0d0d0e radial-gradient(ellipse at 50% 20%, #2a2b2e 0%, #0f1011 70%); }
+.tl .win { position: absolute; left: 40px; right: 40px; top: 30px; bottom: 96px; display: flex; flex-direction: column; border-radius: 8px 8px 0 0; overflow: hidden; box-shadow: 0 0 0 1px #000; }
+.tl .wh { height: 46px; display: grid; place-items: center; font-weight: 700; font-size: 27px; text-shadow: 0 1px 2px #000;
+  background: linear-gradient(180deg, #4f74ad 0%, #284f8c 48%, #163b74 52%, #1f4682 100%); box-shadow: inset 0 1px 0 rgba(255,255,255,.4); }
+.tl .office { height: 156px; display: grid; grid-template-columns: 110px 1fr 120px 96px 1.25fr; align-items: center; gap: 0 18px; padding: 0 30px; color: #1d1d1d;
+  background: linear-gradient(180deg, #ffffff 0%, #f1f1f1 55%, #dcdcdc 100%); }
+.tl .office .bigshield { width: 86px; height: 104px; }
+.tl .office .mo { display: grid; gap: 1px; font-size: 18px; line-height: 1.2; }
+.tl .office .mo .cap { font-size: 16px; letter-spacing: .02em; text-transform: uppercase; }
+.tl .office .mo b { font-size: 20px; }
+.tl .office .face { width: 112px; height: 132px; align-self: end; display: grid; place-items: end center; overflow: hidden; }
+.tl .office .face svg { width: 100%; color: #7a7f87; }
+.tl .office .pcrest { width: 70px; height: 84px; }
+.tl .office .pd { display: grid; gap: 2px; font-size: 18px; }
+.tl .office .pd .nm { font-size: 30px; font-weight: 700; margin-bottom: 4px; line-height: 1; }
+.tl .office .pd .kv { display: flex; justify-content: space-between; gap: 18px; }
+.tl .panes { flex: 1; display: grid; grid-template-columns: 1fr 1.1fr; gap: 8px; background: #050505; padding-top: 8px; min-height: 0; }
+.tl .pane { display: flex; flex-direction: column; background: linear-gradient(180deg, #1d1e20, #141516); min-height: 0; }
+.tl .ph { height: 32px; display: flex; align-items: center; padding: 0 14px; font-size: 20px; }
+.tl .kvlist { padding: 4px 14px; display: grid; gap: 0; }
+.tl .kvlist div { display: grid; grid-template-columns: 1fr 1fr; padding: 3px 0; font-size: 19px; color: #b7b9bd; }
+.tl .kvlist div.act { color: #e6e6e6; font-weight: 700; text-transform: uppercase; }
+.tl .kvlist div.act.sel { background: linear-gradient(90deg, rgba(255,255,255,.18), rgba(255,255,255,0)); color: #fff; }
+.tl .kvlist div b { color: #fff; font-weight: 400; }
+.tl table { width: 100%; border-collapse: collapse; font-size: 19px; color: #fff; }
+.tl thead th { text-align: left; font-weight: 700; padding: 5px 10px; background: linear-gradient(180deg, #4b4d51, #2d2e31); text-shadow: 0 1px 1px #000; }
+.tl thead th.sort { background: linear-gradient(180deg, #8a8c90, #5b5d61); }
+.tl tbody td { padding: 6px 10px; border-bottom: 1px solid #262729; }
+.tl tbody tr { cursor: pointer; }
+.tl tbody tr:hover td { background: rgba(255,255,255,.07); }
+.tl tbody tr.sel td { background: linear-gradient(180deg, #ffffff, #dedede); color: #111; }
+.tl td.n, .tl th.n { text-align: right; }
+.tl .tblwrap { flex: 1; display: grid; grid-template-columns: 1fr 14px; align-items: start; min-height: 0; }
+.tl .tblwrap .sb { align-self: stretch; }
+.tl .sb { background: #0c0c0d; border-left: 1px solid #2a2b2d; display: grid; grid-template-rows: 14px 1fr 14px; justify-items: center; color: #ddd; font-size: 10px; }
+.tl .sb i { width: 6px; background: #8a8c90; border-radius: 3px; margin: 4px 0; height: 46%; }
+.tl .note { padding: 8px 14px; color: #8f9297; font-size: 15px; border-top: 1px solid #262729; }
+.tl .note b { color: #ffd900; }
+
+@media (prefers-reduced-motion: reduce) { .ticker .tk { animation: none; } .scr * { transition: none !important; } }
+</style>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="silh" viewBox="0 0 100 110"><path d="M50 8c15 0 25 11 25 27 0 11-5 21-12 26v6c18 4 32 14 35 43H2c3-29 17-39 35-43v-6c-7-5-12-15-12-26C25 19 35 8 50 8z" fill="currentColor"/></symbol>
+</svg>
+
+<div class="wrap">
+  <header class="intro">
+    <div class="eyebrow">Five Seasons · 2015 era · round 3</div>
+    <h1>The 2015 career, as a console game of that era</h1>
+    <p>Three screens rebuilt from your references at a true 1280×720, scaled to fit like a TV. Glossy split bars, grey tiles, heavy bold type, a calendar strip, a dark transfer table, the silver prompt bar and the results ticker. Club crests are plain shields in club colours, players without photos get the generic silhouette, and there are no league or publisher names. Hover the main menu tabs and click rows in the transfer list.</p>
+  </header>
+
+  <section class="shot">
+    <h2>1 · Main menu</h2>
+    <p class="lede">White, floodlit and shattered: a ball breaking into glossy shards behind chevron tabs, with a description box and a yellow flag above the selected tab.</p>
+    <div class="tv"><div class="scr menu" id="menu">
+      <canvas id="shards" width="1280" height="720" aria-hidden="true"></canvas>
+      <div class="title">FIVE SEASONS<span>2015 · 2020 CAREER</span></div>
+      <div class="stamp">Continue<b>Chelsea · 2015/16</b></div>
+      <div class="desc" id="desc">Pick up where you left off. Chelsea, season one of five: the transfer window is open and the board has €120,000,000 to spend.<b class="flag" id="flag">Window open!</b></div>
+      <div class="rail" id="rail">
+        <button class="tab" data-d="Start a new five-season career with any of the 20 clubs of summer 2015. Your choices, real player careers, one shot at glory." data-f="New career">New Career</button>
+        <button class="tab on" data-d="Pick up where you left off. Chelsea, season one of five: the transfer window is open and the board has €120,000,000 to spend." data-f="Window open!">Continue</button>
+        <button class="tab" data-d="Trophies, legends and the best and worst signings of every career you have played. The treble is still waiting." data-f="Treble watch">Hall of Fame</button>
+        <button class="tab" data-d="Sound, simulation speed and the season length of the results ticker." data-f="Options">Settings</button>
+      </div>
+      <div class="under"><span><span class="glyph">↵</span>Select</span><span><span class="glyph">←</span><span class="glyph">→</span>Move</span></div>
+      <div class="disc">FIVE<br>SEASONS<small>2015</small></div>
+    </div></div>
+    <div class="notes">
+      <div><h3>Taken from the reference</h3><ul><li>Chevron tabs, glossy silver with a wider blue selected tab</li><li>Grey description box with a yellow flag strip</li><li>White shattered-ball background, round disc bottom left</li></ul></div>
+      <div><h3>Changed</h3><ul><li>Shards are drawn in code, no player render</li><li>Our own name in the disc, no publisher logo</li></ul></div>
+    </div>
+  </section>
+
+  <section class="shot">
+    <h2>2 · Career hub</h2>
+    <p class="lede">The central screen: club header in club colours, the calendar strip with match days, breaking news with a feature story, fixtures and the league table with coloured zones.</p>
+    <div class="tv"><div class="scr hub">
+      <div class="head"><svg class="shield" viewBox="0 0 22 26"><path d="M1 1h20v11c0 7-5 11-10 13C6 23 1 19 1 12z" fill="#034694" stroke="#fff" stroke-width="1.5"/><path d="M11 1v24" stroke="#fff" stroke-width="2"/></svg>Chelsea<span class="mgr">The Manager</span></div>
+
+      <div class="col1">
+        <div class="date gbar">Fri, Aug 7, 2015</div>
+        <div class="sim ltile"><span class="glyph">␣</span>Advance</div>
+        <div class="feed"><span><b>Board:</b> transfer budget set at €120,000,000.</span><span><b>Scout:</b> four players can be signed this summer.</span><span><b>Inbox:</b> 3 bids for your players.</span></div>
+        <div class="fixh gbar">Fixtures:</div>
+        <div class="fix">
+          <div class="fx"><div class="h">Sat, Aug 8, 2015</div><div class="b ltile"><em>League</em><svg class="shield" viewBox="0 0 22 26"><path d="M1 1h20v11c0 7-5 11-10 13C6 23 1 19 1 12z" fill="#fff" stroke="#111" stroke-width="1.5"/><path d="M1 13h20" stroke="#111" stroke-width="3"/></svg><span class="ha"><span class="pitchico"></span>Home</span><span>Swansea</span></div></div>
+          <div class="fx"><div class="h">Sun, Aug 16, 2015</div><div class="b ltile"><em>League</em><svg class="shield" viewBox="0 0 22 26"><path d="M1 1h20v11c0 7-5 11-10 13C6 23 1 19 1 12z" fill="#6cabdd" stroke="#1c2c5b" stroke-width="1.5"/></svg><span class="ha"><span class="pitchico"></span>Away</span><span>Man City</span></div></div>
+        </div>
+      </div>
+
+      <div class="cal">
+        <div class="day"><span class="dn gbar">Fri</span><span class="db ltile today"><span class="n">7</span><span class="sw">⇄</span></span></div>
+        <div class="day match"><span class="dn gbar">Sat</span><span class="db ltile"><span class="n">8</span><span class="sw">⇄</span><span class="icons"><span class="pitchico"></span><svg class="shield" viewBox="0 0 22 26"><path d="M1 1h20v11c0 7-5 11-10 13C6 23 1 19 1 12z" fill="#fff" stroke="#111" stroke-width="1.5"/><path d="M1 13h20" stroke="#111" stroke-width="3"/></svg></span></span></div>
+        <div class="day"><span class="dn gbar">Sun</span><span class="db ltile"><span class="n">9</span><span class="sw">⇄</span></span></div>
+        <div class="day"><span class="dn gbar">Mon</span><span class="db ltile"><span class="n">10</span><span class="sw">⇄</span></span></div>
+        <div class="day"><span class="dn gbar">Tue</span><span class="db ltile"><span class="n">11</span><span class="sw">⇄</span></span></div>
+        <div class="day"><span class="dn gbar">Wed</span><span class="db ltile"><span class="n">12</span><span class="sw">⇄</span></span></div>
+        <div class="day"><span class="dn gbar">Thu</span><span class="db ltile"><span class="n">13</span><span class="sw">⇄</span></span></div>
+      </div>
+
+      <div class="news">
+        <div class="bn gbar"><span class="glyph sq">Q</span><span class="glyph sq">E</span>Breaking news<span class="dots"><i class="on"></i><i></i><i></i></span></div>
+        <div class="story">
+          <div class="feature">
+            <div class="pic"><div class="frame"><svg viewBox="0 0 100 110"><use href="#silh"/></svg></div><div class="crestbox"><svg viewBox="0 0 22 26"><path d="M1 1h20v11c0 7-5 11-10 13C6 23 1 19 1 12z" fill="#034694" stroke="#fff" stroke-width="1.5"/><path d="M11 1v24" stroke="#fff" stroke-width="2"/></svg></div></div>
+            <div class="cap">Chelsea Promote Fikayo Tomori to the First-Team Squad</div>
+          </div>
+          <div class="side">
+            <div class="item ltile"><span class="dt">NEW!</span><span class="ex">EXCLUSIVE</span>Manchester City Keen on Signing Verratti</div>
+            <div class="item ltile"><span class="dt">06/08/2015</span>Napoli Bid €16,000,000 for John Terry</div>
+            <div class="item sel"><span class="dt">05/08/2015</span>Board Confirms €120,000,000 Summer Budget</div>
+            <div class="item ltile"><span class="dt">03/08/2015</span>Four Players Available to Chelsea</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="table">
+        <div class="th gbar">English League</div>
+        <div class="cols"><span>P</span><span>PTS</span></div>
+        <div class="rows" id="rows"></div>
+      </div>
+
+      <div class="prompt"><span><span class="glyph">␣</span>Advance</span><span><span class="glyph">↵</span>Expand Story</span><span class="right">Five Seasons · 2015/16</span></div>
+      <div class="ticker"><div class="tk" id="tk1"></div></div>
+      <div class="disc">FIVE<br>SEASONS<small>2015</small></div>
+    </div></div>
+    <div class="notes">
+      <div><h3>Taken from the reference</h3><ul><li>Header strip in club colours, manager name right</li><li>Calendar with today highlighted and green match-day corners</li><li>Breaking news split: feature story left, dated list right, selected item dark</li><li>Table zones: top four green, fifth blue, bottom three red</li></ul></div>
+      <div><h3>Changed</h3><ul><li>Plain shields in club colours instead of crests</li><li>"English League" instead of the sponsor's name</li><li>The ticker carries the real 2015/16 opening-day fixtures</li></ul></div>
+    </div>
+  </section>
+
+  <section class="shot">
+    <h2>3 · Transfer list</h2>
+    <p class="lede">The offers step as a transfer list: manager's office on top with the budget and the selected player, the window's details on the left, and the players you can sign on the right. Click a row.</p>
+    <div class="tv"><div class="scr tl">
+      <div class="win">
+        <div class="wh">Transfer Offers</div>
+        <div class="office">
+          <svg class="bigshield" viewBox="0 0 22 26"><path d="M1 1h20v11c0 7-5 11-10 13C6 23 1 19 1 12z" fill="#034694" stroke="#0b2a57" stroke-width="1"/><path d="M11 1v24" stroke="#fff" stroke-width="2"/></svg>
+          <div class="mo"><span class="cap">Manager's Office</span><b>Chelsea</b><b>Transfer Budget</b><span>€120,000,000</span><b>Squad Size</b><span>23 / 26</span></div>
+          <div class="face"><svg viewBox="0 0 100 110"><use href="#silh"/></svg></div>
+          <svg class="pcrest" id="pcrest" viewBox="0 0 22 26"></svg>
+          <div class="pd"><span class="nm" id="pname">Antoine Griezmann</span>
+            <span class="kv"><span>Current Club</span><span id="pclub">Atlético de Madrid</span></span>
+            <span class="kv"><span>Estimated Worth</span><span id="pworth">€33,000,000</span></span>
+            <span class="kv"><span>Asking Price</span><span id="pask">€36,000,000</span></span>
+          </div>
+        </div>
+        <div class="panes">
+          <div class="pane">
+            <div class="ph gbar">Summer Window 2015</div>
+            <div class="kvlist">
+              <div><span>Step</span><b>2 of 4 · Offers</b></div>
+              <div><span>Deadline Day</span><b>31/08/2015</b></div>
+              <div><span>Players Available</span><b>4</b></div>
+              <div><span>Squad Spaces</span><b>3</b></div>
+              <div><span>Bids Received</span><b>3</b></div>
+              <div><span>Reputation</span><b>Elite</b></div>
+              <div class="act sel"><span>Sign Selected Player</span></div>
+              <div class="act"><span>Around the League</span></div>
+              <div class="act"><span>Go to Deadline Day</span></div>
+            </div>
+          </div>
+          <div class="pane">
+            <div class="ph gbar">Num Results: 4 (max. 5)</div>
+            <div class="tblwrap">
+              <table>
+                <thead><tr><th>Pos</th><th>Player</th><th class="n">Age</th><th class="n sort">Overall ▼</th><th class="n">Fee</th></tr></thead>
+                <tbody id="plist"></tbody>
+              </table>
+              <div class="sb"><span>▲</span><i></i><span>▼</span></div>
+            </div>
+            <div class="note">Rival clubs are watching these players. <b>Wait too long and they may sign elsewhere.</b></div>
+          </div>
+        </div>
+      </div>
+      <div class="prompt"><span><span class="glyph green">↵</span>Sign</span><span><span class="glyph">↑</span><span class="glyph">↓</span>Browse</span><span><span class="glyph">T</span>Around the League</span><span class="right">Budget €120,000,000</span></div>
+      <div class="ticker"><div class="tk" id="tk2"></div></div>
+      <div class="disc">FIVE<br>SEASONS<small>2015</small></div>
+    </div></div>
+    <div class="notes">
+      <div><h3>Taken from the reference</h3><ul><li>Navy glossy window title, white office panel with budget</li><li>Grey-headed dark panes, a highlighted sort column and a white selected row</li><li>Thin scrollbar with arrows, prompt bar and results ticker</li></ul></div>
+      <div><h3>Changed</h3><ul><li>The left pane shows the window's steps instead of search filters</li><li>Potential is not shown anywhere</li></ul></div>
+    </div>
+  </section>
+</div>
+
+<script>
+(() => {
+  // Scale each 1280x720 screen to its TV.
+  const fit = () => document.querySelectorAll('.tv').forEach((tv) => tv.firstElementChild.style.setProperty('--s', tv.clientWidth / 1280));
+  fit();
+  new ResizeObserver(fit).observe(document.body);
+
+  const shield = (fill, stroke, band) =>
+    `<path d="M1 1h20v11c0 7-5 11-10 13C6 23 1 19 1 12z" fill="${fill}" stroke="${stroke}" stroke-width="1.5"/>` + (band ? `<path d="${band}" stroke="${stroke}" stroke-width="2.4" fill="none"/>` : '');
+
+  // League table, pre-season: alphabetical, all on zero.
+  const clubs = [
+    ['Arsenal', '#ef0107', '#fff'], ['A. Villa', '#670e36', '#95bfe5'], ['Bournemouth', '#da291c', '#000'], ['Chelsea', '#034694', '#fff'],
+    ['C. Palace', '#1b458f', '#c4122e'], ['Everton', '#003399', '#fff'], ['Leicester', '#003090', '#fdbe11'], ['Liverpool', '#c8102e', '#fff'],
+    ['Man City', '#6cabdd', '#1c2c5b'], ['Man Utd', '#da291c', '#fbe122'], ['Newcastle', '#241f20', '#fff'], ['Norwich', '#fff200', '#00a650'],
+    ['Southamp.', '#d71920', '#fff'], ['Spurs', '#fff', '#132257'], ['Stoke', '#e03a3e', '#fff'], ['Sunderland', '#eb172b', '#fff'],
+    ['Swansea', '#fff', '#121212'], ['Watford', '#fbee23', '#ed2127'], ['West Brom', '#122f67', '#fff'], ['West Ham', '#7a263a', '#1bb1e7'],
+  ];
+  document.getElementById('rows').innerHTML = clubs.map(([n, a, b], i) => {
+    const zone = i < 4 ? 'cl' : i === 4 ? 'el' : i >= 17 ? 'rel' : '';
+    return `<div class="row ${zone} ${n === 'Chelsea' ? 'me' : ''}"><span>${i + 1}</span><svg class="shield" viewBox="0 0 22 26">${shield(a, b, 'M11 1v24')}</svg><span>${n}</span><span class="r">0</span><span class="r">0</span></div>`;
+  }).join('');
+
+  // Tickers: real 2015/16 opening-day fixtures, then the first results.
+  const opening = ['Man Utd vs. Spurs', 'Bournemouth vs. Aston Villa', 'Everton vs. Watford', 'Leicester vs. Sunderland', 'Norwich vs. Crystal Palace', 'Chelsea vs. Swansea', 'Arsenal vs. West Ham', 'Newcastle vs. Southampton', 'Stoke vs. Liverpool', 'West Brom vs. Man City'];
+  const tk = (id, items) => { const s = items.map((t) => `<span>${t}</span>`).join(''); document.getElementById(id).innerHTML = s + s; };
+  tk('tk1', opening);
+  tk('tk2', ['08/08/2015 League - Chelsea 2 Swansea 2', '08/08/2015 League - Arsenal 0 West Ham 2', '08/08/2015 League - Leicester 4 Sunderland 2', '09/08/2015 League - Man Utd 1 Spurs 0', '10/08/2015 League - West Brom 0 Man City 3']);
+
+  // Transfer list rows; clicking a row updates the office panel.
+  const offers = [
+    { pos: 'ST', name: 'Antoine Griezmann', age: 24, ovr: 83, club: 'Atlético de Madrid', worth: '€33,000,000', fee: '€36,000,000', c: ['#cb3524', '#fff', 'M5 1v23M11 1v24M17 1v23'] },
+    { pos: 'ST', name: 'Paulo Dybala', age: 21, ovr: 78, club: 'Juventus', worth: '€14,000,000', fee: '€15,500,000', c: ['#111', '#fff', 'M8 1v24M14 1v24'] },
+    { pos: 'CB', name: 'Kalidou Koulibaly', age: 24, ovr: 78, club: 'Napoli', worth: '€10,000,000', fee: '€11,000,000', c: ['#12a0d7', '#fff', ''] },
+    { pos: 'LM', name: 'Leroy Sané', age: 19, ovr: 70, club: 'FC Schalke 04', worth: '€2,300,000', fee: '€2,500,000', c: ['#004d9d', '#fff', 'M1 12h20'] },
+  ];
+  const body = document.getElementById('plist');
+  const select = (i) => {
+    const o = offers[i];
+    [...body.children].forEach((tr, k) => tr.classList.toggle('sel', k === i));
+    document.getElementById('pname').textContent = o.name;
+    document.getElementById('pclub').textContent = o.club;
+    document.getElementById('pworth').textContent = o.worth;
+    document.getElementById('pask').textContent = o.fee;
+    document.getElementById('pcrest').innerHTML = shield(o.c[0], o.c[1], o.c[2]);
+  };
+  body.innerHTML = offers.map((o, i) => `<tr data-i="${i}"><td>${o.pos}</td><td>${o.name}</td><td class="n">${o.age}</td><td class="n">${o.ovr}</td><td class="n">${o.fee.replace(',000,000', 'm').replace(/,(\d)00,000/, '.$1m')}</td></tr>`).join('');
+  body.addEventListener('click', (e) => { const tr = e.target.closest('tr'); if (tr) select(+tr.dataset.i); });
+  select(0);
+
+  // Main menu tabs: hover or arrow keys move the selection and its description.
+  const tabs = [...document.querySelectorAll('#rail .tab')];
+  const desc = document.getElementById('desc');
+  const flag = document.getElementById('flag');
+  const pick = (t) => {
+    tabs.forEach((x) => x.classList.toggle('on', x === t));
+    desc.firstChild.textContent = t.dataset.d;
+    flag.textContent = t.dataset.f;
+    desc.style.left = (60 + t.offsetLeft) + 'px';
+  };
+  tabs.forEach((t) => { t.addEventListener('mouseenter', () => pick(t)); t.addEventListener('focus', () => pick(t)); });
+  requestAnimationFrame(() => pick(tabs[1]));
+
+  // Shattered ball: rings of glossy shards bursting from a sphere.
+  const cv = document.getElementById('shards');
+  const g = cv.getContext('2d');
+  let seed = 7;
+  const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+  const cx = 930, cy = 330;
+  const shard = (a0, a1, r0, r1, push, tilt) => {
+    const am = (a0 + a1) / 2;
+    const ox = Math.cos(am) * push, oy = Math.sin(am) * push;
+    const pts = [[a0, r0], [a1, r0], [a1 + tilt, r1], [a0 + tilt, r1]].map(([a, r]) => [cx + ox + Math.cos(a) * r, cy + oy + Math.sin(a) * r]);
+    g.save();
+    g.shadowColor = 'rgba(30,50,80,.28)'; g.shadowBlur = 16; g.shadowOffsetY = 6;
+    g.beginPath(); pts.forEach(([x, y], i) => (i ? g.lineTo(x, y) : g.moveTo(x, y))); g.closePath();
+    const lg = g.createLinearGradient(pts[0][0], pts[0][1], pts[2][0], pts[2][1]);
+    lg.addColorStop(0, '#ffffff'); lg.addColorStop(.55, '#e7ecf2'); lg.addColorStop(1, '#bcc7d4');
+    g.fillStyle = lg; g.fill();
+    g.shadowColor = 'transparent';
+    g.lineWidth = 3; g.strokeStyle = 'rgba(40,90,160,.55)';
+    g.beginPath(); g.moveTo(pts[2][0], pts[2][1]); g.lineTo(pts[3][0], pts[3][1]); g.stroke();
+    g.lineWidth = 1.2; g.strokeStyle = 'rgba(255,255,255,.95)';
+    g.beginPath(); g.moveTo(pts[0][0], pts[0][1]); g.lineTo(pts[1][0], pts[1][1]); g.stroke();
+    g.restore();
+  };
+  const glow = g.createRadialGradient(cx, cy, 20, cx, cy, 330);
+  glow.addColorStop(0, 'rgba(255,255,255,.95)'); glow.addColorStop(1, 'rgba(255,255,255,0)');
+  g.fillStyle = glow; g.fillRect(0, 0, 1280, 720);
+  // The ball itself: a glossy sphere at the centre of the burst.
+  const ball = g.createRadialGradient(cx - 30, cy - 34, 10, cx, cy, 96);
+  ball.addColorStop(0, '#ffffff'); ball.addColorStop(.6, '#e3e9f1'); ball.addColorStop(1, '#a9b8cb');
+  g.save(); g.shadowColor = 'rgba(30,50,80,.3)'; g.shadowBlur = 24; g.shadowOffsetY = 8;
+  g.beginPath(); g.arc(cx, cy, 92, 0, Math.PI * 2); g.fillStyle = ball; g.fill(); g.restore();
+  g.strokeStyle = 'rgba(40,90,160,.45)'; g.lineWidth = 2;
+  for (let k = 0; k < 5; k++) { const a = k * 1.2566 - 1.57; g.beginPath(); g.moveTo(cx, cy); g.lineTo(cx + Math.cos(a) * 92, cy + Math.sin(a) * 92); g.stroke(); }
+  g.beginPath(); for (let k = 0; k <= 5; k++) { const a = k * 1.2566 - 1.57; const x = cx + Math.cos(a) * 34, y = cy + Math.sin(a) * 34; k ? g.lineTo(x, y) : g.moveTo(x, y); } g.fillStyle = 'rgba(31,63,116,.85)'; g.fill();
+  for (const [r0, r1, n, push] of [[262, 306, 20, 52], [214, 258, 17, 36], [168, 210, 14, 22], [124, 164, 11, 12]]) {
+    for (let k = 0; k < n; k++) {
+      if (rnd() < 0.12) continue;
+      const a0 = (k / n) * Math.PI * 2 + rnd() * 0.05;
+      const a1 = a0 + (Math.PI * 2) / n - 0.05;
+      shard(a0, a1, r0, r1, push * (0.6 + rnd()), (rnd() - 0.5) * 0.08);
+    }
+  }
+  for (let k = 0; k < 7; k++) {
+    const a = rnd() * Math.PI * 2;
+    shard(a, a + 0.22, 330 + rnd() * 80, 372 + rnd() * 80, 40 + rnd() * 90, 0.06);
+  }
+})();
+</script>
