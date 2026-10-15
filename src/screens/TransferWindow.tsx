@@ -37,73 +37,75 @@ export function TransferWindow() {
     <>
       {last && <SummerReport />}
 
-      <Card
-        title={game.windowPhase === 'open' ? `Transfer window ${seasonLabel(game.season)}` : 'Deadline day'}
-        right={<span className="text-xs text-slate-400">Squad {club.squad.length}/{MAX_SQUAD}</span>}
-      >
-        <p className="mb-2 text-sm text-slate-400">
-          {game.windowPhase === 'open'
-            ? 'Five players are available to you. Rival clubs are shopping too: anyone you leave may be gone by deadline day.'
-            : 'Last chance. Deals done by rival clubs are final.'}
-        </p>
-        {message && <p className="mb-2 rounded-md bg-rose-500/15 px-3 py-2 text-sm text-rose-300">{message}</p>}
-        <ul className="divide-y divide-slate-800">
-          {game.offers.map((o, i) => {
-            const p = game.players[o.player];
-            const row = data.seasons[game.season][o.player];
-            return (
-              <li key={o.player} className={o.status !== 'open' ? 'opacity-60' : ''}>
-                <PlayerLine data={data} p={p} />
-                <div className="flex items-center justify-between gap-2 pb-2 pl-11 text-xs text-slate-400">
-                  <span className="min-w-0 truncate">
-                    {row ? data.meta.clubNames[row[6]] : 'Free agent'} · value {formatMoney(p.value)}
-                  </span>
-                  {o.status === 'open' && (
-                    <Button
-                      onClick={() => buy(i)}
-                      disabled={club.cash < o.fee || club.squad.length >= MAX_SQUAD}
-                      className="shrink-0 !px-3 !py-1.5"
-                    >
-                      Buy {formatMoney(o.fee)}
-                    </Button>
-                  )}
-                  {o.status === 'bought' && <span className="shrink-0 font-semibold text-emerald-400">Signed</span>}
-                  {o.status === 'gone' && (
-                    <span className="flex shrink-0 items-center gap-1 text-rose-300">
-                      Joined <ClubBadge data={data} club={o.goneTo!} size={18} />
-                    </span>
-                  )}
-                </div>
+      <div className="space-y-3 lg:grid lg:grid-cols-2 lg:items-start lg:gap-4 lg:space-y-0">
+        <div className="space-y-3 lg:space-y-4">
+          <Card
+            title={game.windowPhase === 'open' ? `Transfer window ${seasonLabel(game.season)}` : 'Deadline day'}
+            right={<span className="text-xs text-slate-400">Squad {club.squad.length}/{MAX_SQUAD}</span>}
+          >
+            <p className="mb-2 text-sm text-slate-400">
+              {game.windowPhase === 'open'
+                ? 'Five players are available to you. Rival clubs are shopping too: anyone you leave may be gone by deadline day.'
+                : 'Last chance. Deals done by rival clubs are final.'}
+            </p>
+            {message && <p className="mb-2 rounded-md bg-rose-500/15 px-3 py-2 text-sm text-rose-300">{message}</p>}
+            <ul className="divide-y divide-slate-800">
+              {game.offers.map((o, i) => {
+                const p = game.players[o.player];
+                const row = data.seasons[game.season][o.player];
+                return (
+                  <li key={o.player} className={o.status !== 'open' ? 'opacity-60' : ''}>
+                    <PlayerLine data={data} p={p} />
+                    <div className="flex items-center justify-between gap-2 pb-2 pl-11 text-xs text-slate-400">
+                      <span className="min-w-0 truncate">
+                        {row ? data.meta.clubNames[row[6]] : 'Free agent'} · value {formatMoney(p.value)}
+                      </span>
+                      {o.status === 'open' && (
+                        <Button
+                          onClick={() => buy(i)}
+                          disabled={club.cash < o.fee || club.squad.length >= MAX_SQUAD}
+                          className="shrink-0 !px-3 !py-1.5"
+                        >
+                          Buy {formatMoney(o.fee)}
+                        </Button>
+                      )}
+                      {o.status === 'bought' && <span className="shrink-0 font-semibold text-emerald-400">Signed</span>}
+                      {o.status === 'gone' && (
+                        <span className="flex shrink-0 items-center gap-1 text-rose-300">
+                          Joined <ClubBadge data={data} club={o.goneTo!} size={18} />
+                        </span>
+                      )}
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          </Card>
+          {otherNews.length > 0 && (
+            <Card title="Around the league">
+              <ul className="space-y-1.5 text-sm">
+                {otherNews.slice().reverse().map((n, i) => (
+                  <NewsLine key={i} n={n} />
+                ))}
+              </ul>
+            </Card>
+          )}
+        </div>
+        <Card title="Your squad" right={<span className="text-xs text-slate-400">Tap a player to sell</span>}>
+          <ul className="divide-y divide-slate-800">
+            {squad.map((p) => (
+              <li key={p.id}>
+                <PlayerLine
+                  data={data}
+                  p={p}
+                  onClick={() => setSelling(p.id)}
+                  right={<span className="text-xs tabular-nums text-slate-400">{formatMoney(p.value)}</span>}
+                />
               </li>
-            );
-          })}
-        </ul>
-      </Card>
-
-      <Card title="Your squad" right={<span className="text-xs text-slate-400">Tap a player to sell</span>}>
-        <ul className="divide-y divide-slate-800">
-          {squad.map((p) => (
-            <li key={p.id}>
-              <PlayerLine
-                data={data}
-                p={p}
-                onClick={() => setSelling(p.id)}
-                right={<span className="text-xs tabular-nums text-slate-400">{formatMoney(p.value)}</span>}
-              />
-            </li>
-          ))}
-        </ul>
-      </Card>
-
-      {otherNews.length > 0 && (
-        <Card title="Around the league">
-          <ul className="space-y-1.5 text-sm">
-            {otherNews.slice().reverse().map((n, i) => (
-              <NewsLine key={i} n={n} />
             ))}
           </ul>
         </Card>
-      )}
+      </div>
 
       {selling !== null && (
         <SellSheet
@@ -134,7 +136,7 @@ export function TransferWindow() {
 export function BottomBar({ children }: { children: React.ReactNode }) {
   return (
     <div className="fixed inset-x-0 bottom-0 z-30 border-t border-slate-800 bg-slate-950/95 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur">
-      <div className="mx-auto flex max-w-3xl gap-2">{children}</div>
+      <div className="mx-auto flex max-w-6xl gap-2 lg:justify-end lg:px-3 lg:*:w-auto lg:*:px-10">{children}</div>
     </div>
   );
 }

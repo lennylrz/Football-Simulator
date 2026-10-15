@@ -68,7 +68,14 @@ export function Results() {
           { id: 'squad', label: 'Squad' },
         ]}
       />
-      {tab === 'table' && <LeagueTable />}
+      {tab === 'table' && (
+        <div className="lg:grid lg:grid-cols-[3fr_2fr] lg:items-start lg:gap-4">
+          <LeagueTable />
+          <div className="hidden lg:block">
+            <Leaders stacked />
+          </div>
+        </div>
+      )}
       {tab === 'fixtures' && <Fixtures />}
       {tab === 'cups' && <Cups />}
       {tab === 'leaders' && <Leaders />}
@@ -303,7 +310,7 @@ function Cups() {
     });
   };
   return (
-    <>
+    <div className="space-y-3 lg:grid lg:grid-cols-2 lg:items-start lg:gap-4 lg:space-y-0">
       <Card title="Champions League" right={<EntrantChip e={result.cl.winner} />}>
         {group ? (
           <table className="mb-2 w-full text-sm tabular-nums">
@@ -330,7 +337,7 @@ function Cups() {
         <p className="text-xs text-slate-500">Your ties, then the quarter-finals onwards.</p>
         <ul className="divide-y divide-slate-800">{rows(faLate)}</ul>
       </Card>
-    </>
+    </div>
   );
 }
 
@@ -343,7 +350,7 @@ function EntrantChip({ e }: { e: Entrant }) {
   );
 }
 
-function Leaders() {
+function Leaders({ stacked = false }: { stacked?: boolean }) {
   const { data, game } = useGame();
   const h = game.history[game.history.length - 1];
   const list = (rows: [number, number, number][], label: string) => (
@@ -361,7 +368,7 @@ function Leaders() {
     </Card>
   );
   return (
-    <div className="grid gap-3 sm:grid-cols-2">
+    <div className={`grid gap-3 ${stacked ? '' : 'sm:grid-cols-2'}`}>
       {list(h.topScorers, 'League top scorers')}
       {list(h.topAssists, 'League top assists')}
     </div>

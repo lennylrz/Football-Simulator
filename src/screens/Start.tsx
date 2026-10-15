@@ -30,7 +30,7 @@ export function Start({ data, onStart }: { data: GameData; onStart: (club: numbe
   };
 
   return (
-    <div className="mx-auto max-w-3xl px-3 pb-32 pt-6">
+    <div className="mx-auto max-w-6xl px-3 pb-32 pt-6 lg:px-6 lg:pt-10">
       <h1 className="text-3xl font-black tracking-tight">Five Seasons</h1>
       <p className="mt-1 text-slate-400">
         Take over an English top-flight club in summer 2015 and manage it to 2020. Buy, sell, pick your team and play each season in
@@ -42,7 +42,7 @@ export function Start({ data, onStart }: { data: GameData; onStart: (club: numbe
       </p>
 
       <h2 className="mb-2 mt-6 text-sm font-semibold uppercase tracking-wide text-slate-400">Pick your club</h2>
-      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {clubs.map(({ i, info, xi, star }) => (
           <button
             key={i}
@@ -89,7 +89,7 @@ export function Start({ data, onStart }: { data: GameData; onStart: (club: numbe
       </p>
 
       <div className="fixed inset-x-0 bottom-0 z-30 border-t border-slate-800 bg-slate-950/95 p-3 backdrop-blur">
-        <div className="mx-auto max-w-3xl">
+        <div className="mx-auto flex max-w-6xl lg:justify-end lg:px-3 lg:*:w-auto lg:*:px-10">
           <Button onClick={begin} disabled={club === null} className="w-full py-3 text-base">
             {club === null ? 'Choose a club' : `Manage ${CLUBS.find((c) => c.name === data.meta.gameClubs[club])!.name}`}
           </Button>

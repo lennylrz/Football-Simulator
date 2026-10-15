@@ -74,7 +74,8 @@ export function Lineup() {
 
   return (
     <>
-      <Card title="Formation">
+      <div className="flex flex-col gap-3 lg:grid lg:grid-cols-2 lg:items-start lg:gap-4">
+      <Card title="Formation" className="lg:col-start-2 lg:row-start-1">
         <div className="flex flex-wrap gap-1.5">
           {FORMATION_NAMES.map((f) => (
             <button
@@ -96,7 +97,7 @@ export function Lineup() {
         </div>
       </Card>
 
-      <div className="relative mx-auto aspect-[3/4] w-full max-w-md overflow-hidden rounded-xl bg-emerald-800 ring-1 ring-emerald-900">
+      <div className="relative mx-auto aspect-[3/4] w-full max-w-md overflow-hidden rounded-xl bg-emerald-800 ring-1 ring-emerald-900 lg:col-start-1 lg:row-span-3 lg:row-start-1 lg:h-[calc(100dvh-12rem)] lg:min-h-[480px] lg:w-auto lg:max-w-none lg:justify-self-center">
         <PitchMarkings />
         {slots.map((slot, i) => {
           const p = game.players[club.xi[i]];
@@ -125,7 +126,7 @@ export function Lineup() {
         })}
       </div>
 
-      <Card title="Bench" right={<span className="text-xs text-slate-400">Subs and cover for knocks</span>}>
+      <Card title="Bench" right={<span className="text-xs text-slate-400">Subs and cover for knocks</span>} className="lg:col-start-2 lg:row-start-2">
         <div className="grid grid-cols-5 gap-1.5">
           {Array.from({ length: BENCH_SIZE }, (_, i) => {
             const p = game.players[club.bench[i]];
@@ -147,7 +148,8 @@ export function Lineup() {
         </Button>
       </Card>
 
-      {problems.length > 0 && <p className="text-sm text-rose-300">{problems[0]}</p>}
+      {problems.length > 0 && <p className="text-sm text-rose-300 lg:col-start-2 lg:row-start-3">{problems[0]}</p>}
+      </div>
 
       {pick && (
         <PickSheet

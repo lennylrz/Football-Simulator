@@ -10,7 +10,16 @@ import { loadRun, saveRun } from './storage';
 import { GameContext } from './ui/context';
 import { Header } from './ui/Header';
 
+declare global {
+  interface Window {
+    /** game data inlined by scripts/build_single.mjs for the single-file build */
+    __GAME_DATA__?: Record<string, unknown>;
+  }
+}
+
 async function fetchJson(file: string) {
+  const inlined = window.__GAME_DATA__?.[file];
+  if (inlined) return inlined;
   const res = await fetch(`${import.meta.env.BASE_URL}data/${file}`);
   if (!res.ok) throw new Error(`Could not load ${file}`);
   return res.json();
@@ -62,9 +71,9 @@ export default function App() {
 
   return (
     <GameContext.Provider value={{ data, game, act, quit }}>
-      <div className="mx-auto min-h-dvh max-w-3xl pb-28">
+      <div className="mx-auto min-h-dvh max-w-6xl pb-28">
         <Header />
-        <main className="space-y-3 px-3 pt-3">
+        <main className="space-y-3 px-3 pt-3 lg:space-y-4 lg:px-6 lg:pt-5">
           {game.stage === 'window' && <TransferWindow />}
           {game.stage === 'lineup' && <Lineup />}
           {game.stage === 'results' && <Results />}
