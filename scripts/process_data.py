@@ -25,7 +25,7 @@ SEASONS = {2015: 16, 2016: 17, 2017: 18, 2018: 19, 2019: 20}
 # FIFA league ids. Names are ambiguous ("Premier League" is also Russia, ...).
 EPL = 13
 TOP5 = {EPL, 53, 19, 31, 16}  # England, Spain, Germany, Italy, France
-SQUAD_SIZE = 25
+SQUAD_SIZE = 23
 SQUAD_GK = 3
 
 COLS = [

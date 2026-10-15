@@ -30,7 +30,7 @@ python3 scripts/process_data.py   # -> public/data/*.json (committed)
 ## What ships (public/data, ~1.1 MB)
 
 - `squads_2015.json`: the 20 squads at the start of 2015/16 (FIFA 16,
-  league 13), trimmed to 25 players each (best 3 GK + best 22 outfield).
+  league 13), trimmed to 23 players each (best 3 GK + best 20 outfield).
 - `season_YYYY.json`: rating row per player per season:
   `[overall, potential, age, value €k, wage €k, positions, club index]`.
   The club is the player's real club, or for players whose real club is one of
