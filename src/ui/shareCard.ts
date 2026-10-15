@@ -14,43 +14,13 @@ export interface CardInput {
 
 const W = 1080;
 const H = 1350;
-const FONT = 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif';
-const TROPHY_COLORS: Record<Trophy, string> = { league: '#fbbf24', fa: '#e2e8f0', cl: '#7dd3fc' };
-const TROPHY_LABELS: Record<Trophy, string> = { league: 'League', fa: 'FA Cup', cl: 'Europe' };
+const FONT = 'Arial, "Helvetica Neue", Helvetica, sans-serif';
+const TROPHY_LABELS: Record<Trophy, string> = { league: 'LEAGUE', fa: 'FA CUP', cl: 'EUROPE' };
 
 function ordinal(n: number): string {
   const s = ['th', 'st', 'nd', 'rd'];
   const v = n % 100;
   return n + (s[(v - 20) % 10] || s[v] || s[0]);
-}
-
-function trophy(ctx: CanvasRenderingContext2D, x: number, y: number, size: number, color: string) {
-  // A simple cup: bowl, handles, stem and base. (x, y) is the top centre.
-  const s = size;
-  ctx.save();
-  ctx.fillStyle = color;
-  ctx.strokeStyle = color;
-  ctx.lineWidth = s * 0.07;
-  ctx.beginPath();
-  ctx.moveTo(x - s * 0.32, y);
-  ctx.lineTo(x + s * 0.32, y);
-  ctx.quadraticCurveTo(x + s * 0.32, y + s * 0.5, x, y + s * 0.55);
-  ctx.quadraticCurveTo(x - s * 0.32, y + s * 0.5, x - s * 0.32, y);
-  ctx.fill();
-  ctx.beginPath();
-  ctx.arc(x - s * 0.32, y + s * 0.15, s * 0.12, Math.PI * 0.5, Math.PI * 1.5);
-  ctx.stroke();
-  ctx.beginPath();
-  ctx.arc(x + s * 0.32, y + s * 0.15, s * 0.12, Math.PI * 1.5, Math.PI * 0.5);
-  ctx.stroke();
-  ctx.fillRect(x - s * 0.05, y + s * 0.55, s * 0.1, s * 0.22);
-  ctx.fillRect(x - s * 0.22, y + s * 0.77, s * 0.44, s * 0.1);
-  ctx.restore();
-}
-
-function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
-  ctx.beginPath();
-  ctx.roundRect(x, y, w, h, r);
 }
 
 function fitText(ctx: CanvasRenderingContext2D, text: string, maxWidth: number): string {
@@ -60,166 +30,186 @@ function fitText(ctx: CanvasRenderingContext2D, text: string, maxWidth: number):
   return `${t}…`;
 }
 
+/** The glossy split bar of the era: lighter top half, darker bottom half. */
+function glossBar(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, top: string, mid: string, low: string, bottom: string) {
+  const g = ctx.createLinearGradient(0, y, 0, y + h);
+  g.addColorStop(0, top);
+  g.addColorStop(0.49, mid);
+  g.addColorStop(0.5, low);
+  g.addColorStop(1, bottom);
+  ctx.fillStyle = g;
+  ctx.fillRect(x, y, w, h);
+  ctx.fillStyle = 'rgba(255,255,255,.3)';
+  ctx.fillRect(x, y, w, 1);
+}
+
+function lightTile(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number) {
+  const g = ctx.createLinearGradient(0, y, 0, y + h);
+  g.addColorStop(0, '#f4f4f4');
+  g.addColorStop(0.6, '#dcdcdc');
+  g.addColorStop(1, '#c9c9c9');
+  ctx.fillStyle = g;
+  ctx.fillRect(x, y, w, h);
+}
+
+function shade(hex: string, f: number): string {
+  const n = parseInt(hex.slice(1), 16);
+  const ch = (v: number) => Math.round(f >= 0 ? v + (255 - v) * f : v * (1 + f));
+  return `rgb(${ch((n >> 16) & 255)},${ch((n >> 8) & 255)},${ch(n & 255)})`;
+}
+
+function lum(hex: string): number {
+  const n = parseInt(hex.slice(1), 16);
+  return (0.2126 * ((n >> 16) & 255) + 0.7152 * ((n >> 8) & 255) + 0.0722 * (n & 255)) / 255;
+}
+
 export function drawShareCard(canvas: HTMLCanvasElement, input: CardInput): void {
   const { club, career, name } = input;
   canvas.width = W;
   canvas.height = H;
   const ctx = canvas.getContext('2d')!;
+  const pad = 56;
 
-  // Background and club colour band.
-  const bg = ctx.createLinearGradient(0, 0, 0, H);
-  bg.addColorStop(0, '#0f172a');
-  bg.addColorStop(1, '#020617');
+  // Charcoal stage with faint diagonal swooshes.
+  const bg = ctx.createRadialGradient(W / 2, 0, 50, W / 2, 0, H);
+  bg.addColorStop(0, '#2c2d30');
+  bg.addColorStop(0.6, '#111213');
+  bg.addColorStop(1, '#0b0b0c');
   ctx.fillStyle = bg;
   ctx.fillRect(0, 0, W, H);
-  ctx.fillStyle = club.primary;
-  ctx.fillRect(0, 0, W, 28);
-  ctx.fillStyle = club.secondary;
-  ctx.fillRect(0, 28, W, 10);
+  ctx.save();
+  ctx.globalAlpha = 0.05;
+  ctx.fillStyle = '#fff';
+  for (const [x, w] of [[380, 40], [520, 80]]) {
+    ctx.beginPath();
+    ctx.moveTo(x, 0); ctx.lineTo(x + w, 0); ctx.lineTo(x + w - 700, H); ctx.lineTo(x - 700, H); ctx.closePath(); ctx.fill();
+  }
+  ctx.restore();
 
-  const pad = 72;
-  ctx.textBaseline = 'alphabetic';
-  ctx.fillStyle = '#94a3b8';
-  ctx.font = `600 30px ${FONT}`;
-  ctx.fillText('FIVE SEASONS · 2015/16 – 2019/20', pad, 110);
-
-  // Club badge and name.
-  ctx.beginPath();
-  ctx.arc(pad + 56, 200, 56, 0, Math.PI * 2);
-  ctx.fillStyle = club.primary;
-  ctx.fill();
-  ctx.lineWidth = 4;
-  ctx.strokeStyle = 'rgba(0,0,0,0.35)';
-  ctx.stroke();
-  ctx.fillStyle = club.secondary;
-  ctx.font = `900 40px ${FONT}`;
-  ctx.textAlign = 'center';
-  ctx.fillText(club.code, pad + 56, 214);
+  // Club header strip.
+  let c = club.primary;
+  if (lum(c) > 0.62) c = club.secondary;
+  if (lum(c) > 0.62) c = '#1d4f91';
+  glossBar(ctx, pad, 60, W - pad * 2, 84, shade(c, 0.3), c, shade(c, -0.28), shade(c, -0.12));
+  ctx.fillStyle = '#fff';
+  ctx.shadowColor = 'rgba(0,0,0,.7)';
+  ctx.shadowBlur = 3;
+  ctx.shadowOffsetY = 2;
+  ctx.font = `700 46px ${FONT}`;
+  ctx.fillText(fitText(ctx, club.name, 640), pad + 28, 118);
+  ctx.font = `700 26px ${FONT}`;
+  ctx.textAlign = 'right';
+  ctx.fillText('CAREER SUMMARY', W - pad - 28, 113);
   ctx.textAlign = 'left';
-  ctx.fillStyle = '#f8fafc';
-  ctx.font = `900 64px ${FONT}`;
-  ctx.fillText(fitText(ctx, club.name, W - pad * 2 - 140), pad + 140, 222);
+  ctx.shadowColor = 'transparent';
 
-  // Headline.
+  // White office panel with the headline.
   const t = career.trophies;
   const total = t.league + t.fa + t.cl;
-  let headline: string;
-  if (career.trebles > 0) headline = career.trebles > 1 ? `${career.trebles}× TREBLE WINNERS` : 'TREBLE WINNERS';
-  else if (total === 0) headline = 'No trophies. Yet.';
-  else {
-    const parts: string[] = [];
-    if (t.league) parts.push(`${t.league} league title${t.league > 1 ? 's' : ''}`);
-    if (t.fa) parts.push(`${t.fa} FA Cup${t.fa > 1 ? 's' : ''}`);
-    if (t.cl) parts.push(`${t.cl} Champions League${t.cl > 1 ? 's' : ''}`);
-    headline = parts.join(' · ');
-  }
-  if (career.trebles > 0) {
-    const g = ctx.createLinearGradient(pad, 270, W - pad, 380);
-    g.addColorStop(0, '#fcd34d');
-    g.addColorStop(0.5, '#fef3c7');
-    g.addColorStop(1, '#f59e0b');
-    roundRect(ctx, pad, 270, W - pad * 2, 120, 24);
-    ctx.fillStyle = g;
-    ctx.fill();
-    ctx.fillStyle = '#451a03';
-    ctx.font = `900 64px ${FONT}`;
-    ctx.textAlign = 'center';
-    ctx.fillText(headline, W / 2, 352);
-    ctx.textAlign = 'left';
-  } else {
-    ctx.fillStyle = total ? '#fbbf24' : '#cbd5e1';
-    ctx.font = `800 ${headline.length > 34 ? 40 : 52}px ${FONT}`;
-    ctx.fillText(fitText(ctx, headline, W - pad * 2), pad, 340);
-  }
+  const treble = career.trebles > 0;
+  const og = ctx.createLinearGradient(0, 150, 0, 330);
+  if (treble) { og.addColorStop(0, '#fff6c8'); og.addColorStop(0.55, '#f6d65a'); og.addColorStop(1, '#e2b21c'); }
+  else { og.addColorStop(0, '#ffffff'); og.addColorStop(0.55, '#f1f1f1'); og.addColorStop(1, '#dcdcdc'); }
+  ctx.fillStyle = og;
+  ctx.fillRect(pad, 150, W - pad * 2, 180);
+  ctx.fillStyle = '#5b5e63';
+  ctx.font = `700 22px ${FONT}`;
+  ctx.fillText('FIVE SEASONS · 2015/16 – 2019/20', pad + 28, 196);
+  ctx.fillStyle = treble ? '#4a2f00' : '#1d1d1d';
+  ctx.font = `900 ${treble ? 78 : 64}px ${FONT}`;
+  const headline = treble
+    ? career.trebles > 1 ? `${career.trebles}× TREBLE WINNERS` : 'TREBLE WINNERS'
+    : total === 0 ? 'No trophies. Yet.' : `${total} ${total === 1 ? 'Trophy' : 'Trophies'}`;
+  ctx.fillText(fitText(ctx, headline, W - pad * 2 - 56), pad + 28, 274);
+  ctx.font = `700 24px ${FONT}`;
+  ctx.fillStyle = treble ? '#5a3a00' : '#3b3d41';
+  ctx.fillText(`League ${t.league}   ·   FA Cup ${t.fa}   ·   Champions League ${t.cl}`, pad + 28, 312);
 
-  // Season by season.
-  const top = 430;
-  const gap = 16;
+  // Season tiles: dark header with the season, light body with the finish.
+  const top = 366;
+  const gap = 12;
   const bw = (W - pad * 2 - gap * 4) / 5;
   career.seasons.forEach((s, i) => {
     const x = pad + i * (bw + gap);
-    roundRect(ctx, x, top, bw, 230, 20);
-    ctx.fillStyle = s.trophies.length === 3 ? 'rgba(251,191,36,0.22)' : '#1e293b';
-    ctx.fill();
-    ctx.textAlign = 'center';
-    ctx.fillStyle = '#94a3b8';
-    ctx.font = `600 26px ${FONT}`;
     const y0 = SEASON_YEARS[s.season];
-    ctx.fillText(`${y0}/${String(y0 + 1).slice(2)}`, x + bw / 2, top + 46);
-    ctx.fillStyle = s.finish === 1 ? '#fbbf24' : s.finish <= 4 ? '#34d399' : s.finish >= 18 ? '#fb7185' : '#f8fafc';
-    ctx.font = `900 64px ${FONT}`;
-    ctx.fillText(ordinal(s.finish), x + bw / 2, top + 126);
-    const n = s.trophies.length;
-    s.trophies.forEach((tr, k) => trophy(ctx, x + bw / 2 + (k - (n - 1) / 2) * 46, top + 150, 48, TROPHY_COLORS[tr]));
+    glossBar(ctx, x, top, bw, 44, '#5b5d61', '#45474b', '#2f3134', '#232427');
+    ctx.fillStyle = '#fff';
+    ctx.font = `700 24px ${FONT}`;
+    ctx.textAlign = 'center';
+    ctx.fillText(`${y0}/${String(y0 + 1).slice(2)}`, x + bw / 2, top + 31);
+    lightTile(ctx, x, top + 48, bw, 150);
+    if (s.trophies.length === 3) { ctx.fillStyle = 'rgba(242,194,0,.55)'; ctx.fillRect(x, top + 48, bw, 150); }
+    ctx.fillStyle = s.finish === 1 ? '#9a6b00' : s.finish <= 4 ? '#2f7d0a' : s.finish >= 18 ? '#b3141c' : '#1d1d1d';
+    ctx.font = `900 58px ${FONT}`;
+    ctx.fillText(ordinal(s.finish), x + bw / 2, top + 122);
+    ctx.fillStyle = '#3b3d41';
+    ctx.font = `700 17px ${FONT}`;
+    const label = s.trophies.length === 3 ? 'TREBLE' : s.trophies.map((tr) => TROPHY_LABELS[tr]).join(' + ');
+    ctx.fillText(fitText(ctx, label, bw - 12), x + bw / 2, top + 170);
     ctx.textAlign = 'left';
   });
 
-  // Trophy legend.
-  let lx = pad;
-  ctx.font = `600 24px ${FONT}`;
-  (['league', 'fa', 'cl'] as Trophy[]).forEach((tr) => {
-    trophy(ctx, lx + 14, 684, 30, TROPHY_COLORS[tr]);
-    ctx.fillStyle = '#94a3b8';
-    ctx.fillText(`${TROPHY_LABELS[tr]} ×${career.trophies[tr]}`, lx + 36, 708);
-    lx += 230;
-  });
-
-  // Highlights.
+  // Highlights in a dark table.
   const rows: [string, string, string][] = [];
   const poc = career.playerOfCareer;
-  if (poc) rows.push(['Player of the career', name(poc.id), `${poc.apps} apps · ${poc.goals} goals · ${poc.avg.toFixed(2)} avg`]);
+  if (poc) rows.push(['Player of the Career', name(poc.id), `${poc.apps} apps · ${poc.goals} goals · ${poc.avg.toFixed(2)} avg`]);
   const scorer = career.topScorers[0];
-  if (scorer && scorer.goals > 0) rows.push(['Top scorer', name(scorer.id), `${scorer.goals} goals in ${scorer.apps} apps`]);
+  if (scorer && scorer.goals > 0) rows.push(['Top Scorer', name(scorer.id), `${scorer.goals} goals in ${scorer.apps} apps`]);
   if (career.bestSigning) {
     const b = career.bestSigning;
-    rows.push(['Best signing', name(b.t.player), `${formatMoney(b.t.fee)} → ${b.apps} apps, ${b.sold ? `sold for ${formatMoney(b.exitValue)}` : `worth ${formatMoney(b.exitValue)}`}`]);
+    rows.push(['Best Signing', name(b.t.player), `${formatMoney(b.t.fee)} · ${b.apps} apps`]);
   }
   if (career.worstSigning) {
     const w = career.worstSigning;
-    rows.push(['Worst signing', name(w.t.player), `${formatMoney(w.t.fee)} → ${w.apps} apps, ${w.sold ? `sold for ${formatMoney(w.exitValue)}` : `worth ${formatMoney(w.exitValue)}`}`]);
+    rows.push(['Worst Signing', name(w.t.player), `${formatMoney(w.t.fee)} · ${w.apps} apps`]);
   }
-  let y = 770;
-  for (const [label, who, detail] of rows.slice(0, 4)) {
-    ctx.fillStyle = '#64748b';
-    ctx.font = `700 24px ${FONT}`;
-    ctx.fillText(label.toUpperCase(), pad, y);
-    ctx.fillStyle = '#f8fafc';
-    ctx.font = `800 40px ${FONT}`;
-    ctx.fillText(fitText(ctx, who, 470), pad, y + 46);
-    ctx.fillStyle = '#cbd5e1';
-    ctx.font = `500 28px ${FONT}`;
+  let y = 634;
+  glossBar(ctx, pad, y, W - pad * 2, 44, '#4f74ad', '#284f8c', '#163b74', '#1f4682');
+  ctx.fillStyle = '#fff';
+  ctx.font = `700 24px ${FONT}`;
+  ctx.fillText('Hall of Fame', pad + 20, y + 30);
+  y += 44;
+  rows.slice(0, 4).forEach(([label, who, detail], i) => {
+    ctx.fillStyle = i % 2 ? '#17181a' : '#1e1f21';
+    ctx.fillRect(pad, y, W - pad * 2, 92);
+    ctx.fillStyle = '#8f9297';
+    ctx.font = `700 19px ${FONT}`;
+    ctx.fillText(label.toUpperCase(), pad + 20, y + 32);
+    ctx.fillStyle = '#fff';
+    ctx.font = `700 34px ${FONT}`;
+    ctx.fillText(fitText(ctx, who, 460), pad + 20, y + 72);
+    ctx.fillStyle = '#c9cbcf';
+    ctx.font = `400 24px ${FONT}`;
     ctx.textAlign = 'right';
-    ctx.fillText(fitText(ctx, detail, W - pad * 2 - 490), W - pad, y + 44);
+    ctx.fillText(fitText(ctx, detail, 440), W - pad - 20, y + 72);
     ctx.textAlign = 'left';
-    y += 96;
-  }
-
-  // Money.
-  const my = 1200;
-  roundRect(ctx, pad, my - 52, W - pad * 2, 76, 18);
-  ctx.fillStyle = '#1e293b';
-  ctx.fill();
-  ctx.font = `700 30px ${FONT}`;
-  const net = career.earned - career.spent;
-  const money: [string, string, string][] = [
-    ['Spent', formatMoney(career.spent), '#fb7185'],
-    ['Earned', formatMoney(career.earned), '#34d399'],
-    ['Net', `${net >= 0 ? '+' : ''}${formatMoney(net)}`, net >= 0 ? '#34d399' : '#fb7185'],
-  ];
-  money.forEach(([label, value, color], i) => {
-    const cx = pad + 30 + i * ((W - pad * 2) / 3);
-    ctx.fillStyle = '#94a3b8';
-    ctx.fillText(`${label} `, cx, my);
-    const lw = ctx.measureText(`${label} `).width;
-    ctx.fillStyle = color;
-    ctx.fillText(value, cx + lw, my);
+    y += 92;
   });
 
-  ctx.fillStyle = '#475569';
-  ctx.font = `500 24px ${FONT}`;
-  ctx.fillText(`Can you do better? ${input.site}`, pad, H - 50);
+  // Silver command-bar style money strip.
+  const my = 1100;
+  glossBar(ctx, pad, my, W - pad * 2, 64, '#fdfdfd', '#e8e9eb', '#d3d5d8', '#c6c8cc');
+  const net = career.earned - career.spent;
+  ctx.font = `700 26px ${FONT}`;
+  const money: [string, string, string][] = [
+    ['Spent', formatMoney(career.spent), '#b3141c'],
+    ['Earned', formatMoney(career.earned), '#2f7d0a'],
+    ['Net', `${net >= 0 ? '+' : ''}${formatMoney(net)}`, net >= 0 ? '#2f7d0a' : '#b3141c'],
+  ];
+  money.forEach(([label, value, color], i) => {
+    const cx = pad + 28 + i * ((W - pad * 2) / 3);
+    ctx.fillStyle = '#3b3d41';
+    ctx.fillText(`${label} `, cx, my + 42);
+    const lw = ctx.measureText(`${label} `).width;
+    ctx.fillStyle = color;
+    ctx.fillText(value, cx + lw, my + 42);
+  });
+
+  ctx.fillStyle = '#8f9297';
+  ctx.font = `700 22px ${FONT}`;
+  ctx.fillText(`Can you win the treble? ${input.site}`, pad, H - 60);
   ctx.textAlign = 'right';
-  ctx.fillText(`seed ${input.seed}`, W - pad, H - 50);
+  ctx.fillText(`seed ${input.seed}`, W - pad, H - 60);
   ctx.textAlign = 'left';
 }
 

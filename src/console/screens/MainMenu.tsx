@@ -1,0 +1,94 @@
+import { useEffect, useRef, useState } from 'react';
+import type { GameData } from '../../game/data';
+import { type GameState, seasonLabel } from '../../game/game';
+import '../menu.css';
+import { drawShards } from '../shards';
+import { browse, clubOf, Frame, money } from '../ui';
+
+interface Tab {
+  id: 'new' | 'continue' | 'hall';
+  label: string;
+  desc: string;
+  flag: string;
+}
+
+export function MainMenu({
+  data, save, onNew, onContinue, onHall,
+}: { data: GameData; save: GameState | null; onNew: () => void; onContinue: () => void; onHall: () => void }) {
+  const canvas = useRef<HTMLCanvasElement>(null);
+  const rail = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (canvas.current) drawShards(canvas.current);
+  }, []);
+
+  const club = save && save.user >= 0 ? clubOf(data, save.user) : null;
+  const tabs: Tab[] = [
+    {
+      id: 'new',
+      label: 'New Career',
+      desc: 'Take over one of the 20 clubs of summer 2015 and manage it for five seasons. Players develop as they really did, give or take.',
+      flag: save ? 'Replaces your saved career' : 'Start here',
+    },
+  ];
+  if (save && club) {
+    const where =
+      save.stage === 'summary' ? 'your five seasons are complete' : `season ${save.season + 1} of 5, ${seasonLabel(save.season)}`;
+    tabs.push(
+      {
+        id: 'continue',
+        label: 'Continue',
+        desc: `Pick up where you left off: ${club.name}, ${where}. Budget ${money(save.clubs[save.user].cash)}.`,
+        flag: save.stage === 'summary' ? 'Career complete' : 'Career in progress',
+      },
+      { id: 'hall', label: 'Hall of Fame', desc: 'Your trophies, your best players and your best and worst signings so far.', flag: 'Treble watch' },
+    );
+  }
+  const [index, setIndex] = useState(save ? 1 : 0);
+  const [left, setLeft] = useState(60);
+  const tab = tabs[Math.min(index, tabs.length - 1)];
+
+  useEffect(() => {
+    const el = rail.current?.children[index] as HTMLElement | undefined;
+    if (el) setLeft(60 + el.offsetLeft + 24);
+  }, [index, tabs.length]);
+
+  const go = (t: Tab) => (t.id === 'new' ? onNew() : t.id === 'continue' ? onContinue() : onHall());
+
+  return (
+    <div className="mm">
+      <canvas ref={canvas} width={1280} height={720} aria-hidden />
+      <div className="title">
+        FIVE SEASONS<span>2015 · 2020 CAREER</span>
+      </div>
+      <p className="tagline">
+        Buy, sell, pick your team and play each season in one click. Five years to build a legacy. <em>Can you win the treble?</em>
+      </p>
+      {club && save && (
+        <div className="stamp">
+          Saved career<b>{club.short} · {save.stage === 'summary' ? 'Complete' : seasonLabel(save.season)}</b>
+        </div>
+      )}
+      <div className="desc" style={{ left }}>
+        {tab.desc}
+        <span className="flag">{tab.flag}</span>
+      </div>
+      <div className="rail" ref={rail}>
+        {tabs.map((t, i) => (
+          <button key={t.id} className={`tab ${i === index ? 'on' : ''}`} onMouseEnter={() => setIndex(i)} onClick={() => go(t)} tabIndex={-1}>
+            {t.label}
+          </button>
+        ))}
+      </div>
+      <Frame
+        full
+        commands={[
+          { keys: ['Enter'], label: 'Select', primary: true, onPress: () => go(tab) },
+          browse('Move', () => setIndex(Math.max(0, index - 1)), () => setIndex(Math.min(tabs.length - 1, index + 1)), true),
+        ]}
+        info={<>Unofficial fan game · FIFA 16-20 ratings</>}
+      >
+        {null}
+      </Frame>
+    </div>
+  );
+}

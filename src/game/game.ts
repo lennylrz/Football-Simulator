@@ -10,7 +10,7 @@ import { autoLineup, BENCH_SIZE, pickBench, pickXI, type PlayerLite } from './li
 import { generateIncomingBids, generateOffers, type IncomingBid, type Offer } from './market';
 import { FORMATIONS, type Formation, parsePositions, positionFit } from './positions';
 import { stream } from './rng';
-import { type PlayerSeasonStats, type SeasonResult, simulateSeason, type TableRow } from './season';
+import { fixtures, type PlayerSeasonStats, type SeasonResult, simulateSeason, type TableRow } from './season';
 import type { MatchResult } from './match';
 import { marketValue } from './valuation';
 
@@ -353,6 +353,30 @@ export function setFormation(state: GameState, club: number, formation: Formatio
   c.bench = pickBench(players, c.xi);
 }
 
+/**
+ * Swaps two players between the starting XI, the bench and the reserves,
+ * keeping each slot's position. Swapping two reserves does nothing.
+ */
+export function swapLineup(state: GameState, club: number, a: number, b: number): void {
+  if (a === b) return;
+  const c = state.clubs[club];
+  const where = (id: number): ['xi' | 'bench' | 'res', number] => {
+    const xi = c.xi.indexOf(id);
+    if (xi >= 0) return ['xi', xi];
+    const bench = c.bench.indexOf(id);
+    if (bench >= 0) return ['bench', bench];
+    return ['res', -1];
+  };
+  const [wa, ia] = where(a);
+  const [wb, ib] = where(b);
+  const put = (w: 'xi' | 'bench' | 'res', i: number, id: number) => {
+    if (w === 'xi') c.xi[i] = id;
+    else if (w === 'bench') c.bench[i] = id;
+  };
+  put(wa, ia, b);
+  put(wb, ib, a);
+}
+
 /** Keeps the user's chosen lineup but fills gaps left by departures. */
 export function repairLineup(state: GameState, club: number): void {
   const c = state.clubs[club];
@@ -395,6 +419,11 @@ export function lineupProblems(state: GameState, club: number): string[] {
   return problems;
 }
 
+/** The season's league fixtures, known before it is played. */
+export function seasonFixtures(state: GameState): [number, number][][] {
+  return fixtures(state.clubs.map((c) => c.id), stream(state.seed, 'fixtures', state.season));
+}
+
 /** The four clubs that entered the Champions League in 2015/16 (2014/15 top four). */
 const CL_2015 = ['Chelsea', 'Manchester City', 'Arsenal', 'Manchester United'];
 
@@ -426,7 +455,7 @@ export function simulate(state: GameState, data: GameData): void {
     const byId = (id: number) => lite(state.players[id]);
     return { club: c.id, formation: c.formation, xi: c.xi.map(byId), bench: c.bench.map(byId) };
   });
-  const league = simulateSeason(teams, stream(state.seed, 'season', state.season));
+  const league = simulateSeason(teams, stream(state.seed, 'season', state.season), seasonFixtures(state));
 
   const year = String(SEASON_YEARS[state.season]);
   const opponents = data.teams[year];

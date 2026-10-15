@@ -68,7 +68,7 @@ export function sortTable(rows: TableRow[]): TableRow[] {
   );
 }
 
-export function simulateSeason(teams: SeasonTeam[], rng: Rng): SeasonResult {
+export function simulateSeason(teams: SeasonTeam[], rng: Rng, schedule?: [number, number][][]): SeasonResult {
   const byClub = new Map<number, MatchTeam>();
   for (const t of teams) {
     const form = normal(rng, 0, ENGINE.seasonFormSd);
@@ -80,7 +80,7 @@ export function simulateSeason(teams: SeasonTeam[], rng: Rng): SeasonResult {
   const rounds: SeasonResult['rounds'] = [];
   const scorers: SeasonResult['scorers'] = [];
 
-  for (const round of fixtures(teams.map((t) => t.club), rng)) {
+  for (const round of schedule ?? fixtures(teams.map((t) => t.club), rng)) {
     const out: [number, number, number, number][] = [];
     for (const [h, a] of round) {
       const m = simulateMatch(byClub.get(h)!, byClub.get(a)!, rng);

@@ -1,0 +1,30 @@
+.reveal { position: absolute; inset: 0; z-index: 6; display: grid; place-items: center; background: #0d0d0e radial-gradient(ellipse at 50% 30%, #2c2d30 0%, #0b0b0c 70%); }
+.reveal .box { width: 640px; display: grid; gap: 14px; text-align: center; }
+.reveal .md { font-size: 18px; letter-spacing: .14em; text-transform: uppercase; color: #c9cbcf; font-weight: 700; }
+.reveal .bar { height: 10px; background: #26272a; box-shadow: inset 0 1px 2px #000; }
+.reveal .bar i { display: block; height: 100%; background: linear-gradient(180deg, #8bd23c, #4a9a0b); }
+.reveal .pos { font-size: 110px; font-weight: 900; line-height: 1; text-shadow: 0 4px 10px #000; }
+.reveal .wdl { font-size: 22px; color: #c9cbcf; font-weight: 700; }
+.reveal .cups { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.reveal .cups div { padding: 10px; display: grid; gap: 2px; }
+.reveal .cups small { font-size: 13px; text-transform: uppercase; letter-spacing: .08em; color: #5b5e63; font-weight: 700; }
+.reveal .cups b { font-size: 20px; }
+.review .office.treble { background: linear-gradient(180deg, #fff6c8 0%, #f6d65a 55%, #e2b21c 100%); }
+.review .office .gold { color: #9a6b00; }
+.review .office.treble .gold { color: #5a3a00; }
+.review .tabsbar { height: 42px; display: flex; align-items: center; padding: 0 10px; gap: 6px; flex: none; }
+.review .content { flex: 1; min-height: 0; display: flex; background: #050505; gap: 8px; }
+.review .content > .pane { flex: 1; }
+.review .tbl tr.me td { background: rgba(255,217,0,.16); }
+.review .tbl tr.zone-cl td:first-child { box-shadow: inset 4px 0 0 #5eae17; }
+.review .tbl tr.zone-el td:first-child { box-shadow: inset 4px 0 0 #4c6c9a; }
+.review .tbl tr.zone-rel td:first-child { box-shadow: inset 4px 0 0 #b3141c; }
+.review .comp { font-size: 14px; font-weight: 700; color: #8f9297; }
+.review .comp.cl { color: #7db8ff; }
+.review .comp.fa { color: #ff8a8a; }
+.review .score { font-weight: 700; text-align: center; }
+.review .cuptbl { table-layout: fixed; font-size: 16px; }
+.review .cuptbl td { overflow: hidden; text-overflow: ellipsis; padding: 4px 8px; }
+.review .cuptbl td:nth-child(1) { width: 26%; }
+.review .cuptbl td:nth-child(2) { width: 32%; }
+.review .cuptbl td:nth-child(3) { width: 10%; }

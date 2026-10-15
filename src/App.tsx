@@ -1,14 +1,17 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { MainMenu } from './console/screens/MainMenu';
+import { ClubSelect } from './console/screens/ClubSelect';
+import { Hub } from './console/screens/Hub';
+import { Results } from './console/screens/Results';
+import { Summary } from './console/screens/Summary';
+import { Team } from './console/screens/Team';
+import { BidsStep, OffersStep, SquadStep } from './console/screens/Window';
+import { HallOfFame } from './console/overlays';
+import { CommandBar, Stage } from './console/ui';
 import { type GameData, loadGameData } from './game/data';
 import { type GameState, newGame } from './game/game';
-import { Lineup } from './screens/Lineup';
-import { Results } from './screens/Results';
-import { Start } from './screens/Start';
-import { Summary } from './screens/Summary';
-import { TransferWindow } from './screens/TransferWindow';
 import { loadRun, saveRun } from './storage';
 import { GameContext } from './ui/context';
-import { Header } from './ui/Header';
 
 declare global {
   interface Window {
@@ -25,18 +28,22 @@ async function fetchJson(file: string) {
   return res.json();
 }
 
+type Mode = 'menu' | 'clubs' | 'menu-hall' | 'play';
+
 export default function App() {
   const [data, setData] = useState<GameData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [game, setGame] = useState<GameState | null>(() => loadRun());
+  const [mode, setMode] = useState<Mode>('menu');
+  const [atHub, setAtHub] = useState(true);
 
   useEffect(() => {
     loadGameData(fetchJson).then(setData, (e) => setError(String(e)));
   }, []);
 
-  useEffect(() => {
-    window.scrollTo(0, 0);
-  }, [game?.stage, game?.season]);
+  // A new season opens at the hub.
+  const season = game?.season;
+  useEffect(() => setAtHub(true), [season]);
 
   // Actions run synchronously on a copy, so callers can read results right away.
   const current = useRef(game);
@@ -58,32 +65,47 @@ export default function App() {
     const g = newGame(data, club, seed);
     saveRun(g);
     setGame(g);
+    setAtHub(true);
+    setMode('play');
   };
 
-  const quit = () => {
-    saveRun(null);
-    setGame(null);
-  };
+  if (error) return <Stage><div className="empty" style={{ padding: 60 }}>Couldn't load the game data. {error}</div></Stage>;
+  if (!data) return <Stage><div className="empty" style={{ padding: 60 }}>Loading players…</div></Stage>;
 
-  if (error) return <Centered>Couldn't load the game data. {error}</Centered>;
-  if (!data) return <Centered>Loading players…</Centered>;
-  if (!game) return <Start data={data} onStart={start} />;
+  if (mode === 'menu' || mode === 'menu-hall') {
+    return (
+      <Stage tone="light">
+        <MainMenu data={data} save={game} onNew={() => setMode('clubs')} onContinue={() => { setAtHub(true); setMode('play'); }} onHall={() => setMode('menu-hall')} />
+        {mode === 'menu-hall' && game && (
+          <div style={{ position: 'absolute', inset: 0, zIndex: 6 }}>
+            <HallOfFame game={game} data={data} />
+            <CommandBar commands={[{ keys: ['Escape', 'Enter'], label: 'Close', primary: true, onPress: () => setMode('menu') }]} />
+          </div>
+        )}
+      </Stage>
+    );
+  }
+  if (mode === 'clubs' || !game) {
+    return (
+      <Stage>
+        <ClubSelect data={data} onStart={start} onBack={() => setMode('menu')} />
+      </Stage>
+    );
+  }
+
+  const toHub = () => setAtHub(true);
+  let screen;
+  if (game.stage === 'results') screen = <Results />;
+  else if (game.stage === 'summary') screen = <Summary onNewCareer={() => setMode('clubs')} />;
+  else if (atHub) screen = <Hub onContinue={() => setAtHub(false)} onMenu={() => setMode('menu')} />;
+  else if (game.stage === 'lineup') screen = <Team onHub={toHub} />;
+  else if (game.step === 'squad') screen = <SquadStep onHub={toHub} />;
+  else if (game.step === 'offers') screen = <OffersStep onHub={toHub} />;
+  else screen = <BidsStep onHub={toHub} />;
 
   return (
-    <GameContext.Provider value={{ data, game, act, quit }}>
-      <div className="mx-auto min-h-dvh max-w-6xl pb-28">
-        <Header />
-        <main className="space-y-3 px-3 pt-3 lg:space-y-4 lg:px-6 lg:pt-5">
-          {game.stage === 'window' && <TransferWindow />}
-          {game.stage === 'lineup' && <Lineup />}
-          {game.stage === 'results' && <Results />}
-          {game.stage === 'summary' && <Summary />}
-        </main>
-      </div>
+    <GameContext.Provider value={{ data, game, act, quit: () => setMode('menu') }}>
+      <Stage>{screen}</Stage>
     </GameContext.Provider>
   );
-}
-
-function Centered({ children }: { children: React.ReactNode }) {
-  return <div className="flex min-h-dvh items-center justify-center p-6 text-center text-slate-300">{children}</div>;
 }

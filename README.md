@@ -32,8 +32,11 @@ npm test          # unit and balancing tests (vitest)
 npm run build     # static site in dist/
 ```
 
-Vite, React, TypeScript, Tailwind, Vitest. No backend; the current run is
-saved in localStorage.
+Vite, React, TypeScript, Vitest. No backend; the current run is saved in
+localStorage. The interface is a fixed 1280x720 stage scaled to the window,
+styled after the console football games of 2012-2015 (see
+docs/design-2015-console.html and docs/ROADMAP.md), and fully playable from
+the keyboard: the bar along the bottom lists the keys for each screen.
 
 ## Data
 
