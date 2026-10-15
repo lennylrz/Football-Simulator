@@ -32,5 +32,6 @@ export function formatMoney(k: number): string {
   const sign = k < 0 ? '-' : '';
   const a = Math.abs(k);
   if (a >= 1000) return `${sign}€${(a / 1000).toFixed(a >= 100_000 ? 0 : 1)}m`;
+  if (a === 0) return '€0';
   return `${sign}€${Math.round(a)}k`;
 }

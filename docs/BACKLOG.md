@@ -11,7 +11,7 @@
   achievement for a club like Everton over a whole run. Cover with balancing
   tests.
 
-## Hall of Fame / trophy cabinet
+## Hall of Fame / trophy cabinet (done)
 - Viewable at any point in the run, not just at the end.
 - Trophies won, best players by average match rating, top scorers, and a
   computed "player of the career".
