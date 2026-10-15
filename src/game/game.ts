@@ -1,6 +1,9 @@
 // Game state and the season flow: transfer window -> lineup -> simulation.
 import { aiWindow, ensureMinimumSquad } from './ai';
 import { CLUBS } from './clubs';
+import {
+  CL_ROUNDS, type CupResult, type Entrant, FA_ROUNDS, simulateChampionsLeague, simulateFaCup, WINNER,
+} from './cups';
 import { type GameData, NUM_SEASONS, SEASON_YEARS } from './data';
 import { developPlayer, retireChance } from './development';
 import { autoLineup, BENCH_SIZE, pickBench, pickXI, type PlayerLite } from './lineup';
@@ -8,10 +11,13 @@ import { generateOffers, type Offer } from './market';
 import { FORMATIONS, type Formation, parsePositions, positionFit } from './positions';
 import { stream } from './rng';
 import { type PlayerSeasonStats, type SeasonResult, simulateSeason, type TableRow } from './season';
+import type { MatchResult } from './match';
 import { marketValue } from './valuation';
 
 export const MAX_SQUAD = 26;
 export const MIN_SQUAD = 16;
+/** Academy graduates promoted per club per season. */
+const MAX_YOUTH = 2;
 /** Club index for players outside the 20 clubs. */
 export const EXTERNAL = -1;
 
@@ -46,6 +52,8 @@ export interface TransferRecord {
   from: number;
   to: number;
   fee: number;
+  /** player's overall when the deal was done */
+  ovr: number;
   /** name of the outside club, when from/to is EXTERNAL */
   other?: string;
 }
@@ -55,13 +63,27 @@ export type NewsItem =
   | { kind: 'retired'; player: number; club: number }
   | { kind: 'youth'; player: number; club: number };
 
+/** A season's league plus cups, as kept for the current season. */
+export interface SeasonPlay extends SeasonResult {
+  fa: CupResult;
+  cl: CupResult;
+  /** cup appearances of the user's players */
+  cupStats: PlayerSeasonStats[];
+}
+
 export interface SeasonHistory {
   season: number;
   table: TableRow[];
+  faWinner: Entrant;
+  clWinner: Entrant;
+  /** round reached by each game club, '' if it did not enter */
+  faReached: Record<number, string>;
+  clReached: Record<number, string>;
   /** [player, club, goals] */
   topScorers: [number, number, number][];
   topAssists: [number, number, number][];
   userStats: PlayerSeasonStats[];
+  userCupStats: PlayerSeasonStats[];
   repBefore: number;
   repAfter?: number;
 }
@@ -89,7 +111,7 @@ export interface GameState {
   news: NewsItem[];
   transfers: TransferRecord[];
   devReport: DevChange[];
-  result: SeasonResult | null;
+  result: SeasonPlay | null;
   history: SeasonHistory[];
   /** €k received from income this season, for display */
   income: number;
@@ -144,7 +166,7 @@ export function transfer(state: GameState, data: GameData, player: number, to: n
     state.clubs[to].cash -= fee;
   }
   p.club = to;
-  const t: TransferRecord = { season: state.season, player, from, to, fee };
+  const t: TransferRecord = { season: state.season, player, from, to, fee, ovr: p.ovr };
   if (from === EXTERNAL) t.other = externalClubName(data, state.season, player);
   if (to === EXTERNAL) t.other = other ?? 'Free agent';
   state.transfers.push(t);
@@ -219,9 +241,13 @@ function advancePlayers(state: GameState, data: GameData): void {
   const youth = data.youth[String(SEASON_YEARS[state.season])] ?? {};
   for (const [name, list] of Object.entries(youth)) {
     const club = data.meta.gameClubs.indexOf(name);
-    for (const id of list) {
+    // Only the two best prospects make the first-team squad.
+    const best = list
+      .filter((id) => state.players[id]?.club === EXTERNAL)
+      .sort((a, b) => state.players[b].pot - state.players[a].pot || a - b)
+      .slice(0, MAX_YOUTH);
+    for (const id of best) {
       const p = state.players[id];
-      if (!p || p.club !== EXTERNAL) continue;
       p.club = club;
       state.clubs[club].squad.push(id);
       state.news.push({ kind: 'youth', player: id, club });
@@ -247,7 +273,7 @@ function openWindow(state: GameState, data: GameData): void {
     const last = state.history[state.history.length - 1];
     state.clubs.forEach((c) => {
       const finish = last.table.findIndex((r) => r.club === c.id) + 1;
-      const income = seasonIncome(c.rep, finish);
+      const income = seasonIncome(c.rep, finish) + cupIncome(last, c.id);
       c.cash += income;
       if (c.id === state.user) state.income = income;
     });
@@ -340,29 +366,97 @@ export function lineupProblems(state: GameState, club: number): string[] {
   return problems;
 }
 
-export function simulate(state: GameState): void {
-  if (state.user >= 0 && lineupProblems(state, state.user).length) repairLineup(state, state.user);
+/** The four clubs that entered the Champions League in 2015/16 (2014/15 top four). */
+const CL_2015 = ['Chelsea', 'Manchester City', 'Arsenal', 'Manchester United'];
+
+export function championsLeagueEntrants(state: GameState, data: GameData): number[] {
+  const last = state.history[state.history.length - 1];
+  if (!last) return CL_2015.map((n) => data.meta.gameClubs.indexOf(n));
+  return last.table.slice(0, 4).map((r) => r.club);
+}
+
+function addStats(map: Map<number, PlayerSeasonStats>, m: MatchResult, club: number) {
+  for (const line of m.lines) {
+    if (line.club !== club) continue;
+    let s = map.get(line.id);
+    if (!s) {
+      s = { id: line.id, club, apps: 0, starts: 0, goals: 0, assists: 0, ratingSum: 0 };
+      map.set(line.id, s);
+    }
+    s.apps++;
+    if (line.started) s.starts++;
+    s.goals += line.goals;
+    s.assists += line.assists;
+    s.ratingSum += line.rating;
+  }
+}
+
+export function simulate(state: GameState, data: GameData): void {
+  for (const c of state.clubs) if (lineupProblems(state, c.id).length) repairLineup(state, c.id);
   const teams = state.clubs.map((c) => {
     const byId = (id: number) => lite(state.players[id]);
     return { club: c.id, formation: c.formation, xi: c.xi.map(byId), bench: c.bench.map(byId) };
   });
-  const result = simulateSeason(teams, stream(state.seed, 'season', state.season));
+  const league = simulateSeason(teams, stream(state.seed, 'season', state.season));
+
+  const year = String(SEASON_YEARS[state.season]);
+  const opponents = data.teams[year];
+  const gameClubs = new Set(data.meta.gameClubs);
+  const english = opponents.english.filter((t) => !gameClubs.has(t[0]));
+  const ratings: Record<string, number> = {};
+  for (const [name, , r] of english) ratings[name] = r;
+  for (const [name, , r] of opponents.europe) ratings[name] = r;
+  const cupStats = new Map<number, PlayerSeasonStats>();
+  const ctx = (tag: string) => ({
+    team: (club: number) => ({ club, slots: FORMATIONS[teams[club].formation], xi: teams[club].xi, bench: teams[club].bench }),
+    ratings,
+    rng: stream(state.seed, tag, state.season),
+    onMatch: (m: MatchResult) => addStats(cupStats, m, state.user),
+  });
+  const fa = simulateFaCup(ctx('fa'), state.clubs.map((c) => c.id), english);
+  const cl = simulateChampionsLeague(ctx('cl'), championsLeagueEntrants(state, data), opponents.europe);
+
+  const result: SeasonPlay = { ...league, fa, cl, cupStats: [...cupStats.values()] };
   state.result = result;
   const top = (key: 'goals' | 'assists') =>
-    result.stats
+    league.stats
       .slice()
       .sort((a, b) => b[key] - a[key] || a.apps - b.apps)
       .slice(0, 20)
       .map((s) => [s.id, s.club, s[key]] as [number, number, number]);
   state.history.push({
     season: state.season,
-    table: result.table,
+    table: league.table,
+    faWinner: fa.winner,
+    clWinner: cl.winner,
+    faReached: fa.reached,
+    clReached: cl.reached,
     topScorers: top('goals'),
     topAssists: top('assists'),
-    userStats: result.stats.filter((s) => s.club === state.user),
+    userStats: league.stats.filter((s) => s.club === state.user),
+    userCupStats: result.cupStats,
     repBefore: state.user >= 0 ? state.clubs[state.user].rep : 0,
   });
   state.stage = 'results';
+}
+
+/** Trophies a club won in a season. */
+export function trophiesOf(h: SeasonHistory, club: number): ('league' | 'fa' | 'cl')[] {
+  const out: ('league' | 'fa' | 'cl')[] = [];
+  if (h.table[0].club === club) out.push('league');
+  if (h.faWinner === club) out.push('fa');
+  if (h.clWinner === club) out.push('cl');
+  return out;
+}
+
+/** Prize money for cup runs, €k. */
+export function cupIncome(h: SeasonHistory, club: number): number {
+  let k = 0;
+  const cl = h.clReached[club];
+  if (cl) k += 15_000 + Math.max(0, CL_ROUNDS.indexOf(cl === WINNER ? 'Final' : cl)) * 8_000 + (cl === WINNER ? 15_000 : 0);
+  const fa = h.faReached[club];
+  if (fa) k += Math.max(0, FA_ROUNDS.indexOf(fa === WINNER ? 'Final' : fa)) * 600 + (fa === WINNER ? 4_000 : 0);
+  return k;
 }
 
 /** Reputation moves with the finish compared to what the club's standing predicts. */
@@ -376,6 +470,12 @@ export function updateReputation(state: GameState): void {
     if (actual === 1) delta += 2;
     if (actual <= 4) delta += 1;
     if (actual >= 18) delta -= 1;
+    const h = state.history[state.history.length - 1];
+    const cl = h.clReached[c.id];
+    if (cl === WINNER) delta += 4;
+    else if (cl === 'Final') delta += 2;
+    else if (cl === 'Semi-final') delta += 1;
+    if (h.faWinner === c.id) delta += 1;
     c.rep = Math.round(Math.max(40, Math.min(97, c.rep + delta)) * 10) / 10;
   }
 }
@@ -396,6 +496,6 @@ export function endSeason(state: GameState, data: GameData): void {
 /** Runs a whole season with no user input (used by tests and the AI). */
 export function autoSeason(state: GameState, data: GameData): void {
   closeWindow(state, data);
-  simulate(state);
+  simulate(state, data);
   endSeason(state, data);
 }

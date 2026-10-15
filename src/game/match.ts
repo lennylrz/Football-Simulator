@@ -10,6 +10,8 @@ export interface MatchTeam {
   bench: PlayerLite[];
   /** season-long form offset */
   form?: number;
+  /** teams outside the 20 clubs have a fixed strength and no players */
+  fixed?: Strength;
 }
 
 export interface PlayerLine {
@@ -69,6 +71,7 @@ interface OnPitch {
 }
 
 function lineUp(team: MatchTeam, rng: Rng): { on: OnPitch[]; strength: Strength } {
+  if (team.fixed) return { on: [], strength: team.fixed };
   const bench = team.bench.slice();
   const take = (slot: Position): PlayerLite | undefined => {
     let bi = -1;
@@ -113,18 +116,20 @@ function defending(s: Strength): number {
   return 0.85 * s.def + 0.15 * s.gk;
 }
 
-export function expectedGoals(home: Strength, away: Strength, homeForm = 0, awayForm = 0): [number, number] {
+export function expectedGoals(home: Strength, away: Strength, homeForm = 0, awayForm = 0, neutral = false): [number, number] {
   const e = ENGINE;
+  const adv = neutral ? 0 : e.home;
   const lh = e.base * Math.exp(
-    e.attack * (home.att + homeForm - defending(away) - awayForm) + e.midfield * (home.mid - away.mid + homeForm - awayForm) + e.home,
+    e.attack * (home.att + homeForm - defending(away) - awayForm) + e.midfield * (home.mid - away.mid + homeForm - awayForm) + adv,
   );
   const la = e.base * Math.exp(
-    e.attack * (away.att + awayForm - defending(home) - homeForm) + e.midfield * (away.mid - home.mid + awayForm - homeForm) - e.home,
+    e.attack * (away.att + awayForm - defending(home) - homeForm) + e.midfield * (away.mid - home.mid + awayForm - homeForm) - adv,
   );
   return [lh, la];
 }
 
 function attribute(on: OnPitch[], rng: Rng, goals: number, side: 0 | 1, out: MatchResult['goals']) {
+  if (on.length === 0) return;
   for (let g = 0; g < goals; g++) {
     const sw = on.map((o) => SCORE_W[o.slot] * Math.exp((o.eff - 75) / ENGINE.starPower) * o.share);
     const scorer = on[weightedIndex(rng, sw)];
@@ -151,7 +156,7 @@ function rate(o: OnPitch, scored: number, conceded: number, teamAvg: number, rng
   return Math.round(clamp(r, 3.5, 10) * 10) / 10;
 }
 
-export function simulateMatch(home: MatchTeam, away: MatchTeam, rng: Rng): MatchResult {
+export function simulateMatch(home: MatchTeam, away: MatchTeam, rng: Rng, neutral = false): MatchResult {
   const h = lineUp(home, rng);
   const a = lineUp(away, rng);
   const [lh, la] = expectedGoals(
@@ -159,6 +164,7 @@ export function simulateMatch(home: MatchTeam, away: MatchTeam, rng: Rng): Match
     a.strength,
     (home.form ?? 0) + normal(rng, 0, ENGINE.formSd),
     (away.form ?? 0) + normal(rng, 0, ENGINE.formSd),
+    neutral,
   );
   const hg = poisson(rng, lh);
   const ag = poisson(rng, la);
@@ -166,6 +172,7 @@ export function simulateMatch(home: MatchTeam, away: MatchTeam, rng: Rng): Match
   attribute(h.on, rng, hg, 0, result.goals);
   attribute(a.on, rng, ag, 1, result.goals);
   for (const [side, club, scored, conceded] of [[h, home.club, hg, ag], [a, away.club, ag, hg]] as const) {
+    if (side.on.length === 0) continue;
     const avg = side.on.reduce((s, o) => s + o.eff, 0) / side.on.length;
     for (const o of side.on) {
       result.lines.push({ id: o.p.id, club, started: o.started, goals: o.goals, assists: o.assists, rating: rate(o, scored, conceded, avg, rng) });

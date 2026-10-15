@@ -5,6 +5,8 @@ Outputs (public/data/):
   season_YYYY.json   one per season 2015..2019: id -> rating row (FIFA 16..20)
   squads_2015.json   the 20 Premier League squads at the start of 2015/16
   youth.json         academy graduates joining one of the 20 clubs, by season
+  teams.json         cup opponents by season: English lower-league clubs and
+                     the strongest European clubs, rated from real squads
   meta.json          clubs list, value model, development and retirement curves
 
 Run scripts/fetch_data.sh first. Usage: python3 scripts/process_data.py
@@ -31,7 +33,7 @@ SQUAD_GK = 3
 COLS = [
     "player_id", "fifa_version", "short_name", "nationality_name",
     "player_positions", "overall", "potential", "age", "value_eur",
-    "wage_eur", "club_name", "league_id",
+    "wage_eur", "club_name", "league_id", "league_name",
 ]
 
 
@@ -130,6 +132,33 @@ def main():
             youth[season].setdefault(r.club_name, []).append(int(pid))
         seen |= set(d.index)
 
+    # --- teams outside the 20: cup opponents ---------------------------------
+    # Rated from their real squads: best goalkeeper plus best ten outfielders.
+    ENG_LOWER = {14: 2, 60: 3, 61: 4}  # Championship, League One, League Two
+    EUROPE = {53, 19, 31, 16, 308, 10, 4, 68, 67, 1, 80, 50, 189, 330, 66, 7, 54}
+    teams = {}
+    for season, ver in SEASONS.items():
+        d = by_ver[ver]
+        d = d[d.club_name != "Free agent"]
+        rated = []
+        for (club, league), g in d.groupby(["club_name", "league_id"]):
+            league = int(league)
+            if league not in ENG_LOWER and league not in EUROPE:
+                continue
+            gk = g[g.player_positions.str.startswith("GK")].overall.nlargest(1)
+            out = g[~g.player_positions.str.startswith("GK")].overall.nlargest(10)
+            if len(gk) == 0 or len(out) < 10:
+                continue
+            rating = (gk.sum() + out.sum()) / 11
+            rated.append((club, league, round(float(rating), 1)))
+        lower = sorted([t for t in rated if t[1] in ENG_LOWER], key=lambda t: -t[2])
+        europe = sorted([t for t in rated if t[1] in EUROPE], key=lambda t: -t[2])[:40]
+        league_names = d.drop_duplicates("league_id").set_index("league_id").league_name
+        teams[season] = {
+            "english": [[c, ENG_LOWER[l], r] for c, l, r in lower],
+            "europe": [[c, str(league_names.get(l, "")), r] for c, l, r in europe],
+        }
+
     # --- value model: log(value) ~ quadratic(overall), age, headroom --------
     fit = pd.concat([by_ver[v] for v in SEASONS.values()])
     fit = fit[(fit.value_eur > 0) & (fit.overall >= 55)]
@@ -198,6 +227,7 @@ def main():
         "players.json": dump("players.json", {str(k): v for k, v in sorted(players.items())}),
         "squads_2015.json": dump("squads_2015.json", squads),
         "youth.json": dump("youth.json", youth),
+        "teams.json": dump("teams.json", teams),
         "meta.json": dump("meta.json", meta),
     }
     for season, rows in season_rows.items():

@@ -1,6 +1,6 @@
 # Backlog (requested features not yet built)
 
-## Cups: FA Cup and Champions League
+## Cups: FA Cup and Champions League (done)
 - Rudimentary: one "simulate season" click plays league, FA Cup and Champions
   League games interleaved in the calendar.
 - Show the round reached (CL group stage, knockout rounds; FA Cup rounds).

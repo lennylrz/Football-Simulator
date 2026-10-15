@@ -159,7 +159,7 @@ export function Lineup() {
       )}
 
       <BottomBar>
-        <Button onClick={() => act((s) => simulate(s))} disabled={problems.length > 0} className="w-full py-3">
+        <Button onClick={() => act((s, d) => simulate(s, d))} disabled={problems.length > 0} className="w-full py-3">
           Play the season
         </Button>
       </BottomBar>

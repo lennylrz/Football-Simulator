@@ -23,17 +23,27 @@ export interface GameData {
   squads: Record<string, number[]>;
   /** season start year -> club name -> academy graduates */
   youth: Record<string, Record<string, number[]>>;
+  /** season start year -> cup opponents rated from their real squads */
+  teams: Record<string, SeasonTeams>;
+}
+
+export interface SeasonTeams {
+  /** [club, tier (2 = Championship), rating] */
+  english: [string, number, number][];
+  /** [club, league, rating], strongest first */
+  europe: [string, string, number][];
 }
 
 export const SEASON_YEARS = [2015, 2016, 2017, 2018, 2019];
 export const NUM_SEASONS = SEASON_YEARS.length;
 
 export async function loadGameData(load: (file: string) => Promise<unknown>): Promise<GameData> {
-  const [meta, names, squads, youth, ...seasons] = await Promise.all([
+  const [meta, names, squads, youth, teams, ...seasons] = await Promise.all([
     load('meta.json'),
     load('players.json'),
     load('squads_2015.json'),
     load('youth.json'),
+    load('teams.json'),
     ...SEASON_YEARS.map((y) => load(`season_${y}.json`)),
   ]);
   return {
@@ -41,6 +51,7 @@ export async function loadGameData(load: (file: string) => Promise<unknown>): Pr
     names: names as GameData['names'],
     squads: squads as GameData['squads'],
     youth: youth as GameData['youth'],
+    teams: teams as GameData['teams'],
     seasons: seasons as Record<string, Row>[],
   };
 }

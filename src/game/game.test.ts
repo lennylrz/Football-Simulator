@@ -67,7 +67,7 @@ describe('game flow', () => {
     closeWindow(s, data);
     checkInvariants(s);
     expect(s.stage).toBe('lineup');
-    simulate(s);
+    simulate(s, data);
     expect(s.history[0].userStats.length).toBeGreaterThan(11);
     endSeason(s, data);
     expect(s.season).toBe(1);

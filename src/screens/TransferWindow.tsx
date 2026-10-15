@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
+import { WINNER } from '../game/cups';
 import { EXTERNAL, MAX_SQUAD, MIN_SQUAD, type NewsItem, closeWindow, goToDeadline, seasonLabel } from '../game/game';
-import { acceptBid, type Bid, bidsFor, buyOffer, canSell } from '../game/market';
+import { acceptBid, type Bid, bidsFor, buyOffer, canSell, releasePlayer } from '../game/market';
 import { formatMoney } from '../game/valuation';
 import { Button, Card, ClubBadge, clubInfo, PlayerLine, playerName, Rating, Sheet } from '../ui/components';
 import { useGame } from '../ui/context';
@@ -172,6 +173,20 @@ function SellSheet({ player, onClose, onSold }: { player: number; onClose: () =>
           </li>
         ))}
       </ul>
+      <button
+        onClick={() => {
+          let error: string | null = null;
+          act((s, d) => {
+            error = releasePlayer(s, d, player);
+          });
+          if (error) setErr(error);
+          else onSold();
+        }}
+        disabled={!allowed}
+        className="mt-3 w-full rounded-lg py-2 text-sm text-slate-400 hover:bg-slate-800 disabled:opacity-40"
+      >
+        Release on a free transfer
+      </button>
     </Sheet>
   );
 }
@@ -187,7 +202,7 @@ function NewsLine({ n }: { n: NewsItem }) {
           <b>{playerName(data, t.player)}</b>{' '}
           <span className="text-slate-400">
             {t.from === EXTERNAL ? `from ${t.other}` : `from ${clubInfo(data, t.from).short}`}
-            {t.to === EXTERNAL ? ` to ${t.other}` : ''}
+            {t.to === EXTERNAL ? (t.other === 'Released' ? ', released' : ` to ${t.other}`) : ''}
           </span>
         </span>
         <span className="text-xs tabular-nums text-slate-400">{t.fee ? formatMoney(t.fee) : 'free'}</span>
@@ -215,7 +230,10 @@ function SummerReport() {
     <Card title="Summer report">
       <p className="text-sm">
         Last season you finished <b>{ordinal(finish)}</b>. Reputation {Math.round(last.repBefore)} → {Math.round(last.repAfter ?? last.repBefore)}.
-        Income this summer: <b>{formatMoney(game.income)}</b>.
+        Income this summer, including prize money: <b>{formatMoney(game.income)}</b>.
+      </p>
+      <p className="mt-1 text-sm text-slate-300">
+        FA Cup: {cupText(last.faReached[game.user])} · Champions League: {cupText(last.clReached[game.user])}
       </p>
       {risers.length > 0 && (
         <div className="mt-2 grid grid-cols-2 gap-2 text-sm">
@@ -246,6 +264,13 @@ function SummerReport() {
       )}
     </Card>
   );
+}
+
+function cupText(reached: string | undefined): string {
+  if (!reached) return 'did not qualify';
+  if (reached === WINNER) return '🏆 winners';
+  if (reached === 'Final') return 'runners-up';
+  return reached.toLowerCase();
 }
 
 export function ordinal(n: number): string {

@@ -122,6 +122,13 @@ export function acceptBid(state: GameState, data: GameData, player: number, bid:
   return null;
 }
 
+/** Releases a player on a free transfer. */
+export function releasePlayer(state: GameState, data: GameData, player: number): string | null {
+  if (!canSell(state)) return `You need at least ${MIN_SQUAD} players.`;
+  transfer(state, data, player, EXTERNAL, 0, 'Released');
+  return null;
+}
+
 /** Total effective strength of a squad's best XI, for quick comparisons. */
 export function squadRating(state: GameState, club: number): number {
   const xi = state.clubs[club].xi.map((id) => state.players[id]?.ovr ?? 0);

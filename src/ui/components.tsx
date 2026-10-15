@@ -25,6 +25,25 @@ export function ClubBadge({ data, club, size = 28 }: { data: GameData; club: num
   );
 }
 
+/** Badge for a game club, or a neutral initials badge for an outside club. */
+export function EntrantBadge({ data, e, size = 20 }: { data: GameData; e: number | string; size?: number }) {
+  if (typeof e === 'number') return <ClubBadge data={data} club={e} size={size} />;
+  const initials = e.replace(/^(FC|AFC|AS|SS|SL|SC|RC|OGC|CF|1\. FC)\s+/i, '').slice(0, 3).toUpperCase();
+  return (
+    <span
+      className="inline-flex shrink-0 items-center justify-center rounded-full bg-slate-700 font-bold text-slate-200 ring-1 ring-black/20"
+      style={{ width: size, height: size, fontSize: size * 0.32 }}
+      aria-hidden
+    >
+      {initials}
+    </span>
+  );
+}
+
+export function entrantShort(data: GameData, e: number | string): string {
+  return typeof e === 'number' ? clubInfo(data, e).short : e;
+}
+
 export function ClubName({ data, club, short = true }: { data: GameData; club: number; short?: boolean }) {
   const c = clubInfo(data, club);
   return <span>{short ? c.short : c.name}</span>;

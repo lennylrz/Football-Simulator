@@ -2,6 +2,8 @@
 // look like real Premier League seasons (2010s averages: champion ~87 pts,
 // bottom ~25 pts, ~2.7 goals a match, ~46% home wins, golden boot ~25).
 import { beforeAll, describe, expect, it } from 'vitest';
+import { BIG_SIX as BIG_SIX_CLUBS } from './clubs';
+import { autoSeason, newGame, trophiesOf } from './game';
 import type { GameData } from './data';
 import { autoLineup, type PlayerLite } from './lineup';
 import { parsePositions } from './positions';
@@ -9,7 +11,7 @@ import { mulberry32 } from './rng';
 import { type SeasonResult, type SeasonTeam, simulateSeason } from './season';
 import { loadTestData } from './testData';
 
-const BIG_SIX = ['Arsenal', 'Chelsea', 'Liverpool', 'Manchester City', 'Manchester United', 'Tottenham Hotspur'];
+const BIG_SIX = BIG_SIX_CLUBS;
 
 interface Summary {
   seasons: number;
@@ -95,5 +97,52 @@ describe('balance: 2015/16 squads', () => {
     const s = summarise(results, data.meta.gameClubs);
     console.log(JSON.stringify({ ...s, champions: undefined }));
     expectPlausible(s);
+  });
+});
+
+describe('balance: full five-season runs with AI transfers and cups', () => {
+  it('stays plausible season after season, with rare trebles and slow climbers', async () => {
+    const data = await loadTestData();
+    const RUNS = 16;
+    const bySeason: SeasonResult[][] = [[], [], [], [], []];
+    let trebles = 0;
+    let englishCl = 0;
+    let eliteToSmall = 0;
+    const repGain: number[] = [];
+    for (let r = 0; r < RUNS; r++) {
+      const s = newGame(data, -1, 777 + r);
+      const start = s.clubs.map((c) => c.rep);
+      for (let k = 0; k < 5; k++) {
+        autoSeason(s, data);
+        const h = s.history[k];
+        bySeason[k].push({ table: h.table, rounds: [], scorers: [], stats: [] });
+        if (typeof h.clWinner === 'number') englishCl++;
+        if (s.clubs.some((c) => trophiesOf(h, c.id).length === 3)) trebles++;
+      }
+      for (const t of s.transfers) {
+        if (t.to >= 0 && t.ovr >= 86 && !BIG_SIX.includes(data.meta.gameClubs[t.to])) eliteToSmall++;
+      }
+      s.clubs.forEach((c, i) => {
+        if (!BIG_SIX.includes(data.meta.gameClubs[i])) repGain.push(c.rep - start[i]);
+      });
+    }
+    const seasons = RUNS * 5;
+    for (let k = 0; k < 5; k++) {
+      const champs = bySeason[k].map((r) => data.meta.gameClubs[r.table[0].club]);
+      const big = champs.filter((c) => BIG_SIX.includes(c)).length / champs.length;
+      expect(big, `season ${k + 1} champions`).toBeGreaterThan(0.75);
+      const pts = bySeason[k].reduce((a, r) => a + r.table[0].pts, 0) / RUNS;
+      expect(pts).toBeGreaterThan(80);
+      expect(pts).toBeLessThan(100);
+    }
+    // English clubs won 1 of 5 Champions Leagues 2015/16-2019/20.
+    expect(englishCl / seasons).toBeGreaterThan(0.05);
+    expect(englishCl / seasons).toBeLessThan(0.4);
+    // The treble should be very rare.
+    expect(trebles / seasons).toBeLessThan(0.05);
+    // A club outside the big six signing an 86+ player is extremely unlikely.
+    expect(eliteToSmall / RUNS).toBeLessThan(0.5);
+    // Reputation moves slowly: no club outside the big six jumps 25 points in five years.
+    expect(Math.max(...repGain)).toBeLessThan(25);
   });
 });

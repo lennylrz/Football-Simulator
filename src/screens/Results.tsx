@@ -1,11 +1,15 @@
 import { useMemo, useState } from 'react';
+import { type CupMatch, type Entrant, WINNER } from '../game/cups';
 import { NUM_SEASONS } from '../game/data';
-import { endSeason, seasonLabel } from '../game/game';
-import { Button, Card, ClubBadge, clubInfo, PosChip, playerName, Tabs } from '../ui/components';
+import { endSeason, seasonLabel, trophiesOf } from '../game/game';
+import type { PlayerSeasonStats } from '../game/season';
+import { Button, Card, ClubBadge, clubInfo, EntrantBadge, entrantShort, PosChip, playerName, Tabs } from '../ui/components';
 import { useGame } from '../ui/context';
 import { BottomBar, ordinal } from './TransferWindow';
 
-type Tab = 'table' | 'fixtures' | 'leaders' | 'squad';
+type Tab = 'table' | 'fixtures' | 'cups' | 'leaders' | 'squad';
+
+export const TROPHY_NAMES = { league: 'League title', fa: 'FA Cup', cl: 'Champions League' } as const;
 
 export function Results() {
   const { data, game, act } = useGame();
@@ -13,9 +17,17 @@ export function Results() {
   const h = game.history[game.history.length - 1];
   const finish = h.table.findIndex((r) => r.club === game.user) + 1;
   const last = game.season >= NUM_SEASONS - 1;
+  const won = trophiesOf(h, game.user);
 
   return (
     <>
+      {won.length === 3 && (
+        <div className="rounded-xl bg-gradient-to-r from-amber-300 via-yellow-200 to-amber-400 p-4 text-center text-amber-950 shadow-lg">
+          <div className="text-3xl">🏆🏆🏆</div>
+          <div className="text-2xl font-black">THE TREBLE</div>
+          <div className="text-sm font-semibold">League, FA Cup and Champions League in {seasonLabel(game.season)}</div>
+        </div>
+      )}
       <Card>
         <div className="flex items-center gap-3">
           <ClubBadge data={data} club={h.table[0].club} size={40} />
@@ -30,6 +42,16 @@ export function Results() {
             </div>
           </div>
         </div>
+        <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
+          <CupProgress label="FA Cup" reached={h.faReached[game.user]} winner={h.faWinner} />
+          <CupProgress label="Champions League" reached={h.clReached[game.user]} winner={h.clWinner} />
+        </div>
+        {won.length > 0 && won.length < 3 && (
+          <p className="mt-2 text-center text-sm font-semibold text-amber-300">
+            🏆 {won.map((t) => TROPHY_NAMES[t]).join(' + ')}
+            {won.length === 2 && ' — the double!'}
+          </p>
+        )}
       </Card>
 
       <Tabs<Tab>
@@ -37,13 +59,15 @@ export function Results() {
         onChange={setTab}
         tabs={[
           { id: 'table', label: 'Table' },
-          { id: 'fixtures', label: 'Results' },
+          { id: 'fixtures', label: 'Matches' },
+          { id: 'cups', label: 'Cups' },
           { id: 'leaders', label: 'Leaders' },
-          { id: 'squad', label: 'Your squad' },
+          { id: 'squad', label: 'Squad' },
         ]}
       />
       {tab === 'table' && <LeagueTable />}
       {tab === 'fixtures' && <Fixtures />}
+      {tab === 'cups' && <Cups />}
       {tab === 'leaders' && <Leaders />}
       {tab === 'squad' && <SquadStats />}
 
@@ -53,6 +77,23 @@ export function Results() {
         </Button>
       </BottomBar>
     </>
+  );
+}
+
+function CupProgress({ label, reached, winner }: { label: string; reached: string | undefined; winner: Entrant }) {
+  const { data } = useGame();
+  return (
+    <div className="rounded-lg bg-slate-800 px-3 py-2">
+      <div className="text-xs text-slate-400">{label}</div>
+      <div className={`font-semibold ${reached === WINNER ? 'text-amber-300' : ''}`}>
+        {reached === WINNER ? '🏆 Winners' : reached ? (reached === 'Final' ? 'Runners-up' : reached) : 'Did not qualify'}
+      </div>
+      {reached !== WINNER && (
+        <div className="flex items-center gap-1 truncate text-xs text-slate-500">
+          Won by <EntrantBadge data={data} e={winner} size={14} /> <span className="truncate">{entrantShort(data, winner)}</span>
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -80,7 +121,7 @@ function LeagueTable() {
           {h.table.map((r, i) => (
             <tr
               key={r.club}
-              className={`border-t border-slate-800 text-center ${r.club === game.user ? 'bg-emerald-500/15 font-semibold' : ''} ${i === 4 || i === 17 ? 'border-t-slate-600' : ''}`}
+              className={`border-t text-center ${i === 4 ? 'border-slate-500' : 'border-slate-800'} ${r.club === game.user ? 'bg-emerald-500/15 font-semibold' : ''}`}
             >
               <td className="py-1.5 text-left text-slate-400">{i + 1}</td>
               <td className="py-1.5 text-left">
@@ -101,28 +142,62 @@ function LeagueTable() {
           ))}
         </tbody>
       </table>
+      <p className="mt-2 text-xs text-slate-500">Top four qualify for next season's Champions League.</p>
     </Card>
   );
 }
 
+interface Listed {
+  key: string;
+  slot: number;
+  label: string;
+  home: Entrant;
+  away: Entrant;
+  hg: number;
+  ag: number;
+  pens?: 0 | 1;
+  scorers: [number, number, 0 | 1][];
+}
+
+function cupLabel(comp: 'FA' | 'CL', m: CupMatch): string {
+  const round = m.round === 'Group stage' ? 'Group' : m.round;
+  return `${comp} ${round}${m.leg ? ` (leg ${m.leg})` : ''}`;
+}
+
 function Fixtures() {
-  const { data, game } = useGame();
+  const { game } = useGame();
   const result = game.result!;
   const [round, setRound] = useState(0);
   const [mine, setMine] = useState(true);
-  const [open, setOpen] = useState<number | null>(null);
+  const [open, setOpen] = useState<string | null>(null);
 
   const matches = useMemo(() => {
-    const all = result.rounds.flatMap((r, ri) => r.map((m, mi) => ({ m, round: ri, index: ri * r.length + mi })));
-    return mine ? all.filter(({ m }) => m[0] === game.user || m[1] === game.user) : all.filter((x) => x.round === round);
+    const out: Listed[] = [];
+    result.rounds.forEach((r, ri) =>
+      r.forEach(([h, a, hg, ag], mi) => {
+        if (mine ? h === game.user || a === game.user : ri === round) {
+          out.push({ key: `L${ri}-${mi}`, slot: ri + 1, label: `League ${ri + 1}`, home: h, away: a, hg, ag, scorers: result.scorers[ri * r.length + mi] });
+        }
+      }),
+    );
+    if (mine) {
+      for (const [comp, cup] of [['FA', result.fa], ['CL', result.cl]] as const) {
+        cup.matches.forEach((m, i) => {
+          if (m.home === game.user || m.away === game.user) {
+            out.push({ key: `${comp}${i}`, slot: m.slot, label: cupLabel(comp, m), home: m.home, away: m.away, hg: m.hg, ag: m.ag, pens: m.pens, scorers: m.scorers });
+          }
+        });
+      }
+    }
+    return out.sort((a, b) => a.slot - b.slot);
   }, [result, mine, round, game.user]);
 
   return (
     <Card
-      title={mine ? 'Your matches' : `Matchday ${round + 1}`}
+      title={mine ? 'Your season' : `Matchday ${round + 1}`}
       right={
         <button onClick={() => setMine(!mine)} className="text-xs text-emerald-400">
-          {mine ? 'All matches' : 'Only yours'}
+          {mine ? 'All league matches' : 'Only yours'}
         </button>
       }
     >
@@ -142,47 +217,126 @@ function Fixtures() {
         </div>
       )}
       <ul className="divide-y divide-slate-800">
-        {matches.map(({ m: [h, a, hg, ag], round: r, index }) => {
-          const userSide = h === game.user ? hg - ag : a === game.user ? ag - hg : null;
-          return (
-            <li key={index}>
-              <button onClick={() => setOpen(open === index ? null : index)} className="flex w-full items-center gap-2 py-2 text-sm">
-                {mine && <span className="w-7 text-xs text-slate-500">{r + 1}</span>}
-                <span className="flex flex-1 items-center justify-end gap-1.5 truncate">
-                  <span className="truncate">{clubInfo(data, h).short}</span>
-                  <ClubBadge data={data} club={h} size={20} />
-                </span>
-                <span
-                  className={`w-14 rounded-md py-0.5 text-center font-bold tabular-nums ${userSide === null ? 'bg-slate-800' : userSide > 0 ? 'bg-emerald-500/30' : userSide < 0 ? 'bg-rose-500/30' : 'bg-slate-700'}`}
-                >
-                  {hg}–{ag}
-                </span>
-                <span className="flex flex-1 items-center gap-1.5 truncate">
-                  <ClubBadge data={data} club={a} size={20} />
-                  <span className="truncate">{clubInfo(data, a).short}</span>
-                </span>
-              </button>
-              {open === index && (
-                <div className="grid grid-cols-2 gap-2 pb-2 text-xs text-slate-300">
-                  {[0, 1].map((side) => (
-                    <ul key={side} className={side === 0 ? 'text-right' : ''}>
-                      {result.scorers[index]
-                        .filter((g) => g[2] === side)
-                        .map(([s, as], gi) => (
-                          <li key={gi}>
-                            ⚽ {playerName(data, s)}
-                            {as >= 0 && <span className="text-slate-500"> ({playerName(data, as)})</span>}
-                          </li>
-                        ))}
-                    </ul>
-                  ))}
-                </div>
-              )}
-            </li>
-          );
-        })}
+        {matches.map((m) => (
+          <MatchRow key={m.key} m={m} showLabel={mine} open={open === m.key} onToggle={() => setOpen(open === m.key ? null : m.key)} />
+        ))}
       </ul>
     </Card>
+  );
+}
+
+function MatchRow({ m, showLabel, open, onToggle }: { m: Listed; showLabel: boolean; open: boolean; onToggle: () => void }) {
+  const { data, game } = useGame();
+  const diff = m.home === game.user ? m.hg - m.ag : m.away === game.user ? m.ag - m.hg : null;
+  const pensWon = m.pens !== undefined && ((m.pens === 0) === (m.home === game.user));
+  const tone = diff === null ? 'bg-slate-800' : diff > 0 || (diff === 0 && m.pens !== undefined && pensWon) ? 'bg-emerald-500/30' : diff < 0 || m.pens !== undefined ? 'bg-rose-500/30' : 'bg-slate-700';
+  const cup = !m.label.startsWith('League');
+  return (
+    <li>
+      {showLabel && cup && <div className={`pt-1.5 text-[11px] font-semibold ${m.label.startsWith('CL') ? 'text-sky-300' : 'text-rose-300'}`}>{m.label}</div>}
+      <button onClick={onToggle} className="flex w-full items-center gap-2 py-2 text-sm">
+        <span className="flex flex-1 items-center justify-end gap-1.5 truncate">
+          <span className="truncate">{entrantShort(data, m.home)}</span>
+          <EntrantBadge data={data} e={m.home} />
+        </span>
+        <span className={`w-14 rounded-md py-0.5 text-center font-bold tabular-nums ${tone}`}>
+          {m.hg}–{m.ag}
+        </span>
+        <span className="flex flex-1 items-center gap-1.5 truncate">
+          <EntrantBadge data={data} e={m.away} />
+          <span className="truncate">{entrantShort(data, m.away)}</span>
+        </span>
+      </button>
+      {m.pens !== undefined && (
+        <div className="-mt-1 pb-1 text-center text-[11px] text-slate-400">
+          {entrantShort(data, m.pens === 0 ? m.home : m.away)} win on penalties
+        </div>
+      )}
+      {open && (
+        <div className="grid grid-cols-2 gap-2 pb-2 text-xs text-slate-300">
+          {[0, 1].map((side) => (
+            <ul key={side} className={side === 0 ? 'text-right' : ''}>
+              {m.scorers
+                .filter((g) => g[2] === side)
+                .map(([s, as], gi) => (
+                  <li key={gi}>
+                    ⚽ {playerName(data, s)}
+                    {as >= 0 && <span className="text-slate-500"> ({playerName(data, as)})</span>}
+                  </li>
+                ))}
+            </ul>
+          ))}
+          {m.scorers.length === 0 && m.hg + m.ag > 0 && <p className="col-span-2 text-center text-slate-500">Scorers not recorded for clubs abroad.</p>}
+        </div>
+      )}
+    </li>
+  );
+}
+
+function Cups() {
+  const { data, game } = useGame();
+  const result = game.result!;
+  const group = result.cl.groups?.find((g) => g.some((r) => r.team === game.user));
+  const toListed = (comp: 'FA' | 'CL', m: CupMatch, i: number): Listed => ({
+    key: `${comp}${i}`, slot: m.slot, label: cupLabel(comp, m), home: m.home, away: m.away, hg: m.hg, ag: m.ag, pens: m.pens, scorers: m.scorers,
+  });
+  const [open, setOpen] = useState<string | null>(null);
+  const ko = result.cl.matches.map((m, i) => toListed('CL', m, i)).filter((m) => !m.label.includes('Group'));
+  const faLate = result.fa.matches
+    .map((m, i) => toListed('FA', m, i))
+    .filter((m) => /Quarter|Semi|Final/.test(m.label) || m.home === game.user || m.away === game.user);
+  const rows = (list: Listed[]) => {
+    let lastLabel = '';
+    return list.map((m) => {
+      const heading = m.label.replace(/ \(leg \d\)/, '');
+      const show = heading !== lastLabel;
+      lastLabel = heading;
+      return (
+        <div key={m.key}>
+          {show && <div className="pt-2 text-xs font-semibold text-slate-400">{heading.replace(/^(FA|CL) /, '')}</div>}
+          <MatchRow m={m} showLabel={false} open={open === m.key} onToggle={() => setOpen(open === m.key ? null : m.key)} />
+        </div>
+      );
+    });
+  };
+  return (
+    <>
+      <Card title="Champions League" right={<EntrantChip e={result.cl.winner} />}>
+        {group ? (
+          <table className="mb-2 w-full text-sm tabular-nums">
+            <thead className="text-xs text-slate-400">
+              <tr><th className="text-left">Your group</th><th>W</th><th>D</th><th>L</th><th>GD</th><th>Pts</th></tr>
+            </thead>
+            <tbody>
+              {group.map((r, i) => (
+                <tr key={String(r.team)} className={`border-t border-slate-800 text-center ${r.team === game.user ? 'bg-emerald-500/15 font-semibold' : ''} ${i === 2 ? 'border-slate-500' : ''}`}>
+                  <td className="py-1.5 text-left">
+                    <span className="flex items-center gap-1.5"><EntrantBadge data={data} e={r.team} /> <span className="truncate">{entrantShort(data, r.team)}</span></span>
+                  </td>
+                  <td>{r.w}</td><td>{r.d}</td><td>{r.l}</td><td>{r.gf - r.ga}</td><td className="font-bold">{r.pts}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        ) : (
+          <p className="mb-2 text-sm text-slate-400">You didn't qualify this season. Finish in the top four to get in.</p>
+        )}
+        <ul className="divide-y divide-slate-800">{rows(ko)}</ul>
+      </Card>
+      <Card title="FA Cup" right={<EntrantChip e={result.fa.winner} />}>
+        <p className="text-xs text-slate-500">Your ties, then the quarter-finals onwards.</p>
+        <ul className="divide-y divide-slate-800">{rows(faLate)}</ul>
+      </Card>
+    </>
+  );
+}
+
+function EntrantChip({ e }: { e: Entrant }) {
+  const { data } = useGame();
+  return (
+    <span className="flex items-center gap-1 text-xs text-amber-300">
+      🏆 <EntrantBadge data={data} e={e} size={16} /> {entrantShort(data, e)}
+    </span>
   );
 }
 
@@ -205,19 +359,37 @@ function Leaders() {
   );
   return (
     <div className="grid gap-3 sm:grid-cols-2">
-      {list(h.topScorers, 'Top scorers')}
-      {list(h.topAssists, 'Top assists')}
+      {list(h.topScorers, 'League top scorers')}
+      {list(h.topAssists, 'League top assists')}
     </div>
   );
 }
 
 type SortKey = 'apps' | 'goals' | 'assists' | 'avg';
 
+export function mergeStats(a: PlayerSeasonStats[], b: PlayerSeasonStats[]): PlayerSeasonStats[] {
+  const map = new Map<number, PlayerSeasonStats>();
+  for (const s of [...a, ...b]) {
+    const m = map.get(s.id);
+    if (!m) map.set(s.id, { ...s });
+    else {
+      m.apps += s.apps;
+      m.starts += s.starts;
+      m.goals += s.goals;
+      m.assists += s.assists;
+      m.ratingSum += s.ratingSum;
+    }
+  }
+  return [...map.values()];
+}
+
 function SquadStats() {
   const { data, game } = useGame();
   const h = game.history[game.history.length - 1];
   const [sort, setSort] = useState<SortKey>('avg');
-  const rows = h.userStats
+  const [all, setAll] = useState(false);
+  const stats = all ? mergeStats(h.userStats, h.userCupStats) : h.userStats;
+  const rows = stats
     .map((s) => ({ ...s, avg: s.ratingSum / s.apps, pos: game.players[s.id]?.pos ?? '' }))
     .sort((a, b) => b[sort] - a[sort]);
   const head = (k: SortKey, label: string) => (
@@ -226,7 +398,10 @@ function SquadStats() {
     </th>
   );
   return (
-    <Card>
+    <Card
+      title={all ? 'All competitions' : 'League'}
+      right={<button onClick={() => setAll(!all)} className="text-xs text-emerald-400">{all ? 'League only' : 'All competitions'}</button>}
+    >
       <table className="w-full text-sm tabular-nums">
         <thead className="text-xs text-slate-400">
           <tr>
@@ -257,7 +432,7 @@ function SquadStats() {
           ))}
         </tbody>
       </table>
-      <p className="mt-2 text-xs text-slate-500">Apps: starts (sub appearances).</p>
+      <p className="mt-2 text-xs text-slate-500">Apps: starts (sub appearances). Avg: average match rating.</p>
     </Card>
   );
 }
