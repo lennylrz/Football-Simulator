@@ -43,18 +43,13 @@ section.shot { margin-top: 48px; display: grid; gap: 14px; }
 .glyph { display: inline-grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #fff, #c9ccd1 70%); border: 2px solid #2b2d31; color: #1b1c1f; font: 700 11px/1 Arial, sans-serif; margin-right: 8px; vertical-align: middle; box-shadow: 0 1px 1px rgba(0,0,0,.5); }
 .glyph.sq { border-radius: 6px; width: auto; min-width: 30px; padding: 0 6px; }
 .glyph.green { background: radial-gradient(circle at 35% 30%, #b8f08a, #49a51d 70%); border-color: #1f4d0c; color: #fff; text-shadow: 0 1px 1px #000; }
-.prompt { position: absolute; left: 0; right: 0; bottom: 34px; height: 46px; display: flex; align-items: center; gap: 30px; padding-left: 150px;
+.prompt { position: absolute; left: 0; right: 0; bottom: 34px; height: 46px; display: flex; align-items: center; gap: 30px; padding-left: 40px;
   background: linear-gradient(180deg, #fdfdfd 0%, #e6e7e9 48%, #d0d2d5 52%, #c3c5c9 100%); color: #26282b; font-weight: 700; font-size: 19px; box-shadow: 0 -1px 0 rgba(0,0,0,.4); }
 .prompt .right { margin-left: auto; align-self: stretch; display: flex; align-items: center; padding: 0 28px 0 70px; color: #fff; font-size: 17px; letter-spacing: .02em; text-transform: uppercase;
   background: linear-gradient(180deg, #4a4c50, #2a2b2e 50%, #1b1c1e 51%, #121314); clip-path: polygon(46px 0, 100% 0, 100% 100%, 0 100%); text-shadow: 0 1px 1px #000; }
 .ticker { position: absolute; left: 0; right: 0; bottom: 0; height: 34px; background: linear-gradient(180deg, #23467d, #142b52); overflow: hidden; display: flex; align-items: center; box-shadow: inset 0 1px 0 rgba(255,255,255,.2); }
-.ticker .tk { display: flex; gap: 56px; padding-left: 230px; white-space: nowrap; font-weight: 700; font-size: 18px; color: #e9f0fb; animation: tick 38s linear infinite; }
+.ticker .tk { display: flex; gap: 56px; padding-left: 40px; white-space: nowrap; font-weight: 700; font-size: 18px; color: #e9f0fb; animation: tick 38s linear infinite; }
 @keyframes tick { from { transform: translateX(0); } to { transform: translateX(-50%); } }
-.disc { position: absolute; left: 22px; bottom: 6px; width: 104px; height: 104px; border-radius: 50%; z-index: 3;
-  background: radial-gradient(circle at 38% 30%, #ffffff 0%, #e4e6ea 45%, #b9bdc4 100%); box-shadow: 0 2px 6px rgba(0,0,0,.6), inset 0 -4px 8px rgba(0,0,0,.18);
-  display: grid; place-items: center; color: #23467d; font: 900 15px/1 Arial, sans-serif; text-align: center; letter-spacing: .02em; }
-.disc small { display: block; font-size: 10px; letter-spacing: .14em; color: #59606b; margin-top: 2px; }
-.shield { display: inline-block; width: 22px; height: 26px; vertical-align: middle; flex: none; }
 .sil { display: block; width: 100%; height: 100%; }
 
 /* ===== Screen 1: main menu ===== */
@@ -69,7 +64,7 @@ section.shot { margin-top: 48px; display: grid; gap: 14px; }
   background: linear-gradient(180deg, #ffffff 0%, #eef0f3 48%, #d7dbe1 52%, #e8ebef 100%); clip-path: polygon(0 0, calc(100% - 24px) 0, 100% 50%, calc(100% - 24px) 100%, 0 100%, 24px 50%); transition: flex .2s; }
 .menu .tab:first-child { clip-path: polygon(0 0, calc(100% - 24px) 0, 100% 50%, calc(100% - 24px) 100%, 0 100%); }
 .menu .tab.on { flex: 1.45; color: #fff; font-size: 26px; text-shadow: 0 1px 2px #000; background: linear-gradient(180deg, #4d8fd6 0%, #23609f 48%, #164a83 52%, #1d5a9b 100%); z-index: 2; }
-.menu .under { position: absolute; left: 60px; right: 60px; top: 588px; height: 40px; background: linear-gradient(180deg, #ffffff, #e3e6ea); box-shadow: 0 2px 4px rgba(0,0,0,.25); display: flex; align-items: center; padding-left: 110px; gap: 28px; font-weight: 700; font-size: 16px; color: #3a3d42; }
+.menu .under { position: absolute; left: 60px; right: 60px; top: 592px; height: 40px; background: linear-gradient(180deg, #ffffff, #e3e6ea); box-shadow: 0 2px 4px rgba(0,0,0,.25); display: flex; align-items: center; padding-left: 24px; gap: 28px; font-weight: 700; font-size: 16px; color: #3a3d42; }
 .menu .stamp { position: absolute; right: 70px; top: 66px; text-align: right; color: #6a717c; font-weight: 700; font-size: 16px; letter-spacing: .08em; text-transform: uppercase; }
 .menu .stamp b { display: block; font-size: 28px; color: #1f3f74; letter-spacing: 0; }
 
@@ -132,7 +127,6 @@ section.shot { margin-top: 48px; display: grid; gap: 14px; }
 .hub .row.rel { background: linear-gradient(180deg, #6c1e25, #55151b); }
 .hub .row.me { box-shadow: inset 0 0 0 2px #ffd900; }
 .hub .row .r { text-align: right; }
-.hub .row .shield { width: 15px; height: 18px; }
 
 /* ===== Screen 3: transfer list ===== */
 .tl { background: #0d0d0e radial-gradient(ellipse at 50% 20%, #2a2b2e 0%, #0f1011 70%); }
@@ -141,13 +135,11 @@ section.shot { margin-top: 48px; display: grid; gap: 14px; }
   background: linear-gradient(180deg, #4f74ad 0%, #284f8c 48%, #163b74 52%, #1f4682 100%); box-shadow: inset 0 1px 0 rgba(255,255,255,.4); }
 .tl .office { height: 156px; display: grid; grid-template-columns: 110px 1fr 120px 96px 1.25fr; align-items: center; gap: 0 18px; padding: 0 30px; color: #1d1d1d;
   background: linear-gradient(180deg, #ffffff 0%, #f1f1f1 55%, #dcdcdc 100%); }
-.tl .office .bigshield { width: 86px; height: 104px; }
 .tl .office .mo { display: grid; gap: 1px; font-size: 18px; line-height: 1.2; }
 .tl .office .mo .cap { font-size: 16px; letter-spacing: .02em; text-transform: uppercase; }
 .tl .office .mo b { font-size: 20px; }
 .tl .office .face { width: 112px; height: 132px; align-self: end; display: grid; place-items: end center; overflow: hidden; }
 .tl .office .face svg { width: 100%; color: #7a7f87; }
-.tl .office .pcrest { width: 70px; height: 84px; }
 .tl .office .pd { display: grid; gap: 2px; font-size: 18px; }
 .tl .office .pd .nm { font-size: 30px; font-weight: 700; margin-bottom: 4px; line-height: 1; }
 .tl .office .pd .kv { display: flex; justify-content: space-between; gap: 18px; }
@@ -174,18 +166,66 @@ section.shot { margin-top: 48px; display: grid; gap: 14px; }
 .tl .note { padding: 8px 14px; color: #8f9297; font-size: 15px; border-top: 1px solid #262729; }
 .tl .note b { color: #ffd900; }
 
-@media (prefers-reduced-motion: reduce) { .ticker .tk { animation: none; } .scr * { transition: none !important; } }
+
+/* Faint motion swooshes behind the panels, as in the menus of the period. */
+.hub::before, .tl::before { content: ""; position: absolute; inset: 0; z-index: 0; pointer-events: none;
+  background:
+    linear-gradient(118deg, transparent 0 38%, rgba(255,255,255,.045) 38% 41%, transparent 41% 100%),
+    linear-gradient(118deg, transparent 0 46%, rgba(255,255,255,.03) 46% 52%, transparent 52% 100%),
+    linear-gradient(118deg, transparent 0 70%, rgba(80,140,220,.06) 70% 74%, transparent 74% 100%); }
+.hub > *, .tl > * { z-index: 1; }
+/* The focused element pulses softly, like a controller selection. */
+@keyframes focus { 0%, 100% { box-shadow: inset 0 0 0 2px rgba(255,255,255,.9), 0 0 0 1px #000, 0 0 14px rgba(255,255,255,.25); } 50% { box-shadow: inset 0 0 0 2px #fff, 0 0 0 1px #000, 0 0 22px rgba(255,255,255,.55); } }
+.hub .next { animation: focus 1.8s ease-in-out infinite; }
+.tl .kvlist div.act.sel { animation: focus 1.8s ease-in-out infinite; }
+.hub .head { border-bottom: 1px solid #000; }
+.hub .next { display: grid; gap: 2px; padding: 12px 14px 14px; }
+.hub .next .k { font-size: 14px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: #5b5e63; }
+.hub .next b { font-size: 26px; line-height: 1.05; }
+.hub .next .s { font-size: 16px; color: #3b3d41; }
+.hub .next .go { margin-top: 10px; display: flex; align-items: center; font-weight: 700; font-size: 18px; }
+.hub .steps { display: grid; gap: 3px; }
+.hub .st { display: flex; align-items: center; gap: 10px; height: 38px; padding: 0 10px; font-size: 17px; font-weight: 700; color: #c9cbcf;
+  background: linear-gradient(180deg, #2a2b2e, #1b1c1e); box-shadow: inset 0 1px 0 rgba(255,255,255,.08), 0 1px 0 #000; }
+.hub .st i { font-style: normal; display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: #3e4044; font-size: 13px; color: #fff; }
+.hub .st.done { color: #8d9095; }
+.hub .st.done i { background: #4a9a0b; }
+.hub .st.on { color: #fff; background: linear-gradient(180deg, #2f6fc2, #0a438b); }
+.hub .st.on i { background: #fff; color: #0a438b; }
+.hub .budget { margin-top: auto; height: 58px; display: flex; flex-direction: column; justify-content: center; padding: 0 12px; font-size: 24px; }
+.hub .budget span { font-size: 13px; text-transform: uppercase; letter-spacing: .08em; color: #c9cbcf; }
+.hub .day .db { align-items: flex-start; }
+.hub .day.today .db { background: linear-gradient(180deg, #ffffff, #f0f0f0); color: #111; }
+.hub .day .opp { position: absolute; left: 8px; right: 6px; bottom: 6px; font-size: 13px; font-weight: 700; color: #1d1d1d; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hub .story { grid-template-columns: 1.1fr 1fr; }
+.hub .side { grid-template-rows: repeat(3, 1fr); }
+.hub .pic { display: grid; place-items: center; padding: 0; }
+.hub .figure { display: grid; justify-items: center; text-align: center; gap: 4px; color: #fff; text-shadow: 0 2px 4px rgba(0,0,0,.6); }
+.hub .figure span { font-size: 18px; font-weight: 700; text-transform: uppercase; letter-spacing: .14em; color: #cfe0ff; }
+.hub .figure b { font-size: 40px; line-height: 1; letter-spacing: -.01em; }
+.hub .figure em { font-style: normal; font-size: 15px; color: #cfe0ff; }
+.hub .feature .cap { font-size: 21px; padding: 10px 10px 12px; }
+.hub .item { font-size: 19px; }
+.hub .row { grid-template-columns: 26px 1fr 22px 30px; padding: 0 10px; font-size: 16px; }
+.tl .office { height: 178px; grid-template-columns: 1fr 1px 1.25fr; gap: 0 36px; padding: 0 40px; align-items: center; }
+.tl .office::after { content: none; }
+.tl .office .mo, .tl .office .pd { display: grid; gap: 2px; font-size: 18px; line-height: 1.3; }
+.tl .office .cap { font-size: 15px; letter-spacing: .06em; text-transform: uppercase; color: #5b5e63; }
+.tl .office .mo b.club { font-size: 28px; line-height: 1; margin-bottom: 4px; }
+.tl .office .kv { display: flex; justify-content: space-between; gap: 18px; }
+.tl .office .sep { background: linear-gradient(180deg, transparent, #b8b8b8, transparent); align-self: stretch; margin: 18px 0; }
+.tl .office .pd .nm { font-size: 28px; font-weight: 700; margin-bottom: 4px; line-height: 1; }
+.tl .kvlist div { padding: 6px 0; font-size: 21px; }
+.tl .kvlist div.act { margin: 2px -14px 0; padding: 8px 14px; }
+@media (prefers-reduced-motion: reduce) { .ticker .tk, .hub .next, .tl .kvlist div.act.sel { animation: none; } .scr * { transition: none !important; } }
 </style>
 
-<svg width="0" height="0" style="position:absolute" aria-hidden="true">
-  <symbol id="silh" viewBox="0 0 100 110"><path d="M50 8c15 0 25 11 25 27 0 11-5 21-12 26v6c18 4 32 14 35 43H2c3-29 17-39 35-43v-6c-7-5-12-15-12-26C25 19 35 8 50 8z" fill="currentColor"/></symbol>
-</svg>
 
 <div class="wrap">
   <header class="intro">
-    <div class="eyebrow">Five Seasons · 2015 era · round 3</div>
+    <div class="eyebrow">Five Seasons · 2015 era · round 4</div>
     <h1>The 2015 career, as a console game of that era</h1>
-    <p>Three screens rebuilt from your references at a true 1280×720, scaled to fit like a TV. Glossy split bars, grey tiles, heavy bold type, a calendar strip, a dark transfer table, the silver prompt bar and the results ticker. Club crests are plain shields in club colours, players without photos get the generic silhouette, and there are no league or publisher names. Hover the main menu tabs and click rows in the transfer list.</p>
+    <p>Three screens rebuilt from your references at a true 1280×720, scaled to fit like a TV. Glossy split bars, grey tiles, heavy bold type, a calendar strip, a dark transfer table, the silver prompt bar and the results ticker. This round is calmer: no badges, no player pictures, and only what you need for the next decision on each screen. Hover the main menu tabs and click rows in the transfer list.</p>
   </header>
 
   <section class="shot">
@@ -203,52 +243,57 @@ section.shot { margin-top: 48px; display: grid; gap: 14px; }
         <button class="tab" data-d="Sound, simulation speed and the season length of the results ticker." data-f="Options">Settings</button>
       </div>
       <div class="under"><span><span class="glyph">↵</span>Select</span><span><span class="glyph">←</span><span class="glyph">→</span>Move</span></div>
-      <div class="disc">FIVE<br>SEASONS<small>2015</small></div>
+      <div class="ticker"><div class="tk" id="tk0"></div></div>
     </div></div>
     <div class="notes">
-      <div><h3>Taken from the reference</h3><ul><li>Chevron tabs, glossy silver with a wider blue selected tab</li><li>Grey description box with a yellow flag strip</li><li>White shattered-ball background, round disc bottom left</li></ul></div>
-      <div><h3>Changed</h3><ul><li>Shards are drawn in code, no player render</li><li>Our own name in the disc, no publisher logo</li></ul></div>
+      <div><h3>Taken from the reference</h3><ul><li>Chevron tabs, glossy silver with a wider blue selected tab</li><li>Grey description box with a yellow flag strip</li><li>White shattered-ball background and the results ticker</li></ul></div>
+      <div><h3>Changed</h3><ul><li>Shards are drawn in code, no player render</li><li>No logos or badges of any kind</li></ul></div>
     </div>
   </section>
 
   <section class="shot">
     <h2>2 · Career hub</h2>
-    <p class="lede">The central screen: club header in club colours, the calendar strip with match days, breaking news with a feature story, fixtures and the league table with coloured zones.</p>
+    <p class="lede">The central screen, calmer: club header, a calendar strip, one clear next step, three headlines and the league table. Nothing else.</p>
     <div class="tv"><div class="scr hub">
-      <div class="head"><svg class="shield" viewBox="0 0 22 26"><path d="M1 1h20v11c0 7-5 11-10 13C6 23 1 19 1 12z" fill="#034694" stroke="#fff" stroke-width="1.5"/><path d="M11 1v24" stroke="#fff" stroke-width="2"/></svg>Chelsea<span class="mgr">The Manager</span></div>
+      <div class="head">Chelsea<span class="mgr">The Manager</span></div>
 
       <div class="col1">
         <div class="date gbar">Fri, Aug 7, 2015</div>
-        <div class="sim ltile"><span class="glyph">␣</span>Advance</div>
-        <div class="feed"><span><b>Board:</b> transfer budget set at €120,000,000.</span><span><b>Scout:</b> four players can be signed this summer.</span><span><b>Inbox:</b> 3 bids for your players.</span></div>
-        <div class="fixh gbar">Fixtures:</div>
-        <div class="fix">
-          <div class="fx"><div class="h">Sat, Aug 8, 2015</div><div class="b ltile"><em>League</em><svg class="shield" viewBox="0 0 22 26"><path d="M1 1h20v11c0 7-5 11-10 13C6 23 1 19 1 12z" fill="#fff" stroke="#111" stroke-width="1.5"/><path d="M1 13h20" stroke="#111" stroke-width="3"/></svg><span class="ha"><span class="pitchico"></span>Home</span><span>Swansea</span></div></div>
-          <div class="fx"><div class="h">Sun, Aug 16, 2015</div><div class="b ltile"><em>League</em><svg class="shield" viewBox="0 0 22 26"><path d="M1 1h20v11c0 7-5 11-10 13C6 23 1 19 1 12z" fill="#6cabdd" stroke="#1c2c5b" stroke-width="1.5"/></svg><span class="ha"><span class="pitchico"></span>Away</span><span>Man City</span></div></div>
+        <div class="next ltile">
+          <span class="k">Next</span>
+          <b>Transfer Offers</b>
+          <span class="s">4 players available to you</span>
+          <span class="go"><span class="glyph green">↵</span>Continue</span>
         </div>
+        <div class="steps">
+          <div class="st done"><i>✓</i>Your Squad</div>
+          <div class="st on"><i>2</i>Transfer Offers</div>
+          <div class="st"><i>3</i>Bids for Your Players</div>
+          <div class="st"><i>4</i>Pick Your Team</div>
+        </div>
+        <div class="budget gbar"><span>Budget</span>€120,000,000</div>
       </div>
 
       <div class="cal">
-        <div class="day"><span class="dn gbar">Fri</span><span class="db ltile today"><span class="n">7</span><span class="sw">⇄</span></span></div>
-        <div class="day match"><span class="dn gbar">Sat</span><span class="db ltile"><span class="n">8</span><span class="sw">⇄</span><span class="icons"><span class="pitchico"></span><svg class="shield" viewBox="0 0 22 26"><path d="M1 1h20v11c0 7-5 11-10 13C6 23 1 19 1 12z" fill="#fff" stroke="#111" stroke-width="1.5"/><path d="M1 13h20" stroke="#111" stroke-width="3"/></svg></span></span></div>
-        <div class="day"><span class="dn gbar">Sun</span><span class="db ltile"><span class="n">9</span><span class="sw">⇄</span></span></div>
-        <div class="day"><span class="dn gbar">Mon</span><span class="db ltile"><span class="n">10</span><span class="sw">⇄</span></span></div>
-        <div class="day"><span class="dn gbar">Tue</span><span class="db ltile"><span class="n">11</span><span class="sw">⇄</span></span></div>
-        <div class="day"><span class="dn gbar">Wed</span><span class="db ltile"><span class="n">12</span><span class="sw">⇄</span></span></div>
-        <div class="day"><span class="dn gbar">Thu</span><span class="db ltile"><span class="n">13</span><span class="sw">⇄</span></span></div>
+        <div class="day today"><span class="dn gbar">Fri</span><span class="db ltile"><span class="n">7</span></span></div>
+        <div class="day match"><span class="dn gbar">Sat</span><span class="db ltile"><span class="n">8</span><span class="opp">Swansea (H)</span></span></div>
+        <div class="day"><span class="dn gbar">Sun</span><span class="db ltile"><span class="n">9</span></span></div>
+        <div class="day"><span class="dn gbar">Mon</span><span class="db ltile"><span class="n">10</span></span></div>
+        <div class="day"><span class="dn gbar">Tue</span><span class="db ltile"><span class="n">11</span></span></div>
+        <div class="day"><span class="dn gbar">Wed</span><span class="db ltile"><span class="n">12</span></span></div>
+        <div class="day"><span class="dn gbar">Thu</span><span class="db ltile"><span class="n">13</span></span></div>
       </div>
 
       <div class="news">
         <div class="bn gbar"><span class="glyph sq">Q</span><span class="glyph sq">E</span>Breaking news<span class="dots"><i class="on"></i><i></i><i></i></span></div>
         <div class="story">
           <div class="feature">
-            <div class="pic"><div class="frame"><svg viewBox="0 0 100 110"><use href="#silh"/></svg></div><div class="crestbox"><svg viewBox="0 0 22 26"><path d="M1 1h20v11c0 7-5 11-10 13C6 23 1 19 1 12z" fill="#034694" stroke="#fff" stroke-width="1.5"/><path d="M11 1v24" stroke="#fff" stroke-width="2"/></svg></div></div>
-            <div class="cap">Chelsea Promote Fikayo Tomori to the First-Team Squad</div>
+            <div class="pic"><div class="figure"><span>Summer Budget</span><b>€120,000,000</b><em>Board approval · 05/08/2015</em></div></div>
+            <div class="cap">Board Confirms €120,000,000 Summer Budget</div>
           </div>
           <div class="side">
             <div class="item ltile"><span class="dt">NEW!</span><span class="ex">EXCLUSIVE</span>Manchester City Keen on Signing Verratti</div>
-            <div class="item ltile"><span class="dt">06/08/2015</span>Napoli Bid €16,000,000 for John Terry</div>
-            <div class="item sel"><span class="dt">05/08/2015</span>Board Confirms €120,000,000 Summer Budget</div>
+            <div class="item sel"><span class="dt">06/08/2015</span>Napoli Bid €16,000,000 for John Terry</div>
             <div class="item ltile"><span class="dt">03/08/2015</span>Four Players Available to Chelsea</div>
           </div>
         </div>
@@ -260,50 +305,44 @@ section.shot { margin-top: 48px; display: grid; gap: 14px; }
         <div class="rows" id="rows"></div>
       </div>
 
-      <div class="prompt"><span><span class="glyph">␣</span>Advance</span><span><span class="glyph">↵</span>Expand Story</span><span class="right">Five Seasons · 2015/16</span></div>
+      <div class="prompt"><span><span class="glyph green">↵</span>Continue</span><span><span class="glyph sq">Q</span><span class="glyph sq">E</span>News</span><span class="right">Five Seasons · 2015/16</span></div>
       <div class="ticker"><div class="tk" id="tk1"></div></div>
-      <div class="disc">FIVE<br>SEASONS<small>2015</small></div>
     </div></div>
     <div class="notes">
-      <div><h3>Taken from the reference</h3><ul><li>Header strip in club colours, manager name right</li><li>Calendar with today highlighted and green match-day corners</li><li>Breaking news split: feature story left, dated list right, selected item dark</li><li>Table zones: top four green, fifth blue, bottom three red</li></ul></div>
-      <div><h3>Changed</h3><ul><li>Plain shields in club colours instead of crests</li><li>"English League" instead of the sponsor's name</li><li>The ticker carries the real 2015/16 opening-day fixtures</li></ul></div>
+      <div><h3>What's on screen</h3><ul><li>One next step, always in the same place, with the four window steps under it</li><li>Three headlines, the selected one dark</li><li>League table with coloured zones, your club outlined</li></ul></div>
+      <div><h3>Left out on purpose</h3><ul><li>Fixtures, feeds and badges: the calendar and ticker carry the matches</li><li>No player photos or crests anywhere</li></ul></div>
     </div>
   </section>
 
   <section class="shot">
     <h2>3 · Transfer list</h2>
-    <p class="lede">The offers step as a transfer list: manager's office on top with the budget and the selected player, the window's details on the left, and the players you can sign on the right. Click a row.</p>
+    <p class="lede">The offers step as a transfer list: manager's office on top, a short window panel on the left and the players you can sign on the right. Click a row.</p>
     <div class="tv"><div class="scr tl">
       <div class="win">
         <div class="wh">Transfer Offers</div>
         <div class="office">
-          <svg class="bigshield" viewBox="0 0 22 26"><path d="M1 1h20v11c0 7-5 11-10 13C6 23 1 19 1 12z" fill="#034694" stroke="#0b2a57" stroke-width="1"/><path d="M11 1v24" stroke="#fff" stroke-width="2"/></svg>
-          <div class="mo"><span class="cap">Manager's Office</span><b>Chelsea</b><b>Transfer Budget</b><span>€120,000,000</span><b>Squad Size</b><span>23 / 26</span></div>
-          <div class="face"><svg viewBox="0 0 100 110"><use href="#silh"/></svg></div>
-          <svg class="pcrest" id="pcrest" viewBox="0 0 22 26"></svg>
-          <div class="pd"><span class="nm" id="pname">Antoine Griezmann</span>
+          <div class="mo"><span class="cap">Manager's Office</span><b class="club">Chelsea</b><span class="kv"><b>Transfer Budget</b><span>€120,000,000</span></span><span class="kv"><b>Squad Size</b><span>23 / 26</span></span></div>
+          <div class="sep"></div>
+          <div class="pd"><span class="cap">Selected Player</span><span class="nm" id="pname">Antoine Griezmann</span>
             <span class="kv"><span>Current Club</span><span id="pclub">Atlético de Madrid</span></span>
             <span class="kv"><span>Estimated Worth</span><span id="pworth">€33,000,000</span></span>
-            <span class="kv"><span>Asking Price</span><span id="pask">€36,000,000</span></span>
+            <span class="kv"><span>Asking Price</span><b id="pask">€36,000,000</b></span>
           </div>
         </div>
         <div class="panes">
           <div class="pane">
             <div class="ph gbar">Summer Window 2015</div>
             <div class="kvlist">
-              <div><span>Step</span><b>2 of 4 · Offers</b></div>
               <div><span>Deadline Day</span><b>31/08/2015</b></div>
-              <div><span>Players Available</span><b>4</b></div>
               <div><span>Squad Spaces</span><b>3</b></div>
               <div><span>Bids Received</span><b>3</b></div>
-              <div><span>Reputation</span><b>Elite</b></div>
               <div class="act sel"><span>Sign Selected Player</span></div>
               <div class="act"><span>Around the League</span></div>
               <div class="act"><span>Go to Deadline Day</span></div>
             </div>
           </div>
           <div class="pane">
-            <div class="ph gbar">Num Results: 4 (max. 5)</div>
+            <div class="ph gbar">Players Available: 4</div>
             <div class="tblwrap">
               <table>
                 <thead><tr><th>Pos</th><th>Player</th><th class="n">Age</th><th class="n sort">Overall ▼</th><th class="n">Fee</th></tr></thead>
@@ -317,11 +356,10 @@ section.shot { margin-top: 48px; display: grid; gap: 14px; }
       </div>
       <div class="prompt"><span><span class="glyph green">↵</span>Sign</span><span><span class="glyph">↑</span><span class="glyph">↓</span>Browse</span><span><span class="glyph">T</span>Around the League</span><span class="right">Budget €120,000,000</span></div>
       <div class="ticker"><div class="tk" id="tk2"></div></div>
-      <div class="disc">FIVE<br>SEASONS<small>2015</small></div>
     </div></div>
     <div class="notes">
-      <div><h3>Taken from the reference</h3><ul><li>Navy glossy window title, white office panel with budget</li><li>Grey-headed dark panes, a highlighted sort column and a white selected row</li><li>Thin scrollbar with arrows, prompt bar and results ticker</li></ul></div>
-      <div><h3>Changed</h3><ul><li>The left pane shows the window's steps instead of search filters</li><li>Potential is not shown anywhere</li></ul></div>
+      <div><h3>What's on screen</h3><ul><li>Budget and the selected player's price side by side</li><li>Four players, sorted by overall, the selected row white</li><li>Three actions, nothing else to read</li></ul></div>
+      <div><h3>Left out on purpose</h3><ul><li>Search filters, wages and potential</li><li>Player photos and club crests</li></ul></div>
     </div>
   </section>
 </div>
@@ -333,9 +371,6 @@ section.shot { margin-top: 48px; display: grid; gap: 14px; }
   fit();
   new ResizeObserver(fit).observe(document.body);
 
-  const shield = (fill, stroke, band) =>
-    `<path d="M1 1h20v11c0 7-5 11-10 13C6 23 1 19 1 12z" fill="${fill}" stroke="${stroke}" stroke-width="1.5"/>` + (band ? `<path d="${band}" stroke="${stroke}" stroke-width="2.4" fill="none"/>` : '');
-
   // League table, pre-season: alphabetical, all on zero.
   const clubs = [
     ['Arsenal', '#ef0107', '#fff'], ['A. Villa', '#670e36', '#95bfe5'], ['Bournemouth', '#da291c', '#000'], ['Chelsea', '#034694', '#fff'],
@@ -346,21 +381,22 @@ section.shot { margin-top: 48px; display: grid; gap: 14px; }
   ];
   document.getElementById('rows').innerHTML = clubs.map(([n, a, b], i) => {
     const zone = i < 4 ? 'cl' : i === 4 ? 'el' : i >= 17 ? 'rel' : '';
-    return `<div class="row ${zone} ${n === 'Chelsea' ? 'me' : ''}"><span>${i + 1}</span><svg class="shield" viewBox="0 0 22 26">${shield(a, b, 'M11 1v24')}</svg><span>${n}</span><span class="r">0</span><span class="r">0</span></div>`;
+    return `<div class="row ${zone} ${n === 'Chelsea' ? 'me' : ''}"><span>${i + 1}</span><span>${n}</span><span class="r">0</span><span class="r">0</span></div>`;
   }).join('');
 
   // Tickers: real 2015/16 opening-day fixtures, then the first results.
   const opening = ['Man Utd vs. Spurs', 'Bournemouth vs. Aston Villa', 'Everton vs. Watford', 'Leicester vs. Sunderland', 'Norwich vs. Crystal Palace', 'Chelsea vs. Swansea', 'Arsenal vs. West Ham', 'Newcastle vs. Southampton', 'Stoke vs. Liverpool', 'West Brom vs. Man City'];
   const tk = (id, items) => { const s = items.map((t) => `<span>${t}</span>`).join(''); document.getElementById(id).innerHTML = s + s; };
+  tk('tk0', opening);
   tk('tk1', opening);
   tk('tk2', ['08/08/2015 League - Chelsea 2 Swansea 2', '08/08/2015 League - Arsenal 0 West Ham 2', '08/08/2015 League - Leicester 4 Sunderland 2', '09/08/2015 League - Man Utd 1 Spurs 0', '10/08/2015 League - West Brom 0 Man City 3']);
 
   // Transfer list rows; clicking a row updates the office panel.
   const offers = [
-    { pos: 'ST', name: 'Antoine Griezmann', age: 24, ovr: 83, club: 'Atlético de Madrid', worth: '€33,000,000', fee: '€36,000,000', c: ['#cb3524', '#fff', 'M5 1v23M11 1v24M17 1v23'] },
-    { pos: 'ST', name: 'Paulo Dybala', age: 21, ovr: 78, club: 'Juventus', worth: '€14,000,000', fee: '€15,500,000', c: ['#111', '#fff', 'M8 1v24M14 1v24'] },
-    { pos: 'CB', name: 'Kalidou Koulibaly', age: 24, ovr: 78, club: 'Napoli', worth: '€10,000,000', fee: '€11,000,000', c: ['#12a0d7', '#fff', ''] },
-    { pos: 'LM', name: 'Leroy Sané', age: 19, ovr: 70, club: 'FC Schalke 04', worth: '€2,300,000', fee: '€2,500,000', c: ['#004d9d', '#fff', 'M1 12h20'] },
+    { pos: 'ST', name: 'Antoine Griezmann', age: 24, ovr: 83, club: 'Atlético de Madrid', worth: '€33,000,000', fee: '€36,000,000' },
+    { pos: 'ST', name: 'Paulo Dybala', age: 21, ovr: 78, club: 'Juventus', worth: '€14,000,000', fee: '€15,500,000' },
+    { pos: 'CB', name: 'Kalidou Koulibaly', age: 24, ovr: 78, club: 'Napoli', worth: '€10,000,000', fee: '€11,000,000' },
+    { pos: 'LM', name: 'Leroy Sané', age: 19, ovr: 70, club: 'FC Schalke 04', worth: '€2,300,000', fee: '€2,500,000' },
   ];
   const body = document.getElementById('plist');
   const select = (i) => {
@@ -370,7 +406,6 @@ section.shot { margin-top: 48px; display: grid; gap: 14px; }
     document.getElementById('pclub').textContent = o.club;
     document.getElementById('pworth').textContent = o.worth;
     document.getElementById('pask').textContent = o.fee;
-    document.getElementById('pcrest').innerHTML = shield(o.c[0], o.c[1], o.c[2]);
   };
   body.innerHTML = offers.map((o, i) => `<tr data-i="${i}"><td>${o.pos}</td><td>${o.name}</td><td class="n">${o.age}</td><td class="n">${o.ovr}</td><td class="n">${o.fee.replace(',000,000', 'm').replace(/,(\d)00,000/, '.$1m')}</td></tr>`).join('');
   body.addEventListener('click', (e) => { const tr = e.target.closest('tr'); if (tr) select(+tr.dataset.i); });
