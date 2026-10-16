@@ -3,7 +3,7 @@ import { CLUBS, type ClubInfo } from '../game/clubs';
 import type { GameData } from '../game/data';
 
 /** Scales the fixed 1280x720 stage to fit the window. */
-export function Stage({ tone = 'dark', children }: { tone?: 'dark' | 'light'; children: ReactNode }) {
+export function Stage({ tone = 'dark', children }: { tone?: 'dark' | 'light' | 'home'; children: ReactNode }) {
   const [scale, setScale] = useState(1);
   useLayoutEffect(() => {
     const fit = () => setScale(Math.min(window.innerWidth / 1280, window.innerHeight / 720));

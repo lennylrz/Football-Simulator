@@ -1,0 +1,72 @@
+/* Era previews: each is a 1280x720 screen, scaled down where it is shown. */
+.pv { position: absolute; left: 0; top: 0; width: 1280px; height: 720px; transform-origin: 0 0; overflow: hidden; pointer-events: none; }
+
+/* 2000-2005: desktop management sim */
+.pv-2000 { background: #3a6ea5; padding: 24px; font: 18px/1.35 Tahoma, Verdana, "Segoe UI", sans-serif; color: #000; }
+.pv-2000 .w { height: 100%; display: flex; flex-direction: column; background: #d4d0c8; border: 3px solid; border-color: #fff #404040 #404040 #fff; box-shadow: 1px 1px 0 #000; }
+.pv-2000 .t { background: linear-gradient(90deg, #0a246a, #a6caf0); color: #fff; font-weight: 700; padding: 6px 10px; display: flex; justify-content: space-between; }
+.pv-2000 .t i { font-style: normal; display: flex; gap: 3px; }
+.pv-2000 .t i span { width: 24px; height: 21px; background: #d4d0c8; border: 2px solid; border-color: #fff #404040 #404040 #fff; color: #000; font-size: 13px; line-height: 16px; text-align: center; }
+.pv-2000 .m { display: flex; gap: 22px; padding: 5px 12px; border-bottom: 1px solid #808080; }
+.pv-2000 .b { flex: 1; display: grid; grid-template-columns: 230px 1fr; gap: 12px; padding: 12px; min-height: 0; }
+.pv-2000 .side { display: grid; gap: 6px; align-content: start; }
+.pv-2000 .btn { background: #d4d0c8; border: 2px solid; border-color: #fff #404040 #404040 #fff; padding: 7px 10px; }
+.pv-2000 .btn.on { border-color: #404040 #fff #fff #404040; font-weight: 700; background: #c0bcb4; }
+.pv-2000 .panel { background: #fff; border: 2px solid; border-color: #808080 #fff #fff #808080; overflow: hidden; }
+.pv-2000 table { width: 100%; border-collapse: collapse; }
+.pv-2000 th { background: #d4d0c8; text-align: left; padding: 5px 9px; border: 1px solid; border-color: #fff #808080 #808080 #fff; font-weight: 400; }
+.pv-2000 td { padding: 6px 9px; border-bottom: 1px solid #ece9d8; }
+.pv-2000 tr:nth-child(even) td { background: #f3f1ea; }
+.pv-2000 tr.sel td { background: #0a246a; color: #fff; }
+.pv-2000 .r { text-align: right; }
+.pv-2000 .s { display: flex; gap: 3px; padding: 3px; border-top: 1px solid #808080; }
+.pv-2000 .s span { flex: 1; border: 1px solid; border-color: #808080 #fff #fff #808080; padding: 2px 8px; }
+
+/* 2005-2010: glossy chrome and pill buttons */
+.pv-2005 { background: radial-gradient(ellipse at 30% 20%, #2c6fd1 0%, #0b2f6b 45%, #06142e 100%); font-family: "Trebuchet MS", Verdana, sans-serif; color: #fff; }
+.pv-2005::after { content: ""; position: absolute; left: -10%; right: -10%; top: 62%; height: 60%; background: radial-gradient(ellipse at 50% 0%, rgba(120,200,255,.35), transparent 70%); }
+.pv-2005 .logo { position: absolute; left: 80px; top: 70px; font: 700 italic 70px/1 "Trebuchet MS", sans-serif; letter-spacing: -.02em; text-shadow: 0 3px 0 #06142e, 0 0 30px rgba(120,200,255,.6);
+  background: linear-gradient(180deg, #ffffff 0%, #cfe8ff 50%, #8cc4ff 51%, #e6f3ff 100%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.pv-2005 .logo small { display: block; font: 700 22px/1.4 "Trebuchet MS", sans-serif; letter-spacing: .3em; color: #ff9a1f; -webkit-text-fill-color: #ff9a1f; text-shadow: none; margin-top: 8px; }
+.pv-2005 .pills { position: absolute; left: 80px; top: 250px; display: grid; gap: 16px; width: 440px; z-index: 1; }
+.pv-2005 .pill { position: relative; height: 62px; border-radius: 31px; display: flex; align-items: center; padding: 0 30px; font-size: 26px; font-weight: 700; text-shadow: 0 1px 2px rgba(0,0,0,.6);
+  background: linear-gradient(180deg, #7fb8ff 0%, #2a6fd0 50%, #1556b8 51%, #3b86e8 100%); border: 2px solid rgba(255,255,255,.55); box-shadow: 0 6px 16px rgba(0,0,0,.45), inset 0 -6px 12px rgba(0,0,0,.25); overflow: hidden; }
+.pv-2005 .pill::before { content: ""; position: absolute; left: 18px; right: 18px; top: 4px; height: 24px; border-radius: 20px; background: linear-gradient(180deg, rgba(255,255,255,.75), rgba(255,255,255,0)); }
+.pv-2005 .pill.on { background: linear-gradient(180deg, #ffd27a 0%, #ff9a1f 50%, #e07400 51%, #ffae3b 100%); color: #3a1c00; text-shadow: 0 1px 0 rgba(255,255,255,.5); }
+.pv-2005 .orb { position: absolute; right: 120px; top: 150px; width: 380px; height: 380px; border-radius: 50%; z-index: 1;
+  background: radial-gradient(circle at 35% 30%, #ffffff 0%, #bfe0ff 18%, #3c8ff0 55%, #0b3c8f 100%); box-shadow: 0 30px 60px rgba(0,0,0,.5), inset 0 -20px 40px rgba(0,0,0,.35); }
+.pv-2005 .orb::after { content: "XI"; position: absolute; inset: 0; display: grid; place-items: center; font: 900 italic 150px/1 "Trebuchet MS", sans-serif; color: rgba(255,255,255,.9); text-shadow: 0 6px 20px rgba(0,0,0,.4); }
+.pv-2005 .bar { position: absolute; left: 0; right: 0; bottom: 0; height: 64px; display: flex; align-items: center; gap: 40px; padding: 0 80px; z-index: 1; font-size: 22px;
+  background: linear-gradient(180deg, #4a4f58, #1b1e24); border-top: 2px solid #8a93a3; }
+.pv-2005 .bar b { color: #ff9a1f; }
+
+/* 2010-2015: live tiles over a floodlit stadium */
+.pv-2010 { font-family: "Segoe UI", "Titillium Web", system-ui, sans-serif; color: #fff;
+  background: radial-gradient(circle at 12% 8%, rgba(255,255,240,.55) 0 2%, transparent 9%), radial-gradient(circle at 88% 8%, rgba(255,255,240,.55) 0 2%, transparent 9%),
+    linear-gradient(180deg, #0c1424 0%, #17243c 34%, #24433a 52%, #2e6b38 72%, #224f2a 100%); }
+.pv-2010::before { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(4,10,24,.35), rgba(4,10,24,.75)); }
+.pv-2010 > * { position: relative; }
+.pv-2010 .crumb { padding: 40px 60px 0; font-size: 20px; letter-spacing: .14em; text-transform: uppercase; color: #b9c8e0; font-weight: 300; }
+.pv-2010 h3 { margin: 4px 0 0; padding: 0 60px; font-size: 76px; font-weight: 300; }
+.pv-2010 .grid { display: grid; grid-template-columns: 2fr 1fr 1fr; grid-template-rows: 210px 210px; gap: 14px; padding: 26px 60px 0; }
+.pv-2010 .tile { padding: 20px 22px; display: flex; flex-direction: column; justify-content: space-between; background: var(--t, #1f6fd1); }
+.pv-2010 .tile.big { grid-row: span 2; background: linear-gradient(135deg, #0b5fbf, #0a3d84); outline: 4px solid #fff; outline-offset: -4px; }
+.pv-2010 .tile small { font-size: 16px; letter-spacing: .14em; text-transform: uppercase; font-weight: 600; opacity: .85; }
+.pv-2010 .tile b { font-size: 64px; font-weight: 300; line-height: 1; }
+.pv-2010 .tile span { font-size: 19px; opacity: .9; }
+.pv-2010 .tile .row { display: flex; justify-content: space-between; font-size: 24px; background: rgba(255,255,255,.1); padding: 8px 12px; margin-top: 8px; }
+
+/* 2020-now: clean and modern */
+.pv-2020 { background: #fff; color: #111418; font-family: "Helvetica Neue", Arial, system-ui, sans-serif; }
+.pv-2020 .top { display: flex; align-items: center; gap: 14px; padding: 36px 70px; border-bottom: 1px solid #e7e9ec; font-weight: 700; font-size: 24px; }
+.pv-2020 .top i { width: 16px; height: 16px; border-radius: 50%; background: #034694; box-shadow: 0 0 0 4px #e8eef7; }
+.pv-2020 .top span { margin-left: auto; font: 500 20px ui-monospace, Menlo, monospace; color: #6b717b; }
+.pv-2020 .body { padding: 50px 70px; }
+.pv-2020 h4 { margin: 0; font-size: 46px; letter-spacing: -.03em; }
+.pv-2020 p { margin: 8px 0 34px; color: #6b717b; font-size: 22px; }
+.pv-2020 .cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; background: #e7e9ec; border: 1px solid #e7e9ec; border-radius: 16px; overflow: hidden; }
+.pv-2020 .card { background: #fff; padding: 26px; display: grid; gap: 22px; }
+.pv-2020 .card .n { font-weight: 700; font-size: 22px; }
+.pv-2020 .card .c { font-size: 17px; color: #6b717b; }
+.pv-2020 .card .o { font: 600 58px/1 ui-monospace, Menlo, monospace; letter-spacing: -.04em; }
+.pv-2020 .card .btn { border-radius: 10px; padding: 14px; text-align: center; font-weight: 700; font-size: 18px; background: #034694; color: #fff; }

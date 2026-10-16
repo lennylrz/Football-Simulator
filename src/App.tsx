@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { Home } from './console/home/Home';
 import { Draft } from './console/screens/Draft';
 import { MainMenu } from './console/screens/MainMenu';
 import { NewClub } from './console/screens/NewClub';
@@ -29,13 +30,13 @@ async function fetchJson(file: string) {
   return res.json();
 }
 
-type Mode = 'menu' | 'clubs' | 'menu-hall' | 'play';
+type Mode = 'home' | 'menu' | 'clubs' | 'menu-hall' | 'play';
 
 export default function App() {
   const [data, setData] = useState<GameData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [game, setGame] = useState<GameState | null>(() => loadRun());
-  const [mode, setMode] = useState<Mode>('menu');
+  const [mode, setMode] = useState<Mode>('home');
 
   useEffect(() => {
     loadGameData(fetchJson).then((d) => {
@@ -73,10 +74,17 @@ export default function App() {
   if (error) return <Stage><div className="empty" style={{ padding: 60 }}>Couldn't load the game data. {error}</div></Stage>;
   if (!data) return <Stage><div className="empty" style={{ padding: 60 }}>Loading players…</div></Stage>;
 
+  if (mode === 'home') {
+    return (
+      <Stage tone="home">
+        <Home onPlay={() => setMode('menu')} />
+      </Stage>
+    );
+  }
   if (mode === 'menu' || mode === 'menu-hall') {
     return (
       <Stage tone="light">
-        <MainMenu data={data} save={game} onNew={() => setMode('clubs')} onContinue={() => setMode('play')} onHall={() => setMode('menu-hall')} />
+        <MainMenu data={data} save={game} onNew={() => setMode('clubs')} onContinue={() => setMode('play')} onHall={() => setMode('menu-hall')} onHome={() => setMode('home')} />
         {mode === 'menu-hall' && game && (
           <div style={{ position: 'absolute', inset: 0, zIndex: 6 }}>
             <HallOfFame game={game} data={data} />

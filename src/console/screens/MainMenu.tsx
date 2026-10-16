@@ -13,8 +13,8 @@ interface Tab {
 }
 
 export function MainMenu({
-  data, save, onNew, onContinue, onHall,
-}: { data: GameData; save: GameState | null; onNew: () => void; onContinue: () => void; onHall: () => void }) {
+  data, save, onNew, onContinue, onHall, onHome,
+}: { data: GameData; save: GameState | null; onNew: () => void; onContinue: () => void; onHall: () => void; onHome: () => void }) {
   const canvas = useRef<HTMLCanvasElement>(null);
   const rail = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -84,6 +84,7 @@ export function MainMenu({
         commands={[
           { keys: ['Enter'], label: 'Select', primary: true, onPress: () => go(tab) },
           browse('Move', () => setIndex(Math.max(0, index - 1)), () => setIndex(Math.min(tabs.length - 1, index + 1)), true),
+          { keys: ['Escape'], label: 'All Eras', onPress: onHome },
         ]}
         info={<>Unofficial fan game · FIFA 16-20 ratings</>}
       >
