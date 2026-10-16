@@ -13,7 +13,7 @@ const ERAS: { key: EraKey; years: string; style: string; live: boolean }[] = [
   { key: 2020, years: '2020–now', style: 'The modern era', live: false },
 ];
 
-export function Home({ onPlay }: { onPlay: () => void }) {
+export function Home({ onPlay, onBack }: { onPlay: () => void; onBack: () => void }) {
   // null: nothing hovered, the clean home page shows.
   const [index, setIndex] = useState<number | null>(null);
   const era = index === null ? null : ERAS[index];
@@ -25,7 +25,7 @@ export function Home({ onPlay }: { onPlay: () => void }) {
       onPress: (k) => setIndex((i) => (i === null ? 3 : Math.max(0, Math.min(ERAS.length - 1, i + (k === 'Left' ? -1 : 1))))),
     },
     { keys: ['Enter'], label: 'Play', onPress: () => (era ? go() : setIndex(3)) },
-    { keys: ['Escape'], label: 'Clear', onPress: () => setIndex(null) },
+    { keys: ['Escape'], label: 'Back', onPress: () => (index === null ? onBack() : setIndex(null)) },
   ]);
 
   return (
@@ -36,6 +36,8 @@ export function Home({ onPlay }: { onPlay: () => void }) {
           <Preview era={e.key} width={1280} />
         </div>
       ))}
+
+      <button className="back" onClick={onBack} tabIndex={-1}>‹ Main menu</button>
 
       <div className="clean">
         <div className="mark">Five Seasons<span>.</span></div>

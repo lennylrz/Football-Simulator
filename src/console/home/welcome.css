@@ -1,0 +1,68 @@
+/* The welcome screen: the era home's clean look (paper, ink, one blue) with a game menu. */
+.welcome { position: absolute; inset: 0; }
+.welcome .w-grid { position: absolute; inset: 0; pointer-events: none;
+  background-image: linear-gradient(rgba(18,20,24,.045) 1px, transparent 1px), linear-gradient(90deg, rgba(18,20,24,.045) 1px, transparent 1px); background-size: 32px 32px; }
+.welcome .w-fine { position: absolute; right: 80px; top: 34px; font-size: 13px; color: #8a9099; letter-spacing: .04em; }
+
+.welcome .w-hero { position: absolute; left: 80px; top: 72px; }
+.welcome .w-mark { font-weight: 900; font-size: 84px; letter-spacing: -.045em; line-height: 1; }
+.welcome .w-mark span, .welcome .w-brand span { color: #2a55e6; }
+.welcome .w-tag { margin: 12px 0 0; font-size: 21px; color: #3d424a; }
+
+/* Content for the selected menu item. */
+.welcome .w-panel { position: absolute; left: 80px; top: 224px; width: 640px; height: 426px; padding: 30px 36px; border-radius: 14px;
+  background: rgba(255,255,255,.86); box-shadow: 0 0 0 1px rgba(18,20,24,.12), 0 18px 40px -26px rgba(18,20,24,.55); backdrop-filter: blur(10px);
+  animation: w-in .28s ease both; font-size: 16px; line-height: 1.5; color: #2a2e35; }
+@keyframes w-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+.welcome .w-panel h2 { margin: 0 0 12px; font-size: 30px; font-weight: 900; letter-spacing: -.03em; color: #121418; display: flex; align-items: center; gap: 12px; }
+.welcome .w-panel p { margin: 0 0 12px; }
+.welcome .w-panel .lead { font-size: 19px; color: #121418; line-height: 1.45; }
+.welcome .w-panel .muted { color: #8a9099; font-size: 14px; }
+.welcome .w-panel b { color: #121418; }
+
+.welcome .w-save { display: flex; align-items: center; gap: 10px; margin: 22px 0 0; padding: 14px 16px; border-radius: 10px; background: #eef2ff; color: #1f3a9e; font-weight: 700; font-size: 15px; }
+.welcome .w-save.fresh { background: #f1f3f6; color: #3d424a; }
+.welcome .w-save .dot { flex: none; width: 9px; height: 9px; border-radius: 50%; background: #2a55e6; }
+.welcome .w-save.fresh .dot { background: #1fa34a; }
+.welcome .w-cta { position: absolute; left: 36px; bottom: 30px; display: inline-flex; align-items: center; gap: 14px; padding: 14px 22px; border-radius: 10px;
+  background: #121418; color: #fff; font-weight: 800; font-size: 18px; transition: background .15s, transform .15s; }
+.welcome .w-cta:hover { background: #2a55e6; transform: translateY(-2px); }
+.welcome .w-cta .kbd { background: rgba(255,255,255,.14); color: #fff; box-shadow: none; }
+
+.welcome .w-soon { display: inline-block; padding: 3px 9px; border-radius: 99px; background: #eef2ff; color: #2a55e6; font-size: 11px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; vertical-align: middle; }
+
+.welcome .w-steps { margin: 0 0 12px; padding: 0; list-style: none; counter-reset: s; display: grid; gap: 9px; font-size: 15px; }
+.welcome .w-steps li { counter-increment: s; display: grid; grid-template-columns: 28px 1fr; line-height: 1.4; }
+.welcome .w-steps li::before { content: counter(s); font-weight: 900; color: #2a55e6; }
+
+.welcome .w-settings { display: grid; gap: 10px; margin: 6px 0 16px; }
+.welcome .w-set { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 14px 18px; border-radius: 10px; text-align: left;
+  background: #f4f5f7; box-shadow: 0 0 0 1px rgba(18,20,24,.08); transition: background .15s, box-shadow .15s; }
+.welcome .w-set:not(:disabled):hover { box-shadow: 0 0 0 1px rgba(18,20,24,.25); }
+.welcome .w-set.on { background: #fff; box-shadow: 0 0 0 2px #2a55e6; }
+.welcome .w-set:disabled { opacity: .55; }
+.welcome .w-set b { display: block; font-size: 17px; }
+.welcome .w-set small { display: block; font-size: 13px; color: #8a9099; }
+.welcome .w-toggle { flex: none; min-width: 64px; padding: 6px 12px; border-radius: 99px; text-align: center; font-size: 13px; font-weight: 800; background: #e2e5ea; color: #3d424a; }
+.welcome .w-toggle.yes { background: #2a55e6; color: #fff; }
+.welcome .w-toggle.danger { background: #c8322b; color: #fff; }
+
+.welcome .w-credits { display: grid; grid-template-columns: 120px 1fr; gap: 10px 18px; margin: 18px 0 0; font-size: 15px; }
+.welcome .w-credits dt { font-size: 12px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: #2a55e6; padding-top: 3px; }
+.welcome .w-credits dd { margin: 0; }
+
+/* The menu. */
+.welcome .w-menu { position: absolute; right: 80px; top: 224px; width: 400px; display: grid; gap: 8px; }
+.welcome .w-item { display: grid; gap: 1px; padding: 10px 22px; border-radius: 12px; text-align: left; background: rgba(255,255,255,.7);
+  box-shadow: 0 0 0 1px rgba(18,20,24,.1); transition: transform .16s, background .16s, color .16s, box-shadow .16s; }
+.welcome .w-item .w-label { display: flex; align-items: center; gap: 10px; font-weight: 900; font-size: 22px; letter-spacing: -.03em; }
+.welcome .w-item .w-note { font-size: 13px; color: #8a9099; }
+.welcome .w-item.on { background: #121418; color: #fff; transform: translateX(-10px); box-shadow: 0 0 0 2px #fff, 0 18px 34px -16px rgba(0,0,0,.6); }
+.welcome .w-item.on .w-note { color: rgba(255,255,255,.7); }
+.welcome .w-item.on .w-soon { background: rgba(143,176,255,.2); color: #8fb0ff; }
+.welcome .w-item.held { background: #2a3140; }
+.welcome .w-item:first-child .w-label { font-size: 28px; }
+
+.welcome .w-keys { position: absolute; right: 80px; bottom: 34px; display: flex; gap: 22px; font-size: 13px; color: #8a9099; }
+.welcome .kbd { display: inline-grid; place-items: center; min-width: 24px; height: 22px; padding: 0 6px; margin-right: 4px; border-radius: 5px; background: #fff;
+  box-shadow: 0 0 0 1px rgba(18,20,24,.18), 0 1px 0 rgba(18,20,24,.18); font-size: 11px; font-weight: 800; color: #3d424a; }

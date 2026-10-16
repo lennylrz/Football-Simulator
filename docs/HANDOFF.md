@@ -17,9 +17,18 @@ legacy score, best/worst pick, Hall of Fame and a share card.
 
 ## Screen flow today
 
-`Home` (era picker) → `MainMenu` (2015 era, shattered-ball menu) →
+`Welcome` (site menu) → `Home` (era picker) → `MainMenu` (2015 era, shattered-ball menu) →
 `NewClub` → `Draft` → `Summer` → season viewer + `Results` → `Summer` …
 → `Summary`. Routing is in `src/App.tsx` (`mode` state + `game.stage`).
+
+The welcome screen (`src/console/home/Welcome.tsx`, `welcome.css`): the
+era home's paper/ink/blue look, a menu on the right (Singleplayer,
+Multiplayer "coming soon", How to Play, Settings, About & Credits, Legal)
+and the selected item's content on the left. Up/Down + Enter or mouse;
+Settings takes focus for its rows (Esc back). Settings live in
+`src/settings.ts` (own localStorage key): reduce motion (`.calm` on
+`<html>`) and delete the saved career (press twice). Esc on the era home
+with nothing hovered, or its "Main menu" link, goes back to the welcome.
 
 The era home (`src/console/home/`): clean paper/ink/blue look by default;
 hovering an era panel (2000-2005, 2005-2010, 2010-2015, 2015-2020,
@@ -76,16 +85,5 @@ Browser checks: Playwright with Chromium at
 
 ## Next task
 
-Add a **welcome screen before the era home**, so the site works like a
-proper game website:
-
-- Main options: **Singleplayer** (goes to the era home), **Multiplayer**
-  (placeholder: "coming soon", no functionality), and the classic items:
-  e.g. How to Play, Settings, Credits/About, and legal (unofficial fan
-  game, data source CC0).
-- Its own clean style, consistent with the era home's default look
-  (paper, ink, one blue), keyboard and mouse.
-- Keep the existing save/continue behaviour working; update the
-  Playwright flows and keep all tests passing.
-- Commit and push to `claude/continue-0sh3ao`, rebuild the single file
-  and republish to the artifact URL above.
+None set. The welcome screen is done. Candidates from `docs/ROADMAP.md`:
+daily draft, Ball Knowledge mode, Vercel deploy, real multiplayer.

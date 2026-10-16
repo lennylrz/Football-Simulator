@@ -56,3 +56,9 @@
 .home.t2020 .era .style { color: #034694; }
 .home.t2020 .era.on { background: #034694; color: #fff; box-shadow: 0 16px 30px -16px rgba(3,70,148,.6); }
 .home.t2020 .era.on .style { color: #cfe0ff; }
+
+/* Back link on the era home. */
+.home .back { position: absolute; left: 40px; top: 22px; z-index: 6; padding: 6px 12px 6px 8px; border-radius: 8px; font-size: 14px; font-weight: 700; color: #3d424a;
+  transition: background .15s, opacity .3s; }
+.home .back:hover { background: rgba(18,20,24,.07); }
+.home.themed .back { opacity: 0; pointer-events: none; }

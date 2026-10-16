@@ -129,3 +129,6 @@ input { font: inherit; }
 .overlay { position: absolute; inset: 0; z-index: 4; background: rgba(0,0,0,.62); display: grid; place-items: center; }
 .overlay .win { width: 820px; height: auto; max-height: 560px; }
 .overlay .body { background: linear-gradient(180deg, #1d1e20, #141516); min-height: 0; overflow: hidden; display: flex; flex-direction: column; }
+
+/* Settings: reduce motion. */
+.calm *, .calm *::before, .calm *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
