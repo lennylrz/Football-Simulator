@@ -1,46 +1,15 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useState } from 'react';
 import { type CupMatch, type Entrant, WINNER } from '../../game/cups';
 import { NUM_SEASONS } from '../../game/data';
-import { endSeason, type SeasonPlay, seasonLabel, trophiesOf } from '../../game/game';
+import { endSeason, seasonLabel, trophiesOf } from '../../game/game';
 import type { PlayerSeasonStats } from '../../game/season';
 import { useGame } from '../../ui/context';
 import { closeCommand, HallOfFame } from '../overlays';
 import '../results.css';
-import { cupStatus, positions } from '../reveal';
-import { clubOf, type Command, CommandBar, Frame, KeyCap, money, ordinal, primaryPos } from '../ui';
+import { SeasonViewer } from '../Viewer';
+import { clubOf, type Command, Frame, KeyCap, ordinal, primaryPos } from '../ui';
 
 const TABS = ['Table', 'Your Matches', 'Cups', 'Leaders', 'Squad'] as const;
-
-function Reveal({ result, user, onDone }: { result: SeasonPlay; user: number; onDone: () => void }) {
-  const run = useMemo(() => positions(result, user), [result, user]);
-  const [round, setRound] = useState(0);
-  const total = result.rounds.length;
-  const clEntered = Object.keys(result.cl.reached).map(Number).includes(user);
-  useEffect(() => {
-    if (round >= total - 1) {
-      const t = setTimeout(onDone, 900);
-      return () => clearTimeout(t);
-    }
-    const t = setTimeout(() => setRound((r) => r + 1), 70);
-    return () => clearTimeout(t);
-  }, [round, total, onDone]);
-  const now = run[round];
-  return (
-    <div className="reveal">
-      <div className="box">
-        <div className="md">Matchday {round + 1} of {total}</div>
-        <div className="bar"><i style={{ width: `${((round + 1) / total) * 100}%` }} /></div>
-        <div className="pos">{ordinal(now.pos)}</div>
-        <div className="wdl">W{now.w} · D{now.d} · L{now.l}</div>
-        <div className="cups">
-          <div className="ltile"><small>FA Cup</small><b>{cupStatus(result.fa.matches, user, round, true)}</b></div>
-          <div className="ltile"><small>Champions League</small><b>{cupStatus(result.cl.matches, user, round, clEntered)}</b></div>
-        </div>
-      </div>
-      <CommandBar commands={[{ keys: ['Enter', 'Space'], label: 'Skip', primary: true, onPress: onDone }]} />
-    </div>
-  );
-}
 
 function reachedText(r: string | undefined): string {
   if (!r) return 'Did not qualify';
@@ -78,7 +47,7 @@ export function Results() {
   const last = game.season >= NUM_SEASONS - 1;
   const ent = (e: Entrant) => (typeof e === 'number' ? clubOf(data, e).short : e);
 
-  if (revealing) return <Reveal result={result} user={game.user} onDone={() => setRevealing(false)} />;
+  if (revealing) return <SeasonViewer game={game} data={data} onDone={() => setRevealing(false)} />;
 
   const commands: Command[] = hall
     ? closeCommand(() => setHall(false))
@@ -137,7 +106,6 @@ export function Results() {
       sub="Season Review"
       right={<><small>Season {game.season + 1} of 5</small>{seasonLabel(game.season)}</>}
       commands={commands}
-      info={<><span>Budget</span><b>{money(game.clubs[game.user].cash)}</b></>}
     >
       <div className="win review">
         <div className="win-title">{won.length === 3 ? 'THE TREBLE' : `Season Review ${seasonLabel(game.season)}`}</div>
@@ -174,7 +142,7 @@ export function Results() {
                   <thead><tr><th className="n">#</th><th>Club</th><th className="n">P</th><th className="n">W</th><th className="n">D</th><th className="n">L</th><th className="n">GF</th><th className="n">GA</th><th className="n">GD</th><th className="n sort">Pts</th></tr></thead>
                   <tbody>
                     {h.table.map((r, i) => (
-                      <tr key={r.club} className={`${r.club === game.user ? 'sel' : ''} ${i < 4 ? 'zone-cl' : i === 4 ? 'zone-el' : i >= 17 ? 'zone-rel' : ''}`}>
+                      <tr key={r.club} className={`${r.club === game.user ? 'sel' : ''} ${i < 4 ? 'zone-cl' : i === 4 ? 'zone-el' : i >= h.table.length - 3 ? 'zone-rel' : ''}`}>
                         <td className="n">{i + 1}</td><td>{clubOf(data, r.club).name}</td><td className="n">{r.p}</td><td className="n">{r.w}</td><td className="n">{r.d}</td><td className="n">{r.l}</td>
                         <td className="n">{r.gf}</td><td className="n">{r.ga}</td><td className="n">{r.gf - r.ga > 0 ? '+' : ''}{r.gf - r.ga}</td><td className="n"><b>{r.pts}</b></td>
                       </tr>

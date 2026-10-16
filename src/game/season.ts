@@ -10,6 +10,8 @@ export interface SeasonTeam {
   bench: PlayerLite[];
 }
 
+const BYE = -99;
+
 export interface TableRow {
   club: number;
   p: number;
@@ -41,9 +43,13 @@ export interface SeasonResult {
   stats: PlayerSeasonStats[];
 }
 
-/** Double round robin (circle method): 38 rounds of 10 matches for 20 clubs. */
+/**
+ * Double round robin (circle method): 38 rounds of 10 matches for 20 clubs.
+ * With an odd number of clubs, one club has a bye each round.
+ */
 export function fixtures(clubs: number[], rng: Rng): [number, number][][] {
   const teams = shuffle(rng, clubs);
+  if (teams.length % 2) teams.push(BYE);
   const n = teams.length;
   const first: [number, number][][] = [];
   const rot = teams.slice(1);
@@ -59,7 +65,7 @@ export function fixtures(clubs: number[], rng: Rng): [number, number][][] {
     rot.unshift(rot.pop()!);
   }
   const second = first.map((round) => round.map(([a, b]) => [b, a] as [number, number]));
-  return [...first, ...second];
+  return [...first, ...second].map((round) => round.filter(([a, b]) => a !== BYE && b !== BYE));
 }
 
 export function sortTable(rows: TableRow[]): TableRow[] {

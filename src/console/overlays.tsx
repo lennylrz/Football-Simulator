@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { career, careerScore } from '../game/career';
 import { EXTERNAL, type GameState, seasonLabel, topTransfers } from '../game/game';
 import type { GameData } from '../game/data';
-import { clubOf, type Command, money, moneyShort, ordinal, Overlay } from './ui';
+import { clubOf, type Command, money, ordinal, Overlay } from './ui';
 
 export function AroundTheLeague({ game, data }: { game: GameState; data: GameData }) {
   const top = topTransfers(game, game.season);
@@ -73,10 +73,12 @@ export function HallOfFame({ game, data }: { game: GameState; data: GameData }) 
                 <b>{s.trophies.length === 3 ? 'TREBLE' : s.trophies.map((t) => TROPHY[t]).join(', ') || '—'}</b>
               </div>
             ))}
-            {c.bestSigning && <div className="head">Best signing</div>}
-            {c.bestSigning && <div><span>{name(c.bestSigning.t.player)}</span><b>{moneyShort(c.bestSigning.t.fee)}</b></div>}
-            {c.worstSigning && <div className="head">Worst signing</div>}
-            {c.worstSigning && <div><span>{name(c.worstSigning.t.player)}</span><b>{moneyShort(c.worstSigning.t.fee)}</b></div>}
+            {c.bestPick && <div className="head">Best pick</div>}
+            {c.bestPick && <div><span>{name(c.bestPick.player)}</span><b className="up">{c.bestPick.from} → {c.bestPick.to}</b></div>}
+            {c.worstPick && <div className="head">Worst pick</div>}
+            {c.worstPick && <div><span>{name(c.worstPick.player)}</span><b className="down">{c.worstPick.from} → {c.worstPick.to}</b></div>}
+            <div className="head">Legacy score</div>
+            <div><span>So far</span><b>{c.score.toLocaleString('en-GB')}</b></div>
           </div>
         </div>
         <div className="pane dpanel">

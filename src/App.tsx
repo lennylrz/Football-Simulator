@@ -1,15 +1,16 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { Draft } from './console/screens/Draft';
 import { MainMenu } from './console/screens/MainMenu';
-import { ClubSelect } from './console/screens/ClubSelect';
-import { Hub } from './console/screens/Hub';
+import { NewClub } from './console/screens/NewClub';
 import { Results } from './console/screens/Results';
 import { Summary } from './console/screens/Summary';
-import { Team } from './console/screens/Team';
-import { BidsStep, OffersStep, SquadStep } from './console/screens/Window';
+import { Summer } from './console/screens/Summer';
 import { HallOfFame } from './console/overlays';
 import { CommandBar, Stage } from './console/ui';
 import { type GameData, loadGameData } from './game/data';
-import { type GameState, newGame } from './game/game';
+import type { ClubInfo } from './game/clubs';
+import { type GameState, newGame, REAL_CLUBS, registerUserClub } from './game/game';
+import type { Formation } from './game/positions';
 import { loadRun, saveRun } from './storage';
 import { GameContext } from './ui/context';
 
@@ -35,15 +36,15 @@ export default function App() {
   const [error, setError] = useState<string | null>(null);
   const [game, setGame] = useState<GameState | null>(() => loadRun());
   const [mode, setMode] = useState<Mode>('menu');
-  const [atHub, setAtHub] = useState(true);
 
   useEffect(() => {
-    loadGameData(fetchJson).then(setData, (e) => setError(String(e)));
+    loadGameData(fetchJson).then((d) => {
+      // A saved career's own club joins the 20 real ones.
+      const saved = loadRun();
+      if (saved?.ownClub) registerUserClub(d, saved.ownClub);
+      setData(d);
+    }, (e) => setError(String(e)));
   }, []);
-
-  // A new season opens at the hub.
-  const season = game?.season;
-  useEffect(() => setAtHub(true), [season]);
 
   // Actions run synchronously on a copy, so callers can read results right away.
   const current = useRef(game);
@@ -60,12 +61,12 @@ export default function App() {
     [data],
   );
 
-  const start = (club: number, seed: number) => {
+  const start = (club: ClubInfo, formation: Formation, seed: number) => {
     if (!data) return;
-    const g = newGame(data, club, seed);
+    const g = newGame(data, REAL_CLUBS, seed, 'draft', formation, club);
+    g.ownClub = club;
     saveRun(g);
     setGame(g);
-    setAtHub(true);
     setMode('play');
   };
 
@@ -75,7 +76,7 @@ export default function App() {
   if (mode === 'menu' || mode === 'menu-hall') {
     return (
       <Stage tone="light">
-        <MainMenu data={data} save={game} onNew={() => setMode('clubs')} onContinue={() => { setAtHub(true); setMode('play'); }} onHall={() => setMode('menu-hall')} />
+        <MainMenu data={data} save={game} onNew={() => setMode('clubs')} onContinue={() => setMode('play')} onHall={() => setMode('menu-hall')} />
         {mode === 'menu-hall' && game && (
           <div style={{ position: 'absolute', inset: 0, zIndex: 6 }}>
             <HallOfFame game={game} data={data} />
@@ -88,20 +89,17 @@ export default function App() {
   if (mode === 'clubs' || !game) {
     return (
       <Stage>
-        <ClubSelect data={data} onStart={start} onBack={() => setMode('menu')} />
+        <NewClub onStart={start} onBack={() => setMode('menu')} />
       </Stage>
     );
   }
 
-  const toHub = () => setAtHub(true);
+  const toMenu = () => setMode('menu');
   let screen;
   if (game.stage === 'results') screen = <Results />;
   else if (game.stage === 'summary') screen = <Summary onNewCareer={() => setMode('clubs')} />;
-  else if (atHub) screen = <Hub onContinue={() => setAtHub(false)} onMenu={() => setMode('menu')} />;
-  else if (game.stage === 'lineup') screen = <Team onHub={toHub} />;
-  else if (game.step === 'squad') screen = <SquadStep onHub={toHub} />;
-  else if (game.step === 'offers') screen = <OffersStep onHub={toHub} />;
-  else screen = <BidsStep onHub={toHub} />;
+  else if (game.draft?.slot !== null && game.draft?.slot !== undefined) screen = <Draft onMenu={toMenu} />;
+  else screen = <Summer onMenu={toMenu} />;
 
   return (
     <GameContext.Provider value={{ data, game, act, quit: () => setMode('menu') }}>

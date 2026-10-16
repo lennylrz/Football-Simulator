@@ -4,7 +4,7 @@ import { seasonLabel } from '../../game/game';
 import { useGame } from '../../ui/context';
 import { downloadBlob, drawShareCard, shareOrDownload } from '../../ui/shareCard';
 import { closeCommand, HallOfFame } from '../overlays';
-import { clubOf, type Command, Frame, money, moneyShort, ordinal } from '../ui';
+import { clubOf, type Command, Frame, ordinal } from '../ui';
 
 const TROPHY = { league: 'League', fa: 'FA Cup', cl: 'Europe' } as const;
 
@@ -47,7 +47,7 @@ export function Summary({ onNewCareer }: { onNewCareer: () => void }) {
 
   return (
     <Frame club={info} title={info.name} sub="Career Complete" right={<><small>Seasons</small>2015/16 – 2019/20</>} commands={commands}
-      info={<><span>Net Spend</span><b>{moneyShort(c.spent - c.earned)}</b></>}>
+      info={<><span>Legacy</span><b>{c.score.toLocaleString('en-GB')}</b></>}>
       <canvas ref={canvas} style={{ display: 'none' }} />
       <div className="win">
         <div className="win-title">{c.trebles ? 'Treble Winners' : 'Career Summary'}</div>
@@ -80,7 +80,10 @@ export function Summary({ onNewCareer }: { onNewCareer: () => void }) {
                 </tbody>
               </table>
             </div>
-            <div className="note">Spent {money(c.spent)} · earned {money(c.earned)}</div>
+            <div className="note">
+              {c.bestPick && <>Best pick: <b>{data.names[c.bestPick.player][0]} {c.bestPick.from} → {c.bestPick.to}</b>. </>}
+              {c.worstPick && <>Worst pick: {data.names[c.worstPick.player][0]} {c.worstPick.from} → {c.worstPick.to}.</>}
+            </div>
           </div>
         </div>
       </div>

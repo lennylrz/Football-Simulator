@@ -1,0 +1,53 @@
+/* Pitch with name plates, shared by the draft and summer screens. */
+.dpitch { position: relative; border: 2px solid #0e2a10; overflow: hidden; background: repeating-linear-gradient(180deg, #3f8f3a 0 9%, #469c40 9% 18%); box-shadow: inset 0 0 60px rgba(0,0,0,.35); }
+.dpitch svg.lines { position: absolute; inset: 0; width: 100%; height: 100%; }
+.dplate { position: absolute; transform: translate(-50%, -50%); display: grid; justify-items: center; gap: 1px; width: 124px; cursor: pointer; }
+.dplate b { min-width: 36px; text-align: center; font-size: 18px; padding: 1px 6px; background: linear-gradient(180deg, #2b2d31, #121315); border: 1px solid rgba(255,255,255,.6); }
+.dplate span { max-width: 124px; font-size: 13px; font-weight: 700; padding: 1px 6px; background: rgba(10,14,20,.85); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dplate em { font-style: normal; font-size: 11px; font-weight: 700; color: #d6f0c8; text-shadow: 0 1px 1px #000; }
+.dplate.empty b { background: rgba(0,0,0,.25); border: 1px dashed rgba(255,255,255,.7); color: rgba(255,255,255,.8); }
+.dplate.now b { background: linear-gradient(180deg, #ffe45c, #f2c200); color: #2b2300; border-color: #fff; animation: focus-pulse 1.4s ease-in-out infinite; }
+.dplate.sel b { background: linear-gradient(180deg, #fff, #dcdcdc); color: #111; }
+.dplate .delta { position: absolute; right: 2px; top: -12px; font-size: 13px; font-weight: 900; padding: 1px 5px; border-radius: 3px; opacity: 0; animation: pop .35s ease-out forwards; animation-delay: var(--d, 0ms); box-shadow: 0 2px 4px rgba(0,0,0,.5); }
+.dplate .delta.up { background: #4a9a0b; color: #fff; }
+.dplate .delta.down { background: #b3141c; color: #fff; }
+.dplate .delta.same { background: #3e4044; color: #fff; }
+@keyframes pop { 0% { opacity: 0; transform: scale(.4); } 70% { opacity: 1; transform: scale(1.25); } 100% { opacity: 1; transform: scale(1); } }
+
+/* Draft: five candidate cards. */
+.draft { display: grid; grid-template-columns: 420px 1fr; gap: 8px; height: 100%; }
+.draft .dpitch { height: 100%; }
+.draft .right { display: flex; flex-direction: column; min-height: 0; }
+.cards5 { flex: 1; display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; padding: 14px; background: #050505; align-items: stretch; min-height: 0; }
+.ccard { position: relative; display: flex; flex-direction: column; text-align: left; overflow: hidden; color: #1d1d1d;
+  background: linear-gradient(180deg, #ffffff 0%, #ececec 55%, #d4d4d4 100%); box-shadow: inset 0 1px 0 #fff, 0 0 0 1px #000;
+  opacity: 0; animation: deal .35s ease-out forwards; animation-delay: var(--d, 0ms); transition: transform .15s; }
+.ccard:hover { transform: translateY(-3px); }
+.ccard.on { transform: translateY(-6px); box-shadow: inset 0 0 0 3px #f2c200, 0 0 0 1px #000, 0 10px 24px rgba(0,0,0,.6); }
+@keyframes deal { from { opacity: 0; transform: translateY(24px) rotateY(70deg); } to { opacity: 1; transform: none; } }
+.ccard .top { padding: 10px 12px 0; display: flex; justify-content: space-between; align-items: flex-start; }
+.ccard .r { font: 900 54px/1 Arial, sans-serif; letter-spacing: -.02em; }
+.ccard .pos { font-weight: 700; font-size: 17px; color: #1d4f91; margin-top: 6px; }
+.ccard .band { margin-top: 10px; padding: 8px 12px; background: linear-gradient(180deg, #2f6fc2 0%, #12519f 48%, #063a7c 52%, #0a438b 100%); color: #fff; text-shadow: 0 1px 2px #000; }
+.ccard .band b { display: block; font-size: 20px; line-height: 1.1; min-height: 44px; }
+.ccard .meta { padding: 10px 12px; display: grid; gap: 6px; font-size: 15px; }
+.ccard .meta .line { border-bottom: 1px solid #c4c4c4; padding-bottom: 5px; color: #3b3d41; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ccard .meta .line b { color: #111; }
+.ccard .meta .club { font-weight: 700; color: #111; }
+.ccard .tagline { margin-top: auto; padding: 8px 12px 12px; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: #5b5e63; }
+.ccard.on .tagline { color: #9a6b00; }
+
+/* Summer screen. */
+.summer { display: grid; grid-template-columns: 420px 1fr; gap: 8px; height: 100%; }
+.summer .dpitch { height: 100%; }
+.summer .tbl .up { color: #8fe04a; font-weight: 700; }
+.summer .tbl .down { color: #ff6b6b; font-weight: 700; }
+.summer .tbl tr.sel .up { color: #2f7d0a; }
+.summer .tbl tr.sel .down { color: #b3141c; }
+.summer .tbl tr.gap td { color: #ffd900; }
+
+/* New club screen. */
+.newclub .swatches { display: flex; gap: 8px; }
+.newclub .sw { width: 46px; height: 30px; border: 2px solid #fff; box-shadow: 0 0 0 1px #000; }
+.newclub .sw.on { outline: 3px solid #f2c200; outline-offset: 2px; }
+.newclub input.name { width: 100%; height: 46px; font: 700 28px Arial, sans-serif; padding: 0 12px; background: #fff; color: #111; border: 2px solid #4f74ad; }

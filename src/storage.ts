@@ -7,7 +7,8 @@ export function loadRun(): GameState | null {
     const raw = localStorage.getItem(KEY);
     if (!raw) return null;
     const s = JSON.parse(raw) as GameState;
-    if (!s || s.v !== 1) return null;
+    // Only draft careers can be continued.
+    if (!s || s.v !== 1 || s.mode !== 'draft') return null;
     // Runs saved before the stepped transfer window.
     s.step ??= 'offers';
     s.bids ??= [];

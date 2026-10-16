@@ -39,6 +39,34 @@ export interface Career {
   worstSigning: Signing | null;
   spent: number;
   earned: number;
+  /** draft mode: picks by rating change from when picked to now (or when he left) */
+  bestPick: PickResult | null;
+  worstPick: PickResult | null;
+  /** one number to compare runs */
+  score: number;
+}
+
+export interface PickResult {
+  player: number;
+  season: number;
+  from: number;
+  to: number;
+}
+
+/**
+ * Legacy score: points for every league place above the bottom, big bonuses
+ * for trophies and a huge one for each treble.
+ */
+export function legacyScore(seasons: { finish: number; trophies: Trophy[] }[], clubs: number): number {
+  let total = 0;
+  for (const s of seasons) {
+    total += (clubs + 1 - s.finish) * 100;
+    if (s.trophies.includes('league')) total += 1500;
+    if (s.trophies.includes('fa')) total += 600;
+    if (s.trophies.includes('cl')) total += 2000;
+    if (s.trophies.length === 3) total += 5000;
+  }
+  return total;
 }
 
 /**
@@ -113,7 +141,19 @@ export function career(state: GameState): Career {
     if (t.from === user && t.to !== user) earned += t.fee;
   }
 
+  const picks = (state.draft?.picks ?? []).map((pk) => ({
+    player: pk.player,
+    season: pk.season,
+    from: pk.ovr,
+    to: pk.leftOvr ?? state.players[pk.player].ovr,
+  }));
+  const bestPick = picks.length ? picks.reduce((a, b) => (b.to - b.from > a.to - a.from ? b : a)) : null;
+  const worstPick = picks.length > 1 ? picks.reduce((a, b) => (b.to - b.from < a.to - a.from ? b : a)) : null;
+
   return {
+    bestPick,
+    worstPick: worstPick && worstPick !== bestPick ? worstPick : null,
+    score: legacyScore(seasons, state.clubs.length),
     seasons,
     trophies,
     trebles: seasons.filter((s) => s.trophies.length === 3).length,

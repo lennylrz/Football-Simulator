@@ -3,7 +3,7 @@ import type { GameData } from '../../game/data';
 import { type GameState, seasonLabel } from '../../game/game';
 import '../menu.css';
 import { drawShards } from '../shards';
-import { browse, clubOf, Frame, money } from '../ui';
+import { browse, clubOf, Frame } from '../ui';
 
 interface Tab {
   id: 'new' | 'continue' | 'hall';
@@ -26,7 +26,7 @@ export function MainMenu({
     {
       id: 'new',
       label: 'New Career',
-      desc: 'Take over one of the 20 clubs of summer 2015 and manage it for five seasons. Players develop as they really did, give or take.',
+      desc: 'Create your own club, draft an XI of real 2015 players and take on the 20 clubs of the English top flight for five seasons.',
       flag: save ? 'Replaces your saved career' : 'Start here',
     },
   ];
@@ -37,7 +37,7 @@ export function MainMenu({
       {
         id: 'continue',
         label: 'Continue',
-        desc: `Pick up where you left off: ${club.name}, ${where}. Budget ${money(save.clubs[save.user].cash)}.`,
+        desc: `Pick up where you left off: ${club.name}, ${where}.`,
         flag: save.stage === 'summary' ? 'Career complete' : 'Career in progress',
       },
       { id: 'hall', label: 'Hall of Fame', desc: 'Your trophies, your best players and your best and worst signings so far.', flag: 'Treble watch' },
@@ -61,7 +61,7 @@ export function MainMenu({
         FIVE SEASONS<span>2015 · 2020 CAREER</span>
       </div>
       <p className="tagline">
-        Buy, sell, pick your team and play each season in one click. Five years to build a legacy. <em>Can you win the treble?</em>
+        Draft real players from 2015, watch who becomes a star, and gamble each summer. Five seasons to build a legacy. <em>Can you win the treble?</em>
       </p>
       {club && save && (
         <div className="stamp">

@@ -2,7 +2,6 @@
 import type { Career, Trophy } from '../game/career';
 import type { ClubInfo } from '../game/clubs';
 import { SEASON_YEARS } from '../game/data';
-import { formatMoney } from '../game/valuation';
 
 export interface CardInput {
   club: ClubInfo;
@@ -155,13 +154,13 @@ export function drawShareCard(canvas: HTMLCanvasElement, input: CardInput): void
   if (poc) rows.push(['Player of the Career', name(poc.id), `${poc.apps} apps · ${poc.goals} goals · ${poc.avg.toFixed(2)} avg`]);
   const scorer = career.topScorers[0];
   if (scorer && scorer.goals > 0) rows.push(['Top Scorer', name(scorer.id), `${scorer.goals} goals in ${scorer.apps} apps`]);
-  if (career.bestSigning) {
-    const b = career.bestSigning;
-    rows.push(['Best Signing', name(b.t.player), `${formatMoney(b.t.fee)} · ${b.apps} apps`]);
+  if (career.bestPick) {
+    const b = career.bestPick;
+    rows.push(['Best Pick', name(b.player), `${b.from} → ${b.to} (${b.to - b.from >= 0 ? '+' : ''}${b.to - b.from})`]);
   }
-  if (career.worstSigning) {
-    const w = career.worstSigning;
-    rows.push(['Worst Signing', name(w.t.player), `${formatMoney(w.t.fee)} · ${w.apps} apps`]);
+  if (career.worstPick) {
+    const w = career.worstPick;
+    rows.push(['Worst Pick', name(w.player), `${w.from} → ${w.to} (${w.to - w.from >= 0 ? '+' : ''}${w.to - w.from})`]);
   }
   let y = 634;
   glossBar(ctx, pad, y, W - pad * 2, 44, '#4f74ad', '#284f8c', '#163b74', '#1f4682');
@@ -189,21 +188,14 @@ export function drawShareCard(canvas: HTMLCanvasElement, input: CardInput): void
   // Silver command-bar style money strip.
   const my = 1100;
   glossBar(ctx, pad, my, W - pad * 2, 64, '#fdfdfd', '#e8e9eb', '#d3d5d8', '#c6c8cc');
-  const net = career.earned - career.spent;
   ctx.font = `700 26px ${FONT}`;
-  const money: [string, string, string][] = [
-    ['Spent', formatMoney(career.spent), '#b3141c'],
-    ['Earned', formatMoney(career.earned), '#2f7d0a'],
-    ['Net', `${net >= 0 ? '+' : ''}${formatMoney(net)}`, net >= 0 ? '#2f7d0a' : '#b3141c'],
-  ];
-  money.forEach(([label, value, color], i) => {
-    const cx = pad + 28 + i * ((W - pad * 2) / 3);
-    ctx.fillStyle = '#3b3d41';
-    ctx.fillText(`${label} `, cx, my + 42);
-    const lw = ctx.measureText(`${label} `).width;
-    ctx.fillStyle = color;
-    ctx.fillText(value, cx + lw, my + 42);
-  });
+  ctx.fillStyle = '#3b3d41';
+  ctx.fillText('LEGACY SCORE', pad + 28, my + 42);
+  ctx.fillStyle = '#1d1d1d';
+  ctx.font = `900 40px ${FONT}`;
+  ctx.textAlign = 'right';
+  ctx.fillText(career.score.toLocaleString('en-GB'), W - pad - 28, my + 46);
+  ctx.textAlign = 'left';
 
   ctx.fillStyle = '#8f9297';
   ctx.font = `700 22px ${FONT}`;

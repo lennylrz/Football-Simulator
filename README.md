@@ -1,24 +1,22 @@
 # Five Seasons
 
-A compressed football manager for the browser. Pick one of the 20 English
-top-flight clubs of summer 2015 and manage it for five seasons, 2015/16 to
-2019/20. A run takes about ten minutes and ends with a share card.
+A football draft game for the browser. Create your own club, the 21st club
+of the 2015/16 English top flight, and draft an XI of real players: for
+each position you pick one of five, seeing only their 2015 rating and age.
+Then play five seasons, 2015/16 to 2019/20.
 
-Each season:
-
-1. **Transfer window.** Five players are offered to you, drawn from the
-   market around what your club's reputation can attract. Sell anyone to
-   AI clubs or clubs abroad. Rival clubs shop too: on deadline day your
-   unsigned targets may be gone.
-2. **Team selection.** Five formations; players out of position are
-   penalised.
-3. **Season.** One click plays the league, the FA Cup and the Champions
-   League (top four qualify). Then: table, every result, cup runs, league
-   leaders and your squad's stats.
-
-The headline goal is the treble. It is hard even with the strongest squad.
-The Hall of Fame (🏆 in the header) tracks your trophies, best players,
-player of the career and best and worst signings at any point.
+- **The draft.** Strikers first, goalkeeper last. Each set of five mixes a
+  star (sometimes), established players and youngsters. Who becomes great is
+  down to your ball knowledge.
+- **The season.** Every matchday's scores appear one by one, with your cup
+  ties and a live table; pause, speed up or skip to the review. League, FA
+  Cup and Champions League (top four qualify).
+- **The summer.** Your players' new ratings are revealed (glow-ups and
+  busts, from their real next FIFA rating plus noise). Gamble on up to three
+  re-drafts: the player in that position leaves and you pick from five new
+  candidates.
+- **The goal.** The treble. Every run ends with a legacy score, your best
+  and worst pick, and a share card.
 
 Players develop as they really did, give or take: next season's real FIFA
 rating is the expected value, with random noise around it.

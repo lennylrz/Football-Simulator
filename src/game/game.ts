@@ -1,6 +1,6 @@
 // Game state and the season flow: transfer window -> lineup -> simulation.
 import { aiWindow, ensureMinimumSquad } from './ai';
-import { CLUBS } from './clubs';
+import { type ClubInfo, CLUBS } from './clubs';
 import {
   CL_ROUNDS, type CupResult, type Entrant, FA_ROUNDS, simulateChampionsLeague, simulateFaCup, WINNER,
 } from './cups';
@@ -8,6 +8,7 @@ import { type GameData, NUM_SEASONS, SEASON_YEARS } from './data';
 import { developPlayer, retireChance } from './development';
 import { autoLineup, BENCH_SIZE, pickBench, pickXI, type PlayerLite } from './lineup';
 import { generateIncomingBids, generateOffers, type IncomingBid, type Offer } from './market';
+import { type DraftState, openDraftWindow } from './draft';
 import { FORMATIONS, type Formation, parsePositions, positionFit } from './positions';
 import { stream } from './rng';
 import { fixtures, type PlayerSeasonStats, type SeasonResult, simulateSeason, type TableRow } from './season';
@@ -94,7 +95,7 @@ export interface DevChange {
   to: number;
 }
 
-export type Stage = 'window' | 'lineup' | 'results' | 'summary';
+export type Stage = 'window' | 'lineup' | 'draft' | 'summer' | 'results' | 'summary';
 export type WindowStep = 'squad' | 'offers' | 'bids';
 
 export interface GameState {
@@ -102,6 +103,11 @@ export interface GameState {
   seed: number;
   /** user's club index, or -1 when every club is run by the AI (tests) */
   user: number;
+  /** 'draft': the user drafts an XI instead of managing a squad */
+  mode?: 'draft';
+  draft?: DraftState | null;
+  /** draft mode: the user's own club, to register on load */
+  ownClub?: ClubInfo;
   season: number;
   stage: Stage;
   /** 'open' before deadline day, 'deadline' after the AI's last round of deals */
@@ -179,7 +185,25 @@ export function transfer(state: GameState, data: GameData, player: number, to: n
   return t;
 }
 
-export function newGame(data: GameData, user: number, seed: number): GameState {
+/**
+ * The user's own club in draft mode: the 21st club of the league. Its name
+ * and colours are registered alongside the 20 real clubs.
+ */
+export function registerUserClub(data: GameData, info: ClubInfo): number {
+  const at = data.meta.gameClubs.indexOf(info.name);
+  const index = at >= 0 ? at : REAL_CLUBS;
+  data.meta.gameClubs[index] = info.name;
+  data.meta.gameClubs.length = REAL_CLUBS + 1;
+  const existing = CLUBS.findIndex((c) => c.name === info.name);
+  if (existing >= 0) CLUBS[existing] = info;
+  else CLUBS.push(info);
+  return index;
+}
+
+/** The 20 real clubs of 2015/16 come first; a draft club is number 20. */
+export const REAL_CLUBS = 20;
+
+export function newGame(data: GameData, user: number, seed: number, mode?: 'draft', formation: Formation = '4-3-3', own?: ClubInfo): GameState {
   const state: GameState = {
     v: 1,
     seed,
@@ -199,14 +223,20 @@ export function newGame(data: GameData, user: number, seed: number): GameState {
     history: [],
     income: 0,
   };
+  if (mode) state.mode = mode;
   addNewPlayers(state, data);
-  data.meta.gameClubs.forEach((name, i) => {
+  data.meta.gameClubs.slice(0, REAL_CLUBS).forEach((name, i) => {
     const info = CLUBS.find((c) => c.name === name)!;
     const squad = data.squads[name].slice();
     for (const id of squad) state.players[id].club = i;
     state.clubs.push({ id: i, rep: info.rep, cash: info.budget * 1000, squad, formation: '4-4-2', xi: [], bench: [] });
   });
   for (const c of state.clubs) applyAutoLineup(state, c.id);
+  if (mode === 'draft') {
+    const id = registerUserClub(data, own ?? { name: 'Five Seasons FC', short: 'Five Seasons', code: 'FSF', primary: '#1d4f91', secondary: '#ffffff', rep: 72, budget: 0 });
+    state.user = id;
+    state.clubs.push({ id, rep: own?.rep ?? 72, cash: 0, squad: [], formation, xi: [], bench: [] });
+  }
   openWindow(state, data);
   return state;
 }
@@ -288,6 +318,10 @@ function openWindow(state: GameState, data: GameData): void {
     });
   }
   for (const p of Object.values(state.players)) if (!p.retired) refreshValue(state, data, p);
+  if (state.mode === 'draft') {
+    openDraftWindow(state, data);
+    return;
+  }
   aiWindow(state, data, 'open');
   if (state.user >= 0) {
     state.offers = generateOffers(state, data);

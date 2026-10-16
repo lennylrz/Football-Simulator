@@ -1,0 +1,27 @@
+.viewer { display: grid; grid-template-columns: 1fr 330px; gap: 8px; height: 100%; }
+.viewer .left { display: flex; flex-direction: column; gap: 8px; min-height: 0; }
+.viewer .prog { height: 8px; background: #26272a; box-shadow: inset 0 1px 2px #000; flex: none; }
+.viewer .prog i { display: block; height: 100%; background: linear-gradient(180deg, #8bd23c, #4a9a0b); transition: width .3s; }
+.viewer .md { flex: none; }
+.viewer .res { display: grid; grid-template-columns: 1fr 70px 1fr; align-items: center; gap: 10px; height: 34px; padding: 0 14px; font-size: 19px; font-weight: 700; border-bottom: 1px solid #262729;
+  opacity: 0; animation: rowin .25s ease-out forwards; animation-delay: var(--d, 0ms); }
+@keyframes rowin { from { opacity: 0; transform: translateX(-14px); } to { opacity: 1; transform: none; } }
+.viewer .res .h { text-align: right; }
+.viewer .res .sc { text-align: center; background: linear-gradient(180deg, #4b4d51, #2d2e31); padding: 3px 0; text-shadow: 0 1px 1px #000; }
+.viewer .res.me { background: linear-gradient(180deg, #ffffff, #dedede); color: #111; }
+.viewer .res.me .sc.w { background: linear-gradient(180deg, #8bd23c, #4a9a0b); color: #fff; }
+.viewer .res.me .sc.l { background: linear-gradient(180deg, #e04848, #a3141c); color: #fff; }
+.viewer .res.me .sc.d { background: linear-gradient(180deg, #8a8c90, #5b5d61); color: #fff; }
+.viewer .res.cup { font-size: 17px; }
+.viewer .res .comp { grid-column: 1 / -1; font-size: 13px; text-transform: uppercase; letter-spacing: .1em; color: #7db8ff; height: auto; }
+.viewer .cupbox .res { height: 30px; }
+.viewer .paused { position: absolute; left: 50%; top: 46%; transform: translate(-50%, -50%); z-index: 3; padding: 12px 30px; font-size: 26px; font-weight: 700; letter-spacing: .1em; }
+.viewer .live { display: flex; flex-direction: column; min-height: 0; }
+.viewer .live .rows { flex: 1; display: grid; grid-template-rows: repeat(21, 1fr); }
+.viewer .live .row { display: grid; grid-template-columns: 28px 1fr 30px 36px; align-items: center; padding: 0 10px; font-size: 15px; font-weight: 700; background: linear-gradient(180deg, #213a63, #182c4d); border-top: 1px solid rgba(255,255,255,.08); transition: background .3s; }
+.viewer .live .row:nth-child(even) { background: linear-gradient(180deg, #1c3256, #142643); }
+.viewer .live .row.cl { background: linear-gradient(180deg, #4d8d2a, #3a721c); }
+.viewer .live .row.rel { background: linear-gradient(180deg, #6c1e25, #55151b); }
+.viewer .live .row.me { box-shadow: inset 0 0 0 2px #ffd900; }
+.viewer .live .row span:nth-child(2) { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.viewer .live .row .r { text-align: right; }

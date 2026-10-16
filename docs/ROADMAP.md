@@ -38,3 +38,16 @@ FIFA 15 to 23, so 2014/15 to 2022/23; earlier starts need another source).
 - Sticker Album, Matchday Programme and Tactics Board directions are liked
   too; they could be used for special screens (share card as an album page
   or newspaper front page, tactics board for the lineup) or for other eras.
+
+## Game format (October 2026)
+
+The game is now a draft: the user's own club joins the 20 real clubs as a
+21st club; the XI is drafted one position at a time from five real players;
+each summer reveals rating changes and allows up to three re-draft gambles;
+seasons play out matchday by matchday with a skip. The earlier management
+mode (offers, bids, squad of 26) is still in the game logic and covered by
+tests, but no longer in the interface.
+
+Ideas not built yet: a daily draft that is the same for everyone, a
+leaderboard, a "Ball Knowledge" mode with ratings hidden, friend challenge
+links using the seed.
