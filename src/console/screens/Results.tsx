@@ -35,8 +35,8 @@ function merge(a: PlayerSeasonStats[], b: PlayerSeasonStats[]): PlayerSeasonStat
 }
 
 export function Results() {
-  const { data, game, act } = useGame();
-  const [revealing, setRevealing] = useState(true);
+  const { data, game, act, settings } = useGame();
+  const [revealing, setRevealing] = useState(settings.matchSpeed !== 'instant');
   const [tab, setTab] = useState(0);
   const [hall, setHall] = useState(false);
   const h = game.history[game.history.length - 1];
@@ -47,7 +47,7 @@ export function Results() {
   const last = game.season >= NUM_SEASONS - 1;
   const ent = (e: Entrant) => (typeof e === 'number' ? clubOf(data, e).short : e);
 
-  if (revealing) return <SeasonViewer game={game} data={data} onDone={() => setRevealing(false)} />;
+  if (revealing) return <SeasonViewer game={game} data={data} onDone={() => setRevealing(false)} fastStart={settings.matchSpeed === 'fast'} />;
 
   const commands: Command[] = hall
     ? closeCommand(() => setHall(false))

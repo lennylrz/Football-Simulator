@@ -108,6 +108,8 @@ export interface GameState {
   draft?: DraftState | null;
   /** draft mode: the user's own club, to register on load */
   ownClub?: ClubInfo;
+  /** draft mode: re-drafts per summer and candidates per pick, from the settings */
+  rules?: { redrafts: number; choices: number };
   season: number;
   stage: Stage;
   /** 'open' before deadline day, 'deadline' after the AI's last round of deals */
@@ -203,7 +205,9 @@ export function registerUserClub(data: GameData, info: ClubInfo): number {
 /** The 20 real clubs of 2015/16 come first; a draft club is number 20. */
 export const REAL_CLUBS = 20;
 
-export function newGame(data: GameData, user: number, seed: number, mode?: 'draft', formation: Formation = '4-3-3', own?: ClubInfo): GameState {
+export function newGame(
+  data: GameData, user: number, seed: number, mode?: 'draft', formation: Formation = '4-3-3', own?: ClubInfo, rules?: GameState['rules'],
+): GameState {
   const state: GameState = {
     v: 1,
     seed,
@@ -224,6 +228,7 @@ export function newGame(data: GameData, user: number, seed: number, mode?: 'draf
     income: 0,
   };
   if (mode) state.mode = mode;
+  if (rules) state.rules = rules;
   addNewPlayers(state, data);
   data.meta.gameClubs.slice(0, REAL_CLUBS).forEach((name, i) => {
     const info = CLUBS.find((c) => c.name === name)!;

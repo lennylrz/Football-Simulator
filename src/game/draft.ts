@@ -1,5 +1,5 @@
 // Draft mode: the user builds an XI by picking one of five real players for
-// each position, and each summer may gamble on re-drafting up to three.
+// each position, and each summer may gamble on re-drafting a few (two by default).
 import { aiWindow, ensureMinimumSquad } from './ai';
 import type { GameData } from './data';
 import {
@@ -9,7 +9,7 @@ import { AREA, FORMATIONS, type Position, parsePositions, positionFit } from './
 import { type Rng, shuffle, stream } from './rng';
 
 export const CANDIDATES = 5;
-export const REDRAFTS_PER_SUMMER = 3;
+export const REDRAFTS_PER_SUMMER = 2;
 export const BENCH = 5;
 
 export interface DraftPick {
@@ -34,6 +34,14 @@ export interface DraftState {
   reveal: { player: number; from: number; to: number }[];
 }
 
+export function redraftsPerSummer(state: GameState): number {
+  return state.rules?.redrafts ?? REDRAFTS_PER_SUMMER;
+}
+
+function choicesOf(state: GameState): number {
+  return Math.max(1, Math.min(CANDIDATES, state.rules?.choices ?? CANDIDATES));
+}
+
 const PICK_ORDER: Position[] = ['ST', 'CF', 'LW', 'RW', 'CAM', 'LM', 'RM', 'CM', 'CDM', 'CB', 'LWB', 'RWB', 'LB', 'RB', 'GK'];
 
 /** Strikers first, then wide forwards, midfield, defence and the goalkeeper last. */
@@ -51,7 +59,7 @@ function fits(p: PlayerState, slot: Position): boolean {
 }
 
 /**
- * Five candidates for a slot, mixed so the choice is hard: a star only
+ * Candidates for a slot (five unless the rules say fewer), mixed so the choice is hard: a star only
  * sometimes, a couple of established players, a couple of youngsters with a
  * future, and the rest ordinary.
  */
@@ -74,7 +82,7 @@ export function drawCandidates(state: GameState, data: GameData, slot: Position,
   take((p) => p.age <= 21 && p.pot >= 80 && p.ovr <= 77, rng() < 0.5 ? 1 : 2);
   take((p) => p.ovr >= 70 && p.ovr <= 79, CANDIDATES - chosen.length);
   take(() => true, CANDIDATES - chosen.length);
-  return shuffle(rng, chosen).slice(0, CANDIDATES).map((p) => p.id);
+  return shuffle(rng, chosen).slice(0, choicesOf(state)).map((p) => p.id);
 }
 
 function draw(state: GameState, data: GameData, slot: number): void {
@@ -118,7 +126,7 @@ export function openDraftWindow(state: GameState, data: GameData): void {
   // Players who retired leave an empty slot.
   club.xi = club.xi.map((id) => (club.squad.includes(id) ? id : -1));
   d.reveal = club.xi.filter((id) => id >= 0).map((id) => ({ player: id, from: before.get(id) ?? state.players[id].ovr, to: state.players[id].ovr }));
-  d.redraftsLeft = REDRAFTS_PER_SUMMER;
+  d.redraftsLeft = redraftsPerSummer(state);
   d.slot = null;
   d.candidates = [];
   d.queue = [];
@@ -144,7 +152,7 @@ export function pickCandidate(state: GameState, data: GameData, player: number):
   return null;
 }
 
-/** Summer gamble: lose the player in a slot and pick from five new candidates. */
+/** Summer gamble: lose the player in a slot and pick from new candidates. */
 export function startRedraft(state: GameState, data: GameData, slot: number): string | null {
   const d = state.draft;
   const club = state.clubs[state.user];

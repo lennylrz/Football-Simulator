@@ -42,12 +42,12 @@ function tables(game: GameState): { club: number; p: number; pts: number; gd: nu
   });
 }
 
-export function SeasonViewer({ game, data, onDone }: { game: GameState; data: GameData; onDone: () => void }) {
+export function SeasonViewer({ game, data, onDone, fastStart }: { game: GameState; data: GameData; onDone: () => void; fastStart?: boolean }) {
   const steps = useMemo(() => buildSteps(game), [game]);
   const standings = useMemo(() => tables(game), [game]);
   const [i, setI] = useState(0);
   const [paused, setPaused] = useState(false);
-  const [fast, setFast] = useState(false);
+  const [fast, setFast] = useState(!!fastStart);
   const info = clubOf(data, game.user);
   const step = steps[i];
   const name = (e: Entrant) => (typeof e === 'number' ? clubOf(data, e).short : e);

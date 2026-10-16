@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { career } from '../../game/career';
-import { emptySlots, playDraftSeason, startRedraft } from '../../game/draft';
+import { emptySlots, playDraftSeason, redraftsPerSummer, startRedraft } from '../../game/draft';
 import { seasonLabel, trophiesOf } from '../../game/game';
 import { FORMATIONS } from '../../game/positions';
 import { useGame } from '../../ui/context';
@@ -79,7 +79,7 @@ export function Summer({ onMenu }: { onMenu: () => void }) {
             <div className="sep" />
             <div className="col">
               <span className="cap">Re-drafts this summer</span>
-              <span className="big">{game.season === 0 ? 'From next summer' : `${d.redraftsLeft} of 3 left`}</span>
+              <span className="big">{game.season === 0 ? 'From next summer' : redraftsPerSummer(game) ? `${d.redraftsLeft} of ${redraftsPerSummer(game)} left` : 'None (settings)'}</span>
               <span className="kv"><span>{empty.length ? `${empty.length} empty position${empty.length > 1 ? 's' : ''}: draft a free replacement` : 'Release a player and pick from 5 new ones'}</span></span>
             </div>
           </div>

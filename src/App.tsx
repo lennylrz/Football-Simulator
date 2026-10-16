@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Home } from './console/home/Home';
 import { Welcome } from './console/home/Welcome';
 import { Draft } from './console/screens/Draft';
+import { GameSetup } from './console/screens/GameSetup';
 import { MainMenu } from './console/screens/MainMenu';
 import { NewClub } from './console/screens/NewClub';
 import { Results } from './console/screens/Results';
@@ -13,7 +14,7 @@ import { type GameData, loadGameData } from './game/data';
 import type { ClubInfo } from './game/clubs';
 import { type GameState, newGame, REAL_CLUBS, registerUserClub } from './game/game';
 import type { Formation } from './game/positions';
-import { applySettings, loadSettings, saveSettings, type Settings } from './settings';
+import { applySettings, loadSettings, rulesOf, saveSettings, type Settings } from './settings';
 import { loadRun, saveRun } from './storage';
 import { GameContext } from './ui/context';
 
@@ -32,7 +33,7 @@ async function fetchJson(file: string) {
   return res.json();
 }
 
-type Mode = 'welcome' | 'home' | 'menu' | 'clubs' | 'menu-hall' | 'play';
+type Mode = 'welcome' | 'home' | 'setup' | 'menu' | 'clubs' | 'menu-hall' | 'play';
 
 export default function App() {
   const [data, setData] = useState<GameData | null>(null);
@@ -40,10 +41,21 @@ export default function App() {
   const [game, setGame] = useState<GameState | null>(() => loadRun());
   const [mode, setMode] = useState<Mode>('welcome');
   const [settings, setSettings] = useState<Settings>(loadSettings);
+  // Actions run synchronously on a copy, so callers can read results right away.
+  const current = useRef(game);
+  current.current = game;
   useEffect(() => applySettings(settings), [settings]);
   const changeSettings = (s: Settings) => {
     saveSettings(s);
     setSettings(s);
+    // A saved career follows the rules too.
+    const g = current.current;
+    if (g) {
+      const next = { ...g, rules: rulesOf(s) };
+      current.current = next;
+      saveRun(next);
+      setGame(next);
+    }
   };
 
   useEffect(() => {
@@ -55,9 +67,6 @@ export default function App() {
     }, (e) => setError(String(e)));
   }, []);
 
-  // Actions run synchronously on a copy, so callers can read results right away.
-  const current = useRef(game);
-  current.current = game;
   const act = useCallback(
     (fn: (s: GameState, d: GameData) => void) => {
       if (!current.current || !data) return;
@@ -72,7 +81,7 @@ export default function App() {
 
   const start = (club: ClubInfo, formation: Formation, seed: number) => {
     if (!data) return;
-    const g = newGame(data, REAL_CLUBS, seed, 'draft', formation, club);
+    const g = newGame(data, REAL_CLUBS, seed, 'draft', formation, club, rulesOf(settings));
     g.ownClub = club;
     saveRun(g);
     setGame(g);
@@ -102,14 +111,21 @@ export default function App() {
   if (mode === 'home') {
     return (
       <Stage tone="home">
-        <Home onPlay={() => setMode('menu')} onBack={() => setMode('welcome')} />
+        <Home onPlay={() => setMode('setup')} onBack={() => setMode('welcome')} />
+      </Stage>
+    );
+  }
+  if (mode === 'setup') {
+    return (
+      <Stage>
+        <GameSetup settings={settings} onChange={changeSettings} onDone={() => setMode('menu')} onBack={() => setMode('home')} hasSave={!!game} />
       </Stage>
     );
   }
   if (mode === 'menu' || mode === 'menu-hall') {
     return (
       <Stage tone="light">
-        <MainMenu data={data} save={game} onNew={() => setMode('clubs')} onContinue={() => setMode('play')} onHall={() => setMode('menu-hall')} onHome={() => setMode('home')} />
+        <MainMenu data={data} save={game} onNew={() => setMode('clubs')} onContinue={() => setMode('play')} onHall={() => setMode('menu-hall')} onSettings={() => setMode('setup')} onHome={() => setMode('home')} />
         {mode === 'menu-hall' && game && (
           <div style={{ position: 'absolute', inset: 0, zIndex: 6 }}>
             <HallOfFame game={game} data={data} />
@@ -122,7 +138,7 @@ export default function App() {
   if (mode === 'clubs' || !game) {
     return (
       <Stage>
-        <NewClub onStart={start} onBack={() => setMode('menu')} />
+        <NewClub onStart={start} onBack={() => setMode('menu')} settings={settings} />
       </Stage>
     );
   }
@@ -135,7 +151,7 @@ export default function App() {
   else screen = <Summer onMenu={toMenu} />;
 
   return (
-    <GameContext.Provider value={{ data, game, act, quit: () => setMode('menu') }}>
+    <GameContext.Provider value={{ data, game, act, quit: () => setMode('menu'), settings }}>
       <Stage>{screen}</Stage>
     </GameContext.Provider>
   );

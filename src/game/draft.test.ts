@@ -43,12 +43,13 @@ describe('draft mode', () => {
     expect(h.table.every((r) => r.p === 40)).toBe(true);
     endSeason(s, data);
     expect(s.stage).toBe('summer');
-    expect(s.draft!.redraftsLeft).toBe(3);
+    expect(s.draft!.redraftsLeft).toBe(2);
     expect(s.draft!.reveal.length).toBeGreaterThan(8);
   });
 
-  it('lets the user gamble on three re-drafts a summer', () => {
-    const s = newGame(data, REAL_CLUBS, 4, 'draft', '4-4-2');
+  it('lets the user gamble on the re-drafts the rules allow', () => {
+    const s = newGame(data, REAL_CLUBS, 4, 'draft', '4-4-2', undefined, { redrafts: 3, choices: 3 });
+    expect(s.draft!.candidates).toHaveLength(3);
     autoDraft(s, data);
     playDraftSeason(s, data);
     endSeason(s, data);
@@ -56,6 +57,7 @@ describe('draft mode', () => {
     expect(startRedraft(s, data, 0)).toBeNull();
     expect(s.clubs[s.user].xi[0]).toBe(-1);
     expect(s.players[before].club).not.toBe(s.user);
+    expect(s.draft!.candidates).toHaveLength(3);
     expect(pickCandidate(s, data, s.draft!.candidates[2])).toBeNull();
     startRedraft(s, data, 1); pickCandidate(s, data, s.draft!.candidates[0]);
     startRedraft(s, data, 2); pickCandidate(s, data, s.draft!.candidates[0]);

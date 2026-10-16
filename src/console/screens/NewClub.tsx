@@ -2,6 +2,7 @@ import { useState } from 'react';
 import type { ClubInfo } from '../../game/clubs';
 import { FORMATION_NAMES, type Formation } from '../../game/positions';
 import { Pitch } from '../Pitch';
+import type { Settings } from '../../settings';
 import { browse, type Command, Frame, KeyCap, Overlay } from '../ui';
 
 const COLOURS: [string, string, string][] = [
@@ -21,7 +22,7 @@ function codeOf(name: string): string {
   return code.toUpperCase().padEnd(3, 'X');
 }
 
-export function NewClub({ onStart, onBack }: { onStart: (club: ClubInfo, formation: Formation, seed: number) => void; onBack: () => void }) {
+export function NewClub({ onStart, onBack, settings }: { onStart: (club: ClubInfo, formation: Formation, seed: number) => void; onBack: () => void; settings: Settings }) {
   const [name, setName] = useState('Five Seasons FC');
   const [colour, setColour] = useState(0);
   const [formation, setFormation] = useState<Formation>('4-3-3');
@@ -79,8 +80,8 @@ export function NewClub({ onStart, onBack }: { onStart: (club: ClubInfo, formati
               <div className="ph gbar">How it works</div>
               <div className="kvlist">
                 <div><span>The league</span><b>Your XI joins the 20 clubs of 2015/16</b></div>
-                <div><span>The draft</span><b>Pick 1 of 5 real players per position</b></div>
-                <div><span>Each summer</span><b>See who grew, gamble on 3 re-drafts</b></div>
+                <div><span>The draft</span><b>Pick 1 of {settings.choices} real players per position{settings.hiddenRatings ? ', ratings hidden' : ''}</b></div>
+                <div><span>Each summer</span><b>{settings.redrafts ? `See who grew, gamble on ${settings.redrafts} re-draft${settings.redrafts > 1 ? 's' : ''}` : 'See who grew, no re-drafts'}</b></div>
                 <div><span>Formation</span><b className="tabs" style={{ display: 'flex', gap: 4 }}>
                   <KeyCap k="Left" />
                   {FORMATION_NAMES.map((f) => (

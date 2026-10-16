@@ -124,6 +124,7 @@ export function Welcome({
           </button>
         </div>
         <p className="muted">{focus === 'panel' ? 'Up and Down to move, Enter to change, Esc to go back.' : 'Press Enter or click a setting to change it.'} Settings and your career are kept in this browser only.</p>
+        <p className="muted">Game rules (hidden ratings, pick timer, re-drafts per summer, match speed) open as soon as you pick an era.</p>
       </>
     );
   } else if (item.id === 'about') {

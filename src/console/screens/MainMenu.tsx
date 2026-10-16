@@ -6,15 +6,15 @@ import { drawShards } from '../shards';
 import { browse, clubOf, Frame } from '../ui';
 
 interface Tab {
-  id: 'new' | 'continue' | 'hall';
+  id: 'new' | 'continue' | 'hall' | 'settings';
   label: string;
   desc: string;
   flag: string;
 }
 
 export function MainMenu({
-  data, save, onNew, onContinue, onHall, onHome,
-}: { data: GameData; save: GameState | null; onNew: () => void; onContinue: () => void; onHall: () => void; onHome: () => void }) {
+  data, save, onNew, onContinue, onHall, onSettings, onHome,
+}: { data: GameData; save: GameState | null; onNew: () => void; onContinue: () => void; onHall: () => void; onSettings: () => void; onHome: () => void }) {
   const canvas = useRef<HTMLCanvasElement>(null);
   const rail = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -43,6 +43,7 @@ export function MainMenu({
       { id: 'hall', label: 'Hall of Fame', desc: 'Your trophies, your best players and your best and worst signings so far.', flag: 'Treble watch' },
     );
   }
+  tabs.push({ id: 'settings', label: 'Settings', desc: 'Hidden ratings, the pick timer, re-drafts per summer, match speed and more.', flag: 'Your rules' });
   const [index, setIndex] = useState(save ? 1 : 0);
   const [left, setLeft] = useState(60);
   const tab = tabs[Math.min(index, tabs.length - 1)];
@@ -52,7 +53,7 @@ export function MainMenu({
     if (el) setLeft(60 + el.offsetLeft + 24);
   }, [index, tabs.length]);
 
-  const go = (t: Tab) => (t.id === 'new' ? onNew() : t.id === 'continue' ? onContinue() : onHall());
+  const go = (t: Tab) => (t.id === 'new' ? onNew() : t.id === 'continue' ? onContinue() : t.id === 'settings' ? onSettings() : onHall());
 
   return (
     <div className="mm">

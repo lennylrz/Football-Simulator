@@ -17,7 +17,7 @@ legacy score, best/worst pick, Hall of Fame and a share card.
 
 ## Screen flow today
 
-`Welcome` (site menu) → `Home` (era picker) → `MainMenu` (2015 era, shattered-ball menu) →
+`Welcome` (site menu) → `Home` (era picker) → `GameSetup` (game settings, opens on era click; also a main menu tab) → `MainMenu` (2015 era, shattered-ball menu) →
 `NewClub` → `Draft` → `Summer` → season viewer + `Results` → `Summer` …
 → `Summary`. Routing is in `src/App.tsx` (`mode` state + `game.stage`).
 
@@ -26,8 +26,14 @@ era home's paper/ink/blue look, a menu on the right (Singleplayer,
 Multiplayer "coming soon", How to Play, Settings, About & Credits, Legal)
 and the selected item's content on the left. Up/Down + Enter or mouse;
 Settings takes focus for its rows (Esc back). Settings live in
-`src/settings.ts` (own localStorage key): reduce motion (`.calm` on
-`<html>`) and delete the saved career (press twice). Esc on the era home
+`src/settings.ts` (own localStorage key, `OPTIONS` drives the settings
+screen): ratings shown/hidden in the draft, pick timer (off by default;
+auto-picks the highlighted card), choices per pick (3-5), re-drafts per
+summer (default 2), match speed (normal/fast/instant), reduce motion
+(`.calm` on `<html>`). Re-drafts and choices are career rules copied into
+`GameState.rules` (new careers, and synced into a saved one on change);
+the rest is read live from `GameContext.settings`. The welcome screen's
+Settings has reduce motion and delete saved career (press twice). Esc on the era home
 with nothing hovered, or its "Main menu" link, goes back to the welcome.
 
 The era home (`src/console/home/`): clean paper/ink/blue look by default;
