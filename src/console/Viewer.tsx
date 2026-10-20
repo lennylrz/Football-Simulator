@@ -5,25 +5,54 @@ import { type GameState, seasonLabel } from '../game/game';
 import { clubOf, type Command, Frame } from './ui';
 import './viewer.css';
 
-interface Step {
-  round: number;
-  league: [number, number, number, number][];
-  cups: (CupMatch & { comp: string })[];
-}
+type Score = { home: Entrant; away: Entrant; hg: number; ag: number; pens?: 0 | 1; leg?: 1 | 2 };
 
-/** Matchday by matchday, with the user's cup ties and the finals on their dates. */
+/** One screen of the season: a league matchday, or a cup day of its own. */
+type Step =
+  | { kind: 'league'; matchday: number; time: number; matches: Score[] }
+  | { kind: 'cup'; comp: 'FA Cup' | 'Champions League'; round: string; leg?: 1 | 2; time: number; matches: Score[]; table: number };
+
+/**
+ * League matchdays, with cup days in between on their dates: every day the
+ * user plays, and the semi-finals and finals.
+ */
 function buildSteps(game: GameState): Step[] {
   const r = game.result!;
   const n = r.rounds.length;
-  const steps: Step[] = r.rounds.map((league, round) => ({ round, league, cups: [] }));
-  const place = (comp: string, list: CupMatch[]) =>
-    list.forEach((m) => {
-      if (m.home !== game.user && m.away !== game.user && m.round !== 'Final') return;
-      const at = Math.min(n - 1, Math.max(0, Math.floor((m.slot * n) / 38) - 1));
-      steps[at].cups.push({ ...m, comp });
-    });
-  place('FA Cup', r.fa.matches);
-  place('Champions League', r.cl.matches);
+  const steps: Step[] = r.rounds.map((round, k) => ({
+    kind: 'league', matchday: k + 1, time: ((k + 1) * 38) / n, matches: round.map(([home, away, hg, ag]) => ({ home, away, hg, ag })),
+  }));
+  const me = (m: CupMatch) => m.home === game.user || m.away === game.user;
+  const ours = (e: Entrant) => typeof e === 'number';
+  const cup = (comp: 'FA Cup' | 'Champions League', list: CupMatch[]) => {
+    const days = new Map<number, CupMatch[]>();
+    for (const m of list) days.set(m.slot, [...(days.get(m.slot) ?? []), m]);
+    for (const [slot, day] of days) {
+      const mine = day.find(me);
+      const round = day[0].round;
+      if (!mine && !/Semi|Final/.test(round)) continue;
+      let shown = day;
+      if (round === 'Group stage') {
+        // Just the user's group.
+        const group = r.cl.groups?.find((g) => g.some((x) => x.team === game.user));
+        const teams = new Set(group?.map((x) => x.team));
+        shown = day.filter((m) => teams.has(m.home));
+      } else if (comp === 'FA Cup' && day.length > 8) {
+        shown = day.filter((m) => me(m) || (ours(m.home) && ours(m.away)));
+      }
+      shown = [...shown].sort((a, b) => Number(me(b)) - Number(me(a)));
+      steps.push({ kind: 'cup', comp, round, leg: day[0].leg, time: slot, matches: shown, table: 0 });
+    }
+  };
+  cup('Champions League', r.cl.matches);
+  cup('FA Cup', r.fa.matches);
+  steps.sort((a, b) => a.time - b.time || (a.kind === 'league' ? -1 : 1));
+  // The league table to show beside a cup day is the one after the last league matchday.
+  let last = 0;
+  for (const s of steps) {
+    if (s.kind === 'league') last = s.matchday - 1;
+    else s.table = last;
+  }
   return steps;
 }
 
@@ -51,6 +80,7 @@ export function SeasonViewer({ game, data, onDone, fastStart }: { game: GameStat
   const info = clubOf(data, game.user);
   const step = steps[i];
   const name = (e: Entrant) => (typeof e === 'number' ? clubOf(data, e).short : e);
+  const leagueDays = steps.filter((s) => s.kind === 'league').length;
 
   useEffect(() => {
     if (paused) return;
@@ -58,63 +88,61 @@ export function SeasonViewer({ game, data, onDone, fastStart }: { game: GameStat
       const t = setTimeout(onDone, fast ? 900 : 2200);
       return () => clearTimeout(t);
     }
-    const t = setTimeout(() => setI((x) => x + 1), fast ? 380 : 1250 + step.cups.length * 350);
+    const mine = step.matches.some((m) => m.home === game.user || m.away === game.user);
+    const wait = step.kind === 'cup' ? (fast ? 650 : 1700) : fast ? 380 : mine ? 1250 : 900;
+    const t = setTimeout(() => setI((x) => x + 1), wait);
     return () => clearTimeout(t);
-  }, [i, paused, fast, steps.length, step.cups.length, onDone]);
+  }, [i, paused, fast, steps.length, step, game.user, onDone]);
 
-  const outcome = (h: Entrant, _a: Entrant, hg: number, ag: number, pens?: 0 | 1) => {
-    const mine = h === game.user ? hg - ag : ag - hg;
+  const outcome = (m: Score) => {
+    const mine = m.home === game.user ? m.hg - m.ag : m.ag - m.hg;
     if (mine !== 0) return mine > 0 ? 'w' : 'l';
-    if (pens === undefined) return 'd';
-    return (pens === 0) === (h === game.user) ? 'w' : 'l';
+    if (m.pens === undefined) return 'd';
+    return (m.pens === 0) === (m.home === game.user) ? 'w' : 'l';
   };
+  const WORD = { w: 'WIN', d: 'DRAW', l: 'LOSS' } as const;
 
   const commands: Command[] = [
     { keys: ['Enter'], label: 'Skip to Results', primary: true, onPress: onDone },
     { keys: ['Space'], label: paused ? 'Resume' : 'Pause', onPress: () => setPaused(!paused) },
+    { keys: ['Left', 'Right'], label: 'Step', onPress: (k) => { setPaused(true); setI((x) => Math.max(0, Math.min(steps.length - 1, x + (k === 'Left' ? -1 : 1)))); } },
     { keys: ['F'], label: fast ? 'Normal Speed' : 'Fast', onPress: () => setFast(!fast) },
   ];
-  const table = standings[i];
+  const tableAt = step.kind === 'league' ? step.matchday - 1 : step.table;
+  const table = standings[tableAt];
+  const title = step.kind === 'league'
+    ? `Matchday ${step.matchday}`
+    : `${step.round}${step.leg ? ` · ${step.leg === 1 ? 'first' : 'second'} leg` : ''}`;
+  const mine = step.matches.find((m) => m.home === game.user || m.away === game.user);
 
   return (
-    <Frame club={info} title={info.name} sub={`Live · Matchday ${i + 1} of ${steps.length}`} right={<><small>Season {game.season + 1} of 5</small>{seasonLabel(game.season)}</>} commands={commands}
-      info={<><span>Position</span><b>{table.findIndex((r) => r.club === game.user) + 1}</b></>}>
+    <Frame club={info} title={info.name} sub={step.kind === 'league' ? `Live · Matchday ${step.matchday} of ${leagueDays}` : `Live · ${step.comp}`}
+      right={<><small>Season {game.season + 1} of 5</small>{seasonLabel(game.season)}</>} commands={commands}
+      info={<><span>League position</span><b>{table.findIndex((r) => r.club === game.user) + 1}</b></>}>
       <div className="viewer">
         <div className="left">
           <div className="prog"><i style={{ width: `${((i + 1) / steps.length) * 100}%` }} /></div>
-          <div className="dpanel md" key={`l${i}`}>
-            <div className="ph gbar">Matchday {i + 1}<small>League</small></div>
-            {step.league.map(([h, a, hg, ag], k) => {
-              const me = h === game.user || a === game.user;
-              return (
-                <div key={k} className={`res ${me ? 'me' : ''}`} style={{ '--d': `${k * (fast ? 20 : 70)}ms` } as React.CSSProperties}>
-                  <span className="h">{name(h)}</span>
-                  <span className={`sc ${me ? outcome(h, a, hg, ag) : ''}`}>{hg}–{ag}</span>
-                  <span>{name(a)}</span>
-                </div>
-              );
-            })}
-            {!step.league.some(([h, a]) => h === game.user || a === game.user) && (
-              <div className="res" style={{ '--d': `${10 * 70}ms` } as React.CSSProperties}><span className="h">{info.short}</span><span className="sc">bye</span><span /></div>
+          <div className={`dpanel md ${step.kind === 'cup' ? (step.comp === 'FA Cup' ? 'fa' : 'cl') : ''}`} key={i}>
+            <div className="ph gbar">{title}<small>{step.kind === 'league' ? 'League' : step.comp}</small></div>
+            {mine && (
+              <div className={`mine ${outcome(mine)}`}>
+                <span className="h">{name(mine.home)}</span>
+                <span className="sc">{mine.hg}–{mine.ag}{mine.pens !== undefined ? ' p' : ''}</span>
+                <span>{name(mine.away)}</span>
+                <span className="word">{WORD[outcome(mine)]}</span>
+              </div>
             )}
-          </div>
-          {step.cups.length > 0 && (
-            <div className="dpanel cupbox" key={`c${i}`}>
-              {step.cups.map((m, k) => {
-                const me = m.home === game.user || m.away === game.user;
-                return (
-                  <div key={k}>
-                    <div className="res comp" style={{ '--d': `${700 + k * 300}ms` } as React.CSSProperties}>{m.comp} · {m.round}{m.leg ? ` (leg ${m.leg})` : ''}</div>
-                    <div className={`res cup ${me ? 'me' : ''}`} style={{ '--d': `${750 + k * 300}ms` } as React.CSSProperties}>
-                      <span className="h">{name(m.home)}</span>
-                      <span className={`sc ${me ? outcome(m.home, m.away, m.hg, m.ag, m.pens) : ''}`}>{m.hg}–{m.ag}{m.pens !== undefined ? ' p' : ''}</span>
-                      <span>{name(m.away)}</span>
-                    </div>
-                  </div>
-                );
-              })}
+            {!mine && step.kind === 'league' && <div className="mine bye"><span className="h">{info.short}</span><span className="sc">–</span><span>No match this week</span><span className="word">BYE</span></div>}
+            <div className="others">
+              {step.matches.filter((m) => m !== mine).map((m, k) => (
+                <div key={k} className="res">
+                  <span className="h">{name(m.home)}</span>
+                  <span className="sc">{m.hg}–{m.ag}{m.pens !== undefined ? ' p' : ''}</span>
+                  <span>{name(m.away)}</span>
+                </div>
+              ))}
             </div>
-          )}
+          </div>
         </div>
         <div className="live dpanel">
           <div className="ph gbar">League Table<small>P · Pts</small></div>
@@ -126,8 +154,8 @@ export function SeasonViewer({ game, data, onDone, fastStart }: { game: GameStat
             ))}
           </div>
         </div>
+        {paused && <div className="paused gbar">PAUSED</div>}
       </div>
-      {paused && <div className="paused gbar">PAUSED</div>}
     </Frame>
   );
 }

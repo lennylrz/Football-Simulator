@@ -57,3 +57,25 @@ export function Pitch({ formation, plates, onPick, children }: { formation: Form
     </div>
   );
 }
+
+/** The substitutes, in a row under the pitch. */
+export function BenchStrip({ plates, onPick }: { plates: PlateInfo[]; onPick?: (j: number) => void }) {
+  if (!plates.length) return null;
+  return (
+    <div className="bench-strip">
+      <span className="cap">Bench</span>
+      {plates.map((p, j) => (
+        <div key={j} className={`dplate ${p.state ?? ''} ${onPick ? 'click' : ''}`} onClick={() => onPick?.(j)}>
+          <b>{p.rating ?? '?'}</b>
+          <span>{p.name ?? 'Empty'}</span>
+          <em>{p.label}</em>
+          {p.delta !== undefined && (
+            <i className={`delta ${p.delta > 0 ? 'up' : p.delta < 0 ? 'down' : 'same'}`} style={{ '--d': `${p.delay ?? 0}ms` } as React.CSSProperties}>
+              {p.delta > 0 ? `+${p.delta}` : p.delta === 0 ? '=' : p.delta}
+            </i>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}

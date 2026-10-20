@@ -1,11 +1,11 @@
 import { useMemo, useState } from 'react';
 import { career } from '../../game/career';
-import { emptySlots, playDraftSeason, redraftsPerSummer, startRedraft } from '../../game/draft';
+import { emptySlots, inSpot, isBench, playDraftSeason, redraftsPerSummer, startRedraft, swapSpots, XI } from '../../game/draft';
 import { paperTable, seasonLabel, trophiesOf } from '../../game/game';
-import { FORMATIONS } from '../../game/positions';
+import { FORMATIONS, parsePositions, positionFit } from '../../game/positions';
 import { useGame } from '../../ui/context';
 import { AroundTheLeague, closeCommand, HallOfFame, LeaveCareer, leaveCommands } from '../overlays';
-import { Pitch, type PlateInfo } from '../Pitch';
+import { BenchStrip, Pitch, type PlateInfo } from '../Pitch';
 import { browse, clubOf, type Command, Frame, ordinal, Overlay, useListNav } from '../ui';
 
 const TROPHY = { league: 'League', fa: 'FA Cup', cl: 'Champions League' } as const;
@@ -15,8 +15,12 @@ export function Summer() {
   const club = game.clubs[game.user];
   const d = game.draft!;
   const slots = FORMATIONS[club.formation];
-  const nav = useListNav(11);
+  // Spots 0-10 are the XI, 11 and up the bench, in one list.
+  const spots = [...club.xi.map((_, i) => i), ...club.bench.map((_, j) => XI + j)];
+  const nav = useListNav(spots.length);
   const [overlay, setOverlay] = useState<'confirm' | 'around' | 'hall' | 'leave' | null>(null);
+  /** the spot picked first when swapping two players */
+  const [swapFrom, setSwapFrom] = useState<number | null>(null);
   const info = clubOf(data, game.user);
   const reveal = new Map(d.reveal.map((r) => [r.player, r]));
   const empty = emptySlots(game);
@@ -24,31 +28,53 @@ export function Summer() {
   const score = useMemo(() => career(game).score, [game]);
   const paper = useMemo(() => paperTable(game), [game]);
   const rank = paper.findIndex((r) => r.club === game.user) + 1;
-  const sel = club.xi[nav.index];
+  const sel = inSpot(game, nav.index);
   const selName = sel >= 0 ? data.names[sel][0] : null;
   const done = (i: number) => game.season > 0 && !!d.redrafted?.includes(i);
-  const can = (i: number) => !done(i) && (club.xi[i] < 0 || d.redraftsLeft > 0);
+  const can = (i: number) => !done(i) && (inSpot(game, i) < 0 || d.redraftsLeft > 0);
+  const label = (i: number) => (isBench(i) ? 'SUB' : slots[i]);
+  /** The position a player was drafted for, or his main one. */
+  const homeOf = (id: number) => d.home?.[id] ?? parsePositions(game.players[id].pos)[0];
+  const canSwap = (a: number, b: number) => a !== b && !(isBench(a) && isBench(b));
 
-  const plates: PlateInfo[] = club.xi.map((id, i) => {
+  const plate = (id: number, i: number): PlateInfo => {
     const p = game.players[id];
-    if (!p || id < 0) return { label: slots[i], state: i === nav.index ? 'now' : 'empty' };
+    const mark = swapFrom === i ? 'now' : i === nav.index ? 'sel' : undefined;
+    if (!p || id < 0) return { label: label(i), state: i === nav.index ? 'now' : 'empty' };
     const r = reveal.get(id);
     return {
-      rating: p.ovr, name: data.names[id][0], label: slots[i], state: i === nav.index ? 'sel' : done(i) ? 'done' : undefined,
+      rating: p.ovr, name: data.names[id][0], label: isBench(i) ? homeOf(id) : slots[i], state: mark ?? (done(i) ? 'done' : undefined),
       delta: r && game.season > 0 ? r.to - r.from : undefined, delay: 300 + i * 140,
     };
-  });
+  };
+  const plates = club.xi.map((id, i) => plate(id, i));
+  const subs = club.bench.map((id, j) => plate(id, XI + j));
 
   const redraft = (i: number) => act((s, dd) => void startRedraft(s, dd, i));
   /** Re-drafts a position: straight away when it is empty, after a confirmation otherwise. */
   const ask = (i: number) => {
     if (!can(i)) return;
     nav.setIndex(i);
-    if (club.xi[i] < 0) redraft(i);
+    if (inSpot(game, i) < 0) redraft(i);
     else setOverlay('confirm');
   };
+  const swapTo = (i: number) => {
+    if (swapFrom === null || !canSwap(swapFrom, i)) return;
+    const from = swapFrom;
+    setSwapFrom(null);
+    nav.setIndex(i);
+    act((s) => void swapSpots(s, from, i));
+  };
+  /** Clicking a spot: completes a swap, otherwise selects it (or acts on it when already selected). */
+  const click = (i: number) => (swapFrom !== null ? swapTo(i) : i === nav.index ? ask(i) : nav.setIndex(i));
   const commands: Command[] =
-    overlay === 'confirm'
+    swapFrom !== null
+      ? [
+          { keys: ['Enter'], label: 'Swap Here', primary: true, disabled: !canSwap(swapFrom, nav.index), onPress: () => swapTo(nav.index) },
+          browse('Browse', nav.up, nav.down),
+          { keys: ['Escape', 'S'], label: 'Cancel Swap', onPress: () => setSwapFrom(null) },
+        ]
+      : overlay === 'confirm'
       ? [
           { keys: ['Enter'], label: 'Gamble', primary: true, onPress: () => { setOverlay(null); redraft(nav.index); } },
           { keys: ['Escape'], label: 'Keep Him', onPress: () => setOverlay(null) },
@@ -60,6 +86,7 @@ export function Summer() {
           : [
               { keys: ['Space'], label: 'Play the Season', primary: true, disabled: empty.length > 0, onPress: () => act((s, dd) => void playDraftSeason(s, dd)) },
               { keys: ['Enter'], label: sel < 0 ? 'Draft' : 'Re-draft', disabled: !can(nav.index), onPress: () => ask(nav.index) },
+              { keys: ['S'], label: 'Swap', hidden: !club.bench.length, disabled: sel < 0 || empty.length > 0, onPress: () => setSwapFrom(nav.index) },
               browse('Browse', nav.up, nav.down),
               { keys: ['T'], label: 'Transfers', onPress: () => setOverlay('around') },
               { keys: ['H'], label: 'Hall of Fame', onPress: () => setOverlay('hall') },
@@ -69,7 +96,7 @@ export function Summer() {
   const finish = last ? last.table.findIndex((r) => r.club === game.user) + 1 : 0;
   const won = last ? trophiesOf(last, game.user) : [];
   const redrafts = redraftsPerSummer(game);
-  const rowLabel = (i: number) => (done(i) ? 'Re-drafted' : club.xi[i] < 0 ? 'Draft' : d.redraftsLeft > 0 ? 'Re-draft' : 'None left');
+  const rowLabel = (i: number) => (done(i) ? 'Re-drafted' : inSpot(game, i) < 0 ? 'Draft' : d.redraftsLeft > 0 ? 'Re-draft' : 'None left');
 
   return (
     <Frame
@@ -81,7 +108,10 @@ export function Summer() {
       info={<><span>Legacy</span><b>{score.toLocaleString('en-GB')}</b></>}
     >
       <div className="summer">
-        <Pitch formation={club.formation} plates={plates} onPick={(i) => (i === nav.index ? ask(i) : nav.setIndex(i))} />
+        <div className="pitchcol">
+          <Pitch formation={club.formation} plates={plates} onPick={click} />
+          <BenchStrip plates={subs} onPick={(j) => click(XI + j)} />
+        </div>
         <div className="win">
           <div className="win-title">{game.season === 0 ? 'Your XI Is Ready' : 'Summer Reveal'}</div>
           <div className="office three" style={{ height: 128 }}>
@@ -105,7 +135,10 @@ export function Summer() {
           </div>
           <div className="panes" style={{ gridTemplateColumns: '1fr' }}>
             <div className="pane dpanel">
-              <div className="ph gbar">{game.season === 0 ? 'Your XI' : 'Who grew, who faded'}<small>{selName ? `Selected: ${selName}` : 'Empty position selected'}</small></div>
+              <div className="ph gbar">
+                {swapFrom !== null ? `Swap ${data.names[inSpot(game, swapFrom)][0]} with…` : game.season === 0 ? 'Your Squad' : 'Who grew, who faded'}
+                <small>{swapFrom !== null ? 'Click a player, or Enter on the selected one' : selName ? `Selected: ${selName}` : 'Empty position selected'}</small>
+              </div>
               <div className="tblwrap scroll">
                 <table className="tbl">
                   <thead>
@@ -116,14 +149,25 @@ export function Summer() {
                     </tr>
                   </thead>
                   <tbody>
-                    {club.xi.map((id, i) => {
+                    {spots.map((i) => {
+                      const id = inSpot(game, i);
                       const p = game.players[id];
                       const r = reveal.get(id);
                       const delta = r && game.season > 0 ? r.to - r.from : null;
+                      // Out of position: a player moved to a spot he wasn't drafted for.
+                      const off = p && !isBench(i) && positionFit([homeOf(id)], slots[i]) < 1 ? homeOf(id) : null;
                       return (
-                        <tr key={i} className={`${i === nav.index ? 'sel' : ''} ${!p ? 'gap' : ''}`} onClick={() => nav.setIndex(i)} onDoubleClick={() => ask(i)}>
-                          <td className="pos">{slots[i]}</td>
-                          <td className="ellip">{p ? data.names[id][0] : 'Retired – draft a replacement'}</td>
+                        <tr
+                          key={i}
+                          className={`${i === nav.index ? 'sel' : ''} ${!p ? 'gap' : ''} ${i === XI ? 'div' : ''} ${swapFrom === i ? 'from' : ''}`}
+                          onClick={() => (swapFrom !== null ? swapTo(i) : nav.setIndex(i))}
+                          onDoubleClick={() => swapFrom === null && ask(i)}
+                        >
+                          <td className="pos">{label(i)}{isBench(i) && p ? <small> {homeOf(id)}</small> : null}</td>
+                          <td className="ellip">
+                            {p ? data.names[id][0] : 'Retired – draft a replacement'}
+                            {off && <span className="offpos" title={`Drafted as ${off}: plays below his rating here`}> {off} out of position</span>}
+                          </td>
                           <td className="n">{p?.age ?? ''}</td>
                           {game.season > 0 && (
                             <td className={`n ${r?.boost === undefined ? '' : r.boost >= 0.5 ? 'up' : r.boost <= -0.5 ? 'down' : ''}`}>{r?.avg?.toFixed(2) ?? (p ? '–' : '')}</td>
@@ -133,8 +177,11 @@ export function Summer() {
                           <td className={`n ${delta === null ? '' : delta > 0 ? 'up' : delta < 0 ? 'down' : ''}`}>
                             {delta === null ? '' : delta >= 3 ? `+${delta} GLOW UP` : delta <= -3 ? `${delta} BUST` : delta > 0 ? `+${delta}` : delta}
                           </td>
-                          <td className="c">
-                            {game.season > 0 || !p ? (
+                          <td className="c acts">
+                            {p && club.bench.length > 0 && swapFrom === null && (
+                              <button className="rowbtn" disabled={empty.length > 0} onClick={(e) => { e.stopPropagation(); nav.setIndex(i); setSwapFrom(i); }} tabIndex={-1}>Swap</button>
+                            )}
+                            {(game.season > 0 || !p) && swapFrom === null ? (
                               <button className="rowbtn" disabled={!can(i)} onClick={(e) => { e.stopPropagation(); ask(i); }} tabIndex={-1}>{rowLabel(i)}</button>
                             ) : null}
                           </td>
@@ -148,8 +195,8 @@ export function Summer() {
                 {empty.length
                   ? <b>Fill every position before the season.</b>
                   : game.season > 0
-                    ? 'Ratings follow real history plus how each player performed for you: Form is his average match rating last season, judged against his team-mates. Re-drafting is a gamble, and the player you release is gone.'
-                    : 'On paper is where your XI ranks against the rest of the league. The strongest XI usually wins, but not always.'}
+                    ? 'Form is last season\'s average match rating, judged against team-mates: young players who play well grow fastest. Swap a substitute into your XI for free; re-drafting is a gamble.'
+                    : 'On paper is where your XI ranks against the league. Substitutes come on in most matches and start now and then in their position.'}
               </div>
             </div>
           </div>
@@ -158,7 +205,7 @@ export function Summer() {
       {overlay === 'confirm' && selName && (
         <Overlay title="Re-draft This Position?">
           <div className="empty" style={{ color: '#fff' }}>
-            <b>{selName}</b> leaves the club, and you pick from new {slots[nav.index]} candidates. You can't change your mind, and you can only re-draft this position once this summer.
+            <b>{selName}</b> leaves the club, and you pick from new {isBench(nav.index) ? 'substitute' : slots[nav.index]} candidates. You can't change your mind, and you can only re-draft this position once this summer.
           </div>
         </Overlay>
       )}

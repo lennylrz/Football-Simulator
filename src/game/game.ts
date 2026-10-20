@@ -9,7 +9,7 @@ import { developPlayer, type Form, formBoost, retireChance } from './development
 import { autoLineup, BENCH_SIZE, pickBench, pickXI, type PlayerLite, teamStrength } from './lineup';
 import { generateIncomingBids, generateOffers, type IncomingBid, type Offer } from './market';
 import { type DraftState, openDraftWindow } from './draft';
-import { FORMATIONS, type Formation, parsePositions, positionFit } from './positions';
+import { FORMATIONS, type Formation, parsePositions, type Position, positionFit } from './positions';
 import { stream } from './rng';
 import { fixtures, type PlayerSeasonStats, type SeasonResult, simulateSeason, type TableRow } from './season';
 import { expectedGoals, type MatchResult } from './match';
@@ -115,7 +115,7 @@ export interface GameState {
   /** draft mode: the user's own club, to register on load */
   ownClub?: ClubInfo;
   /** draft mode: re-drafts per summer and candidates per pick, from the settings */
-  rules?: { redrafts: number; choices: number };
+  rules?: { redrafts: number; choices: number; bench?: number };
   /** draft mode: players offered in recent careers, offered less often now */
   recent?: number[];
   season: number;
@@ -540,6 +540,17 @@ export interface PaperRow {
   edge: number;
 }
 
+/**
+ * A player as the match engine sees him. The user's drafted players keep the
+ * position they were drafted for, even when their listed positions change.
+ */
+function engineLite(state: GameState, club: number, id: number, slot?: Position): PlayerLite {
+  const p = lite(state.players[id]);
+  if (state.mode !== 'draft' || club !== state.user) return p;
+  const home = state.draft?.home?.[id] ?? slot;
+  return home ? { ...p, pos: [home, ...p.pos] } : p;
+}
+
 /** The league ranked on paper: each XI's strength against everyone else's. */
 export function paperTable(state: GameState): PaperRow[] {
   const teams = state.clubs.map((c) => {
@@ -547,10 +558,9 @@ export function paperTable(state: GameState): PaperRow[] {
     const lineup = c.id === state.user ? c : autoLineup(squadOf(state, c.id).map(lite), c.formation);
     const slots = FORMATIONS[lineup.formation];
     const eff = lineup.xi.map((id, i) => {
-      const p = state.players[id];
-      if (!p) return 0;
-      const pos = state.mode === 'draft' && c.id === state.user ? [slots[i]] : parsePositions(p.pos);
-      return p.ovr * positionFit(pos, slots[i]);
+      if (!state.players[id]) return 0;
+      const p = engineLite(state, c.id, id, slots[i]);
+      return p.ovr * positionFit(p.pos, slots[i]);
     });
     return { club: c.id, rating: eff.reduce((a, b) => a + b, 0) / eff.length, strength: teamStrength(slots, eff) };
   });
@@ -571,15 +581,10 @@ export function simulate(state: GameState, data: GameData): void {
   for (const c of state.clubs) if (lineupProblems(state, c.id).length) repairLineup(state, c.id);
   const predicted = state.user >= 0 ? paperTable(state).findIndex((r) => r.club === state.user) + 1 : undefined;
   const teams = state.clubs.map((c) => {
-    const byId = (id: number) => lite(state.players[id]);
-    // A drafted player keeps the position he was drafted for, even if his listed positions change.
-    const drafted = state.mode === 'draft' && c.id === state.user;
     const slots = FORMATIONS[c.formation];
-    const xi = c.xi.map((id, i) => {
-      const p = byId(id);
-      return drafted ? { ...p, pos: [slots[i], ...p.pos] } : p;
-    });
-    return { club: c.id, formation: c.formation, xi, bench: c.bench.map(byId) };
+    const xi = c.xi.map((id, i) => engineLite(state, c.id, id, slots[i]));
+    const bench = c.bench.filter((id) => id >= 0).map((id) => engineLite(state, c.id, id));
+    return { club: c.id, formation: c.formation, xi, bench };
   });
   const league = simulateSeason(teams, stream(state.seed, 'season', state.season), seasonFixtures(state));
 

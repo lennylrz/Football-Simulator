@@ -21,7 +21,12 @@
 
 /* Draft: five candidate cards. */
 .draft { display: grid; grid-template-columns: 420px 1fr; gap: 8px; height: 100%; }
-.draft .dpitch { height: 100%; }
+.draft .dpitch, .summer .dpitch { flex: 1; min-height: 0; }
+.pitchcol { display: flex; flex-direction: column; gap: 6px; min-height: 0; }
+.bench-strip { flex: none; height: 64px; display: flex; align-items: center; justify-content: space-around; gap: 4px; padding: 0 6px; background: linear-gradient(180deg, #2a5a2a, #1d461e); border: 2px solid #0e2a10; }
+.bench-strip .cap { font-size: 11px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: #d6f0c8; writing-mode: vertical-rl; transform: rotate(180deg); }
+.bench-strip .dplate { position: relative; transform: none; width: auto; max-width: 92px; flex: 1; }
+.bench-strip .dplate span { max-width: 92px; }
 .draft .right { display: flex; flex-direction: column; min-height: 0; }
 .cards5 { flex: 1; display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; padding: 14px; background: #050505; align-items: stretch; min-height: 0; }
 .ccard { position: relative; display: flex; flex-direction: column; text-align: left; overflow: hidden; color: #1d1d1d;
@@ -45,7 +50,6 @@
 
 /* Summer screen. */
 .summer { display: grid; grid-template-columns: 420px 1fr; gap: 8px; height: 100%; }
-.summer .dpitch { height: 100%; }
 .summer .tbl .up { color: #8fe04a; font-weight: 700; }
 .summer .tbl .down { color: #ff6b6b; font-weight: 700; }
 .summer .tbl tr.sel .up { color: #2f7d0a; }
@@ -63,3 +67,9 @@
 .pick-timer i { display: block; height: 100%; background: linear-gradient(180deg, #ffe45c, #f2c200); transition: width 1s linear; }
 .cmdbar .info b.timer.low { color: #ff6b6b; }
 .ccard.hid .r { color: #9aa0a8; }
+
+.summer .tbl td.pos small { font-size: 12px; color: #8f9297; }
+.summer .tbl .offpos { font-size: 13px; font-weight: 700; color: #ff9f43; }
+.summer .tbl tr.from td { box-shadow: inset 0 0 0 9999px rgba(242,194,0,.18); }
+.summer .tbl td.acts { text-align: right; }
+.summer .tbl td.acts .rowbtn + .rowbtn { margin-left: 6px; }

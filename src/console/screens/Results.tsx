@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { type CupMatch, type Entrant, WINNER } from '../../game/cups';
+import { CL_ROUNDS, type CupMatch, type Entrant, FA_ROUNDS, type Tie, tiesOf, WINNER } from '../../game/cups';
+import { Bracket } from '../Bracket';
 import { NUM_SEASONS } from '../../game/data';
 import { endSeason, seasonLabel, trophiesOf } from '../../game/game';
 import { useGame } from '../../ui/context';
@@ -9,7 +10,7 @@ import '../results.css';
 import { SeasonViewer } from '../Viewer';
 import { clubOf, type Command, Frame, KeyCap, ordinal } from '../ui';
 
-const TABS = ['Table', 'Your Matches', 'Cups', 'Leaders', 'Squad'] as const;
+const TABS = ['Table', 'Your Matches', 'Champions League', 'FA Cup', 'Leaders', 'Squad'] as const;
 
 export function Results() {
   const { data, game, act, settings, quit } = useGame();
@@ -64,18 +65,27 @@ export function Results() {
   };
 
   const group = result.cl.groups?.find((g) => g.some((r) => r.team === game.user));
-  const ko = result.cl.matches.filter((m) => m.round !== 'Group stage');
-  const fa = result.fa.matches.filter((m) => m.home === game.user || m.away === game.user || /Quarter|Semi|Final/.test(m.round));
-
-  const matchRows = (list: CupMatch[]) =>
-    list.map((m, i) => (
-      <tr key={i} className={m.home === game.user || m.away === game.user ? 'me' : ''}>
-        <td className="comp">{m.round}{m.leg ? ` (${m.leg})` : ''}</td>
-        <td className="n">{ent(m.home)}</td>
-        <td className="score">{m.hg}–{m.ag}{m.pens !== undefined ? ' p' : ''}</td>
-        <td>{ent(m.away)}</td>
-      </tr>
-    ));
+  /** The user's ties in a cup, round by round. */
+  const run = (matches: CupMatch[], rounds: string[]) =>
+    rounds.flatMap((round) => tiesOf(matches, round).filter((t) => t.a === game.user || t.b === game.user));
+  const faRun = run(result.fa.matches, FA_ROUNDS);
+  const clRun = run(result.cl.matches, CL_ROUNDS.slice(1));
+  const faOut = faRun.find((t) => t.winner !== game.user);
+  const runRows = (list: Tie[]) =>
+    list.map((t) => {
+      const home = t.a === game.user;
+      const opp = home ? t.b : t.a;
+      const won = t.winner === game.user;
+      const [f, a] = home ? [t.ga, t.gb] : [t.gb, t.ga];
+      return (
+        <tr key={t.round}>
+          <td className="comp">{t.round}</td>
+          <td className="ellip">{t.legs.length > 1 ? 'vs' : home ? 'vs' : 'at'} {ent(opp)}</td>
+          <td className="score">{f}–{a}{t.pens ? ' p' : ''}{t.legs.length > 1 ? ' agg' : ''}</td>
+          <td className="c"><span className={`tag ${won ? 'g' : 'r'}`}>{won ? (t.round === 'Final' ? 'WON' : 'THROUGH') : 'OUT'}</span></td>
+        </tr>
+      );
+    });
 
   return (
     <Frame
@@ -158,32 +168,57 @@ export function Results() {
           )}
           {tab === 2 && (
             <>
-              <div className="pane dpanel">
-                <div className="ph gbar">Champions League<small>Won by {ent(result.cl.winner)}</small></div>
-                <div className="tblwrap scroll">
-                  {group && (
-                    <table className="tbl">
-                      <thead><tr><th>Your Group</th><th className="n">W</th><th className="n">D</th><th className="n">L</th><th className="n sort">Pts</th></tr></thead>
-                      <tbody>
-                        {group.map((r) => (
-                          <tr key={String(r.team)} className={r.team === game.user ? 'sel' : ''}><td className="ellip">{ent(r.team)}</td><td className="n">{r.w}</td><td className="n">{r.d}</td><td className="n">{r.l}</td><td className="n">{r.pts}</td></tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  )}
-                  {!group && <div className="empty">You didn't qualify. Finish in the top four to get in.</div>}
-                  <table className="tbl cuptbl"><tbody>{matchRows(ko)}</tbody></table>
-                </div>
+              <div className="pane dpanel" style={{ flex: 'none', width: 400 }}>
+                <div className="ph gbar">{group ? 'Your Group' : 'Group Stage'}<small>{reachedText(h.clReached[game.user])}</small></div>
+                {group ? (
+                  <table className="tbl">
+                    <thead><tr><th>Club</th><th className="n">W</th><th className="n">D</th><th className="n">L</th><th className="n">GD</th><th className="n sort">Pts</th></tr></thead>
+                    <tbody>
+                      {group.map((r, k) => (
+                        <tr key={String(r.team)} className={`${r.team === game.user ? 'sel' : ''} ${k < 2 ? 'zone-cl' : ''}`}>
+                          <td className="ellip">{ent(r.team)}</td><td className="n">{r.w}</td><td className="n">{r.d}</td><td className="n">{r.l}</td>
+                          <td className="n">{r.gf - r.ga > 0 ? '+' : ''}{r.gf - r.ga}</td><td className="n"><b>{r.pts}</b></td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                ) : (
+                  <div className="empty">You didn't qualify this season. Finish in the top four to play in it next season.</div>
+                )}
+                <div className="note">The top two of each group go through to the Round of 16.</div>
+                {clRun.length > 0 && (
+                  <>
+                    <div className="ph gbar">Your Knockout Ties<small>{result.cl.winner === game.user ? 'Champions' : ''}</small></div>
+                    <div className="tblwrap scroll">
+                      <table className="tbl cuptbl"><tbody>{runRows(clRun)}</tbody></table>
+                    </div>
+                  </>
+                )}
               </div>
               <div className="pane dpanel">
-                <div className="ph gbar">FA Cup<small>Won by {ent(result.fa.winner)}</small></div>
-                <div className="tblwrap scroll">
-                  <table className="tbl cuptbl"><tbody>{matchRows(fa)}</tbody></table>
-                </div>
+                <div className="ph gbar">Knockout Stage<small>Won by {ent(result.cl.winner)} · aggregate scores, * on penalties</small></div>
+                <Bracket matches={result.cl.matches} rounds={CL_ROUNDS.slice(1)} user={game.user} name={ent} />
               </div>
             </>
           )}
           {tab === 3 && (
+            <>
+              <div className="pane dpanel" style={{ flex: 'none', width: 400 }}>
+                <div className="ph gbar">Your Cup Run<small>{reachedText(h.faReached[game.user])}</small></div>
+                <table className="tbl cuptbl"><tbody>{runRows(faRun)}</tbody></table>
+                <div className="note">
+                  {result.fa.winner === game.user
+                    ? <b>FA Cup winners.</b>
+                    : faOut ? <>Knocked out in the {faOut.round.toLowerCase()} by <b>{ent(faOut.winner)}</b>.</> : 'No FA Cup run this season.'}
+                </div>
+              </div>
+              <div className="pane dpanel">
+                <div className="ph gbar">From the Quarter-finals<small>Won by {ent(result.fa.winner)} · * on penalties</small></div>
+                <Bracket matches={result.fa.matches} rounds={FA_ROUNDS.slice(3)} user={game.user} name={ent} />
+              </div>
+            </>
+          )}
+          {tab === 4 && (
             <>
               {([['Top Scorers', h.topScorers], ['Top Assists', h.topAssists]] as const).map(([label, list]) => (
                 <div key={label} className="pane dpanel">
@@ -201,7 +236,7 @@ export function Results() {
               ))}
             </>
           )}
-          {tab === 4 && (
+          {tab === 5 && (
             <div className="pane dpanel">
               <div className="tblwrap scroll">
                 <SortTable rows={seasonPlayers(game, h.season)} columns={seasonColumns(game, data)} initial="avg" rowKey={(r) => r.id} />

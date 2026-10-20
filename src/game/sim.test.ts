@@ -85,14 +85,21 @@ describe('season', () => {
 
 describe('development', () => {
   it('rewards a great season and punishes a poor one, most of all for the young', () => {
-    expect(formBoost({ age: 22, ovr: 80 }, { avg: 7.5, apps: 38 })).toBeGreaterThan(3);
-    expect(formBoost({ age: 27, ovr: 80 }, { avg: 7.5, apps: 38 })).toBeCloseTo(3);
-    expect(formBoost({ age: 27, ovr: 80 }, { avg: 6.2, apps: 38 })).toBeLessThan(-1.5);
-    expect(formBoost({ age: 27, ovr: 80 }, { avg: 7.5, apps: 3 })).toBe(0);
-    expect(formBoost({ age: 27, ovr: 90 }, { avg: 7.5, apps: 38 })).toBeLessThan(2);
+    expect(formBoost({ age: 22, ovr: 80 }, { avg: 7.5, apps: 38 })).toBeGreaterThan(4);
+    expect(formBoost({ age: 25, ovr: 80 }, { avg: 7.5, apps: 38 })).toBeCloseTo(3);
+    expect(formBoost({ age: 25, ovr: 80 }, { avg: 6.2, apps: 38 })).toBeLessThan(-1.5);
+    expect(formBoost({ age: 25, ovr: 80 }, { avg: 7.5, apps: 3 })).toBe(0);
+    expect(formBoost({ age: 25, ovr: 90 }, { avg: 7.5, apps: 38 })).toBeLessThan(2);
     // Judged against team-mates: an average player in a weak side keeps his rating.
     const weak = { team: 6.3, league: 6.6, apps: 38 };
-    expect(Math.abs(formBoost({ age: 27, ovr: 75 }, { ...weak, avg: 6.3 }))).toBeLessThan(0.7);
+    expect(Math.abs(formBoost({ age: 25, ovr: 75 }, { ...weak, avg: 6.3 }))).toBeLessThan(0.7);
     expect(formBoost({ age: 22, ovr: 80 }, { ...weak, avg: 7.2 })).toBeGreaterThan(3);
+  });
+
+  it('lets a teenager who stars jump towards his potential, and keeps a player in his prime steady', () => {
+    const star = { avg: 7.6, apps: 38, team: 6.8, league: 6.6 };
+    expect(formBoost({ age: 18, ovr: 72, pot: 92 }, star)).toBeGreaterThanOrEqual(8);
+    expect(Math.abs(formBoost({ age: 29, ovr: 84 }, star))).toBeLessThanOrEqual(1.2);
+    expect(Math.abs(formBoost({ age: 29, ovr: 84 }, { ...star, avg: 6.0 }))).toBeLessThanOrEqual(1.2);
   });
 });

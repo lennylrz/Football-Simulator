@@ -28,3 +28,18 @@
 .review .cuptbl td:nth-child(1) { width: 26%; }
 .review .cuptbl td:nth-child(2) { width: 32%; }
 .review .cuptbl td:nth-child(3) { width: 10%; }
+
+/* Knockout bracket: each round a column, ties centred between the two they came from. */
+.bracket { flex: 1; min-height: 0; display: grid; gap: 14px; padding: 6px 14px 8px; }
+.bracket .bcol { display: flex; flex-direction: column; min-height: 0; }
+.bracket .bhead { flex: none; font-size: 13px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: #8f9297; padding-bottom: 6px; text-align: center; }
+.bracket .bties { flex: 1; display: flex; flex-direction: column; justify-content: space-around; gap: 4px; }
+.bracket .btie { background: linear-gradient(180deg, #2a2c30, #1e1f22); box-shadow: 0 0 0 1px #3a3c40; cursor: default; }
+.bracket .btie.mine { box-shadow: 0 0 0 2px #ffd900; }
+.bracket .bt { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center; padding: 1px 7px; font-size: 14px; line-height: 19px; }
+.bracket .bt + .bt { border-top: 1px solid #333539; }
+.bracket .bt .nm { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bracket .bt.won { color: #fff; font-weight: 700; }
+.bracket .bt.lost { color: #7d8086; }
+.bracket .bt.me { background: linear-gradient(180deg, #ffe45c, #f2c200); color: #2b2300; }
+.bracket .bt.me.lost { background: linear-gradient(180deg, #c9b04a, #a08a2a); }

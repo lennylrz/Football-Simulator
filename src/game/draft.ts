@@ -1,16 +1,18 @@
-// Draft mode: the user builds an XI by picking one of five real players for
-// each position, and each summer may gamble on re-drafting a few (two by default).
+// Draft mode: the user builds an XI and a small bench by picking one of five
+// real players for each spot, and each summer may gamble on re-drafting a few
+// (two by default) and move players between the bench and the XI.
 import { aiWindow, ensureMinimumSquad } from './ai';
 import type { GameData } from './data';
 import {
-  applyAutoLineup, type DevChange, EXTERNAL, type GameState, goToDeadline, marketPool, type PlayerState, simulate, transfer,
+  applyAutoLineup, type DevChange, EXTERNAL, type GameState, goToDeadline, type PlayerState, simulate, transfer,
 } from './game';
-import { AREA, FORMATIONS, type Position, parsePositions } from './positions';
+import { FORMATIONS, type Position, parsePositions } from './positions';
 import { type Rng, shuffle, stream } from './rng';
 
 export const CANDIDATES = 5;
 export const REDRAFTS_PER_SUMMER = 2;
-export const BENCH = 5;
+/** Substitutes the user drafts, unless the rules say otherwise. */
+export const BENCH = 3;
 
 export interface DraftPick {
   season: number;
@@ -36,8 +38,30 @@ export interface DraftState {
   /** slots re-drafted this summer: each position can be re-drafted once */
   redrafted?: number[];
   picks: DraftPick[];
-  /** summer reveal for the XI: rating before and after, and last season's form */
+  /** summer reveal for the XI and bench: rating before and after, and last season's form */
   reveal: DevChange[];
+  /** the position each player was drafted to play; he keeps it wherever he is moved */
+  home?: Record<number, Position>;
+}
+
+/** Draft spots: 0-10 are the XI's positions, 11 and up the bench. */
+export const XI = 11;
+export const isBench = (spot: number) => spot >= XI;
+
+export function benchSize(state: GameState): number {
+  return state.rules?.bench ?? BENCH;
+}
+
+/** The player in a spot of the XI or bench, or -1. */
+export function inSpot(state: GameState, spot: number): number {
+  const club = state.clubs[state.user];
+  return (isBench(spot) ? club.bench[spot - XI] : club.xi[spot]) ?? -1;
+}
+
+function setSpot(state: GameState, spot: number, player: number): void {
+  const club = state.clubs[state.user];
+  if (isBench(spot)) club.bench[spot - XI] = player;
+  else club.xi[spot] = player;
 }
 
 export function redraftsPerSummer(state: GameState): number {
@@ -101,6 +125,33 @@ export function drawCandidates(state: GameState, data: GameData, slot: Position,
   return shuffle(rng, chosen).slice(0, choicesOf(state)).map((p) => p.id);
 }
 
+/**
+ * Substitutes: any outfield position, mostly youngsters who may grow into
+ * starters, with an experienced squad player or two.
+ */
+export function drawBenchCandidates(state: GameState, data: GameData, rng: Rng): number[] {
+  const taken = new Set(state.clubs[state.user].squad);
+  const rows = data.seasons[state.season];
+  const recent = new Set(state.recent ?? []);
+  const pool: PlayerState[] = [];
+  for (const key in rows) {
+    const p = state.players[+key];
+    if (!p || p.retired || taken.has(p.id) || p.age > 33 || p.ovr < 62 || parsePositions(p.pos)[0] === 'GK') continue;
+    pool.push(p);
+  }
+  const chosen: PlayerState[] = [];
+  const take = (filter: (p: PlayerState) => boolean, n: number) => {
+    const all = pool.filter((p) => filter(p) && !chosen.includes(p));
+    const fresh = all.filter((p) => !recent.has(p.id));
+    chosen.push(...shuffle(rng, fresh.length >= n ? fresh : all).slice(0, n));
+  };
+  take((p) => p.age <= 20 && p.pot >= 84, 1);
+  take((p) => p.age <= 22 && p.pot >= 80 && p.ovr <= 76, 2);
+  take((p) => p.age >= 24 && p.ovr >= 74 && p.ovr <= 80, 1);
+  take((p) => p.ovr >= 70 && p.ovr <= 78, CANDIDATES - chosen.length);
+  return shuffle(rng, chosen).slice(0, choicesOf(state)).map((p) => p.id);
+}
+
 function draw(state: GameState, data: GameData, slot: number): void {
   const d = state.draft!;
   d.slot = slot;
@@ -111,7 +162,7 @@ function draw(state: GameState, data: GameData, slot: number): void {
     return;
   }
   const rng = stream(state.seed, 'draft', state.season, slot, d.picks.length);
-  d.candidates = drawCandidates(state, data, slotsOf(state)[slot], rng);
+  d.candidates = isBench(slot) ? drawBenchCandidates(state, data, rng) : drawCandidates(state, data, slotsOf(state)[slot], rng);
   if (state.stage === 'draft') (d.offers ??= {})[slot] = d.candidates;
   d.shown = [...(d.shown ?? []), ...d.candidates];
 }
@@ -130,7 +181,6 @@ function nextPick(state: GameState, data: GameData): void {
   if (slot === undefined) {
     d.slot = null;
     d.candidates = [];
-    fillBench(state, data);
     state.stage = 'summer';
     return;
   }
@@ -145,9 +195,10 @@ export function openDraftWindow(state: GameState, data: GameData): void {
     for (const id of club.squad) state.players[id].club = EXTERNAL;
     club.squad = [];
     club.xi = slotsOf(state).map(() => -1);
-    club.bench = [];
+    club.bench = Array.from({ length: benchSize(state) }, () => -1);
     aiWindow(state, data, 'open');
-    state.draft = { queue: pickOrder(slotsOf(state)), slot: null, candidates: [], offers: {}, shown: [], redraftsLeft: 0, redrafted: [], picks: [], reveal: [] };
+    const queue = [...pickOrder(slotsOf(state)), ...club.bench.map((_, j) => XI + j)];
+    state.draft = { queue, slot: null, candidates: [], offers: {}, shown: [], redraftsLeft: 0, redrafted: [], picks: [], reveal: [], home: {} };
     state.stage = 'draft';
     nextPick(state, data);
     return;
@@ -157,14 +208,14 @@ export function openDraftWindow(state: GameState, data: GameData): void {
   const report = new Map(state.devReport.map((r) => [r.player, r]));
   // Players who retired leave an empty slot.
   club.xi = club.xi.map((id) => (club.squad.includes(id) ? id : -1));
-  d.reveal = club.xi.filter((id) => id >= 0).map((id) => report.get(id) ?? { player: id, from: state.players[id].ovr, to: state.players[id].ovr });
+  club.bench = club.bench.map((id) => (club.squad.includes(id) ? id : -1));
+  d.reveal = [...club.xi, ...club.bench].filter((id) => id >= 0).map((id) => report.get(id) ?? { player: id, from: state.players[id].ovr, to: state.players[id].ovr });
   d.redraftsLeft = redraftsPerSummer(state);
   d.redrafted = [];
   d.offers = {};
   d.slot = null;
   d.candidates = [];
   d.queue = [];
-  fillBench(state, data);
   state.stage = 'summer';
 }
 
@@ -175,8 +226,8 @@ export function pickCandidate(state: GameState, data: GameData, player: number):
   const p = state.players[player];
   transfer(state, data, player, state.user, 0);
   club.cash = Math.max(club.cash, 0);
-  club.xi[d.slot] = player;
-  club.bench = club.bench.filter((id) => id !== player);
+  setSpot(state, d.slot, player);
+  (d.home ??= {})[player] = isBench(d.slot) ? parsePositions(p.pos)[0] : slotsOf(state)[d.slot];
   d.picks.push({ season: state.season, slot: d.slot, player, ovr: p.ovr });
   if (state.stage === 'draft') {
     const done = d.slot;
@@ -193,9 +244,8 @@ export function pickCandidate(state: GameState, data: GameData, player: number):
 /** Summer gamble: lose the player in a slot and pick from new candidates. */
 export function startRedraft(state: GameState, data: GameData, slot: number): string | null {
   const d = state.draft;
-  const club = state.clubs[state.user];
   if (!d || state.stage !== 'summer' || d.slot !== null) return 'Not now.';
-  const current = club.xi[slot];
+  const current = inSpot(state, slot);
   if (d.redrafted?.includes(slot)) return 'You have already re-drafted this position this summer.';
   if (current >= 0) {
     if (d.redraftsLeft <= 0) return 'No re-drafts left this summer.';
@@ -203,7 +253,7 @@ export function startRedraft(state: GameState, data: GameData, slot: number): st
     const pick = [...d.picks].reverse().find((x) => x.player === current && x.leftOvr === undefined);
     if (pick) pick.leftOvr = state.players[current].ovr;
     transfer(state, data, current, EXTERNAL, 0, 'Released');
-    club.xi[slot] = -1;
+    setSpot(state, slot, -1);
   }
   (d.redrafted ??= []).push(slot);
   draw(state, data, slot);
@@ -211,33 +261,20 @@ export function startRedraft(state: GameState, data: GameData, slot: number): st
 }
 
 export function emptySlots(state: GameState): number[] {
-  return state.clubs[state.user].xi.flatMap((id, i) => (id < 0 ? [i] : []));
+  const club = state.clubs[state.user];
+  return [...club.xi, ...club.bench].flatMap((id, i) => (id < 0 ? [i < club.xi.length ? i : XI + i - club.xi.length] : []));
 }
 
-/** Tops the bench up to five squad players: a keeper and cover across the pitch. */
-function fillBench(state: GameState, data: GameData): void {
-  const club = state.clubs[state.user];
-  const inXI = new Set(club.xi);
-  club.bench = club.squad.filter((id) => !inXI.has(id));
-  const rng = stream(state.seed, 'bench', state.season);
-  const pool = shuffle(rng, marketPool(state, data).filter((p) => p.ovr >= 68 && p.ovr <= 74 && p.age >= 20 && p.age <= 31));
-  const need: ('GK' | 'DEF' | 'MID' | 'ATT')[] = ['GK', 'DEF', 'MID', 'ATT', 'DEF'];
-  for (const area of need) {
-    if (club.bench.length >= BENCH) break;
-    const has = club.bench.some((id) => AREA[parsePositions(state.players[id].pos)[0]] === area);
-    if (has && area !== 'DEF') continue;
-    const p = pool.find((q) => q.club === EXTERNAL && AREA[parsePositions(q.pos)[0]] === area);
-    if (!p) continue;
-    transfer(state, data, p.id, state.user, 0);
-    club.bench.push(p.id);
-  }
-  while (club.bench.length < BENCH) {
-    const p = pool.find((q) => q.club === EXTERNAL);
-    if (!p) break;
-    transfer(state, data, p.id, state.user, 0);
-    club.bench.push(p.id);
-  }
-  club.bench = club.bench.slice(0, BENCH);
+/** Summer: swaps a starter and a substitute (or two starters). Free, and no re-draft is used. */
+export function swapSpots(state: GameState, a: number, b: number): string | null {
+  const d = state.draft;
+  if (!d || state.stage !== 'summer' || d.slot !== null) return 'Not now.';
+  if (a === b || (isBench(a) && isBench(b))) return 'Pick a starter and a substitute.';
+  const pa = inSpot(state, a);
+  const pb = inSpot(state, b);
+  setSpot(state, a, pb);
+  setSpot(state, b, pa);
+  return null;
 }
 
 /** Deadline day for the AI, then the season is played. */
@@ -249,7 +286,6 @@ export function playDraftSeason(state: GameState, data: GameData): string | null
     ensureMinimumSquad(state, data, c.id);
     applyAutoLineup(state, c.id);
   }
-  fillBench(state, data);
   simulate(state, data);
   return null;
 }

@@ -122,6 +122,32 @@ Browser checks: Playwright with Chromium at
   sort) is used for squad stats, Club Legends and the Hall of Fame; Career
   Summary seasons open a Season Report.
 
+## Second pass (bench, viewer, cups, development by age)
+
+- Bench: after the XI the user drafts 3 substitutes (setting: 3 or 5,
+  `rules.bench`). Spots 0-10 are the XI, 11+ the bench (`XI`, `isBench`,
+  `inSpot`, `swapSpots` in `draft.ts`). Substitutes come from any outfield
+  position, mostly prospects. Each player keeps the position he was drafted
+  for (`DraftState.home`, used by `engineLite` in `game.ts`); moved
+  elsewhere he plays out of position. Summer: Swap (S, or the row button)
+  moves players between bench and XI for free; bench spots can be re-drafted.
+- Engine: `ENGINE.rotation` (12%) rests a starter when the bench has someone
+  for his position within `rotationGap` (12) points; a slot's strength is now
+  the minutes-weighted rating of everyone who played there, so the bench
+  counts.
+- Development by age (`formBoost`): 20 and under x2 (cap +9), 21-23 x1.5
+  (cap +6), plus 30% of the gap to potential when playing well; 27-30 move
+  at most about 1 (half the real change, small noise); 31+ decline more
+  than they improve. Under-24s may drift up to +12 above their real rating.
+- Season viewer: no row animation, the user's match on top with WIN / DRAW /
+  LOSS colours, cup days are their own steps (user's ties, semis, finals),
+  Left/Right steps through days.
+- Season review: separate Champions League and FA Cup tabs. CL: the user's
+  group table and knockout ties, plus a bracket (`Bracket.tsx`, ties from
+  `tiesOf` in `cups.ts`). FA Cup: the user's run and a bracket from the
+  quarter-finals. Knockout pairings no longer reshuffle between rounds, so
+  the bracket connects.
+
 ## Next task
 
 None set. The welcome screen is done. Candidates from `docs/ROADMAP.md`:

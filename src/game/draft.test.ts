@@ -1,6 +1,6 @@
 import { beforeAll, describe, expect, it } from 'vitest';
 import type { GameData } from './data';
-import { autoDraft, chooseSlot, emptySlots, fits, pickCandidate, playDraftSeason, startRedraft } from './draft';
+import { autoDraft, chooseSlot, emptySlots, fits, pickCandidate, playDraftSeason, startRedraft, swapSpots, XI } from './draft';
 import { endSeason, type GameState, newGame, REAL_CLUBS, trophiesOf } from './game';
 import { loadTestData } from './testData';
 
@@ -36,7 +36,8 @@ describe('draft mode', () => {
     autoDraft(s, data);
     expect(s.stage).toBe('summer');
     expect(s.clubs[s.user].xi.every((id) => id >= 0)).toBe(true);
-    expect(s.clubs[s.user].bench).toHaveLength(5);
+    expect(s.clubs[s.user].bench).toHaveLength(3);
+    expect(s.clubs[s.user].bench.every((id) => id >= 0)).toBe(true);
     expect(playDraftSeason(s, data)).toBeNull();
     const h = s.history[0];
     expect(h.table).toHaveLength(21);
@@ -90,7 +91,7 @@ describe('draft rules', () => {
       const slots = ['GK', 'LB', 'CB', 'CB', 'RB', 'CM', 'CDM', 'CM', 'LW', 'ST', 'RW'];
       while (s.draft!.slot !== null) {
         const slot = slots[s.draft!.slot];
-        for (const id of s.draft!.candidates) expect(fits(s.players[id], slot as never), `${s.players[id].pos} at ${slot}`).toBe(true);
+        if (slot) for (const id of s.draft!.candidates) expect(fits(s.players[id], slot as never), `${s.players[id].pos} at ${slot}`).toBe(true);
         pickCandidate(s, data, s.draft!.candidates[0]);
       }
     }
@@ -133,5 +134,27 @@ describe('draft rules', () => {
     autoDraft(b, data);
     const again = b.draft!.shown!.filter((id) => seen.includes(id)).length;
     expect(again / b.draft!.shown!.length).toBeLessThan(0.2);
+  });
+});
+
+describe('bench', () => {
+  it('drafts substitutes who play some matches, and swaps them into the XI in the summer', () => {
+    const s = newGame(data, REAL_CLUBS, 21, 'draft', '4-3-3', undefined, { redrafts: 2, choices: 5, bench: 5 });
+    autoDraft(s, data);
+    const club = s.clubs[s.user];
+    expect(club.bench).toHaveLength(5);
+    playDraftSeason(s, data);
+    const apps = new Map(s.history[0].userStats.map((x) => [x.id, x.apps]));
+    for (const id of club.bench) expect(apps.get(id) ?? 0).toBeGreaterThan(0);
+    endSeason(s, data);
+    const starter = club.xi[9];
+    const sub = s.clubs[s.user].bench[0];
+    expect(swapSpots(s, 9, XI)).toBeNull();
+    expect(s.clubs[s.user].xi[9]).toBe(sub);
+    expect(s.clubs[s.user].bench[0]).toBe(starter);
+    expect(swapSpots(s, XI, XI + 1)).not.toBeNull();
+    // A substitute can be re-drafted too.
+    expect(startRedraft(s, data, XI + 1)).toBeNull();
+    expect(s.draft!.candidates.length).toBe(5);
   });
 });
