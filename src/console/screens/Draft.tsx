@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
-import { pickCandidate, redraftsPerSummer } from '../../game/draft';
+import { chooseSlot, pickCandidate, redraftsPerSummer } from '../../game/draft';
 import { seasonLabel } from '../../game/game';
 import { FORMATIONS } from '../../game/positions';
 import { useGame } from '../../ui/context';
+import { LeaveCareer, leaveCommands } from '../overlays';
 import { Pitch, type PlateInfo } from '../Pitch';
 import { browse, clubOf, type Command, Frame, moneyShort } from '../ui';
 
@@ -12,8 +13,9 @@ const SLOT_NAMES: Record<string, string> = {
   LW: 'Left winger', RW: 'Right winger', CF: 'Centre-forward', ST: 'Striker',
 };
 
-export function Draft({ onMenu }: { onMenu: () => void }) {
-  const { data, game, act, settings } = useGame();
+export function Draft() {
+  const { data, game, act, settings, quit } = useGame();
+  const [leaving, setLeaving] = useState(false);
   const hidden = settings.hiddenRatings;
   const club = game.clubs[game.user];
   const d = game.draft!;
@@ -44,21 +46,32 @@ export function Draft({ onMenu }: { onMenu: () => void }) {
   const opening = game.stage === 'draft';
   const pickNo = d.picks.filter((p) => p.season === game.season).length + 1;
 
+  // In the opening draft the positions can be filled in any order.
+  const open = opening ? d.queue : [];
   const plates: PlateInfo[] = club.xi.map((id, i) => {
     const p = game.players[id];
     if (i === d.slot) return { label: slots[i], state: 'now' };
-    if (!p || id < 0) return { label: slots[i], state: 'empty' };
+    if (!p || id < 0) return { label: slots[i], state: open.includes(i) ? 'open' : 'empty' };
     return { rating: p.ovr, name: data.names[id][0], label: slots[i] };
   });
 
   const pick = (i: number) => act((s, dd) => void pickCandidate(s, dd, s.draft!.candidates[i]));
   autoPick.current = () => pick(index);
   const redrafts = redraftsPerSummer(game);
-  const commands: Command[] = [
-    { keys: ['Enter'], label: 'Pick', primary: true, onPress: () => pick(index) },
-    browse('Browse', () => setIndex(Math.max(0, index - 1)), () => setIndex(Math.min(d.candidates.length - 1, index + 1)), true),
-    { keys: ['Escape'], label: 'Main Menu', onPress: onMenu },
-  ];
+  const switchTo = (slot: number) => act((s, dd) => void chooseSlot(s, dd, slot));
+  const order = open.slice().sort((a, b) => a - b);
+  const cycle = (dir: 1 | -1) => {
+    const at = order.indexOf(d.slot!);
+    switchTo(order[(at + dir + order.length) % order.length]);
+  };
+  const commands: Command[] = leaving
+    ? leaveCommands(quit, () => setLeaving(false))
+    : [
+        { keys: ['Enter'], label: 'Pick', primary: true, onPress: () => pick(index) },
+        browse('Browse', () => setIndex(Math.max(0, index - 1)), () => setIndex(Math.min(d.candidates.length - 1, index + 1)), true),
+        { keys: ['Q', 'E'], label: 'Position', hidden: order.length < 2, disabled: order.length < 2, onPress: (k) => cycle(k === 'Q' ? -1 : 1) },
+        { keys: ['Escape'], label: 'Leave Career', onPress: () => setLeaving(true) },
+      ];
 
   return (
     <Frame
@@ -72,7 +85,7 @@ export function Draft({ onMenu }: { onMenu: () => void }) {
         : <><span>Choose</span><b>{SLOT_NAMES[slotPos]}</b></>}
     >
       <div className="draft">
-        <Pitch formation={club.formation} plates={plates} />
+        <Pitch formation={club.formation} plates={plates} onPick={opening ? (i) => order.includes(i) && i !== d.slot && switchTo(i) : undefined} />
         <div className="right win">
           <div className="win-title">Choose Your {SLOT_NAMES[slotPos]}</div>
           {settings.pickTimer > 0 && <div className="pick-timer"><i style={{ width: `${(left / settings.pickTimer) * 100}%` }} /></div>}
@@ -108,10 +121,13 @@ export function Draft({ onMenu }: { onMenu: () => void }) {
           <div className="note">
             {hidden
               ? 'Ratings are hidden: pick on name, age and club alone. You see his rating once he is yours.'
-              : opening ? 'Ratings are 2015/16. Nobody tells you who will grow: that is down to your ball knowledge.' : 'Your old player has gone. Pick his replacement.'}
+              : opening
+                ? 'Draft in any order: click a position on the pitch or press Q and E. Ratings are 2015/16; who grows is down to your ball knowledge.'
+                : 'Your old player has gone. Pick his replacement.'}
           </div>
         </div>
       </div>
+      {leaving && <LeaveCareer />}
     </Frame>
   );
 }

@@ -4,8 +4,8 @@ import { browse, type Command, Frame, KeyCap, useListNav } from '../ui';
 
 /** Game settings, shown when the era is chosen and from its main menu. */
 export function GameSetup({
-  settings, onChange, onDone, onBack, hasSave,
-}: { settings: Settings; onChange: (s: Settings) => void; onDone: () => void; onBack: () => void; hasSave: boolean }) {
+  settings, onChange, onDone, onBack,
+}: { settings: Settings; onChange: (s: Settings) => void; onDone: () => void; onBack: () => void }) {
   const nav = useListNav(OPTIONS.length);
   const opt = OPTIONS[nav.index];
   const change = (i: number, dir: 1 | -1) => onChange(step(settings, OPTIONS[i].key, dir));
@@ -56,7 +56,7 @@ export function GameSetup({
             <span className="kv"><span>Default</span><b>{(opt.show as (v: unknown) => string)(DEFAULT_SETTINGS[opt.key])}</b></span>
           </div>
           <div className="note">
-            Settings are saved in this browser. {hasSave ? 'Your saved career follows them too: re-drafts from next summer, choices from the next pick.' : 'You can change them later from the main menu.'}
+            Settings are saved in this browser. You can change them later from the main menu.
           </div>
         </div>
       </div>

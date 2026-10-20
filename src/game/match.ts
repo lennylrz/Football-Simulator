@@ -35,14 +35,14 @@ export interface MatchResult {
 
 // Tuned by the balancing tests (src/game/balance.test.ts).
 export const ENGINE = {
-  base: 1.22,
+  base: 1.2,
   home: 0.13,
-  attack: 0.05,
-  midfield: 0.03,
+  attack: 0.056,
+  midfield: 0.034,
   /** match-to-match form, in rating points */
-  formSd: 2,
+  formSd: 1.5,
   /** season-long form of a team (a hot or cold season), in rating points */
-  seasonFormSd: 1.5,
+  seasonFormSd: 0.6,
   /** how strongly a player's rating drives his share of goals and assists */
   starPower: 14,
   missChance: 0.05,

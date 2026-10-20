@@ -23,7 +23,7 @@ export interface PlateInfo {
   rating?: number;
   name?: string;
   label: string;
-  state?: 'empty' | 'now' | 'sel';
+  state?: 'empty' | 'open' | 'now' | 'sel' | 'done';
   delta?: number;
   delay?: number;
 }
@@ -42,7 +42,7 @@ export function Pitch({ formation, plates, onPick, children }: { formation: Form
         </g>
       </svg>
       {plates.map((p, i) => (
-        <div key={i} className={`dplate ${p.state ?? ''}`} style={{ left: `${at[i].x}%`, top: `${at[i].y}%` }} onClick={() => onPick?.(i)}>
+        <div key={i} className={`dplate ${p.state ?? ''} ${onPick ? 'click' : ''}`} style={{ left: `${at[i].x}%`, top: `${at[i].y}%` }} onClick={() => onPick?.(i)}>
           <b>{p.rating ?? '?'}</b>
           <span>{p.name ?? 'Empty'}</span>
           <em>{p.label}</em>

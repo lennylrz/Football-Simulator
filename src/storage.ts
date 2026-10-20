@@ -1,28 +1,38 @@
-import type { GameState } from './game/game';
+// Careers are not saved: leaving one ends it. What is kept is the players
+// offered in recent careers, so the next draft brings new faces.
 
-const KEY = 'five-seasons-run-v1';
+const OLD_RUN_KEY = 'five-seasons-run-v1';
+const RECENT_KEY = 'five-seasons-recent-v1';
+/** How many recent careers' draws to remember. */
+const CAREERS = 3;
 
-export function loadRun(): GameState | null {
+interface RecentCareer {
+  seed: number;
+  ids: number[];
+}
+
+function read(): RecentCareer[] {
   try {
-    const raw = localStorage.getItem(KEY);
-    if (!raw) return null;
-    const s = JSON.parse(raw) as GameState;
-    // Only draft careers can be continued.
-    if (!s || s.v !== 1 || s.mode !== 'draft') return null;
-    // Runs saved before the stepped transfer window.
-    s.step ??= 'offers';
-    s.bids ??= [];
-    return s;
+    localStorage.removeItem(OLD_RUN_KEY);
+    const raw = localStorage.getItem(RECENT_KEY);
+    return raw ? (JSON.parse(raw) as RecentCareer[]) : [];
   } catch {
-    return null;
+    return [];
   }
 }
 
-export function saveRun(state: GameState | null): void {
+/** Players offered in recent careers other than this one. */
+export function recentPlayers(except?: number): number[] {
+  return [...new Set(read().filter((c) => c.seed !== except).flatMap((c) => c.ids))];
+}
+
+/** Remembers the players a career has been offered so far. */
+export function rememberShown(seed: number, ids: number[]): void {
   try {
-    if (state) localStorage.setItem(KEY, JSON.stringify(state));
-    else localStorage.removeItem(KEY);
+    const list = read().filter((c) => c.seed !== seed);
+    list.push({ seed, ids: [...new Set(ids)] });
+    localStorage.setItem(RECENT_KEY, JSON.stringify(list.slice(-CAREERS)));
   } catch {
-    // Storage full or blocked: the run still works, it just won't survive a reload.
+    // Storage blocked: the next career just draws from everyone.
   }
 }

@@ -22,7 +22,7 @@ function codeOf(name: string): string {
   return code.toUpperCase().padEnd(3, 'X');
 }
 
-export function NewClub({ onStart, onBack, settings }: { onStart: (club: ClubInfo, formation: Formation, seed: number) => void; onBack: () => void; settings: Settings }) {
+export function NewClub({ onStart, onBack, settings }: { onStart: (club: ClubInfo, formation: Formation, seed: number, shared: boolean) => void; onBack: () => void; settings: Settings }) {
   const [name, setName] = useState('Five Seasons FC');
   const [colour, setColour] = useState(0);
   const [formation, setFormation] = useState<Formation>('4-3-3');
@@ -34,7 +34,7 @@ export function NewClub({ onStart, onBack, settings }: { onStart: (club: ClubInf
 
   const start = () => {
     const parsed = Number.parseInt(seedText, 10);
-    onStart(info, formation, Number.isFinite(parsed) ? parsed >>> 0 : Math.floor(Math.random() * 2 ** 32));
+    onStart(info, formation, Number.isFinite(parsed) ? parsed >>> 0 : Math.floor(Math.random() * 2 ** 32), Number.isFinite(parsed));
   };
   const fIndex = FORMATION_NAMES.indexOf(formation);
   const commands: Command[] = seedOpen

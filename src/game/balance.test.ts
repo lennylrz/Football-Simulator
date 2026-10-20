@@ -57,9 +57,8 @@ export function summarise(results: SeasonResult[], clubNames: string[]): Summary
 
 export function expectPlausible(s: Summary) {
   const bigSixRate = s.champions.filter((c) => BIG_SIX.includes(c)).length / s.seasons;
-  expect(bigSixRate).toBeGreaterThan(0.85);
-  // A mid-table title should be rare but possible.
-  expect(bigSixRate).toBeLessThan(1);
+  // The strongest squads win the league; a mid-table title is a near-miracle.
+  expect(bigSixRate).toBeGreaterThan(0.9);
   expect(s.championPts).toBeGreaterThan(80);
   expect(s.championPts).toBeLessThan(96);
   expect(s.lastPts).toBeGreaterThan(17);

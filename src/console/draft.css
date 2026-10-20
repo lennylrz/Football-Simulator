@@ -1,12 +1,17 @@
 /* Pitch with name plates, shared by the draft and summer screens. */
 .dpitch { position: relative; border: 2px solid #0e2a10; overflow: hidden; background: repeating-linear-gradient(180deg, #3f8f3a 0 9%, #469c40 9% 18%); box-shadow: inset 0 0 60px rgba(0,0,0,.35); }
 .dpitch svg.lines { position: absolute; inset: 0; width: 100%; height: 100%; }
-.dplate { position: absolute; transform: translate(-50%, -50%); display: grid; justify-items: center; gap: 1px; width: 124px; cursor: pointer; }
+.dplate { position: absolute; transform: translate(-50%, -50%); display: grid; justify-items: center; gap: 1px; width: 124px; }
+.dplate.click { cursor: pointer; }
+.dplate.click:hover b { border-color: #f2c200; box-shadow: 0 0 0 2px rgba(242,194,0,.6); }
 .dplate b { min-width: 36px; text-align: center; font-size: 18px; padding: 1px 6px; background: linear-gradient(180deg, #2b2d31, #121315); border: 1px solid rgba(255,255,255,.6); }
 .dplate span { max-width: 124px; font-size: 13px; font-weight: 700; padding: 1px 6px; background: rgba(10,14,20,.85); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .dplate em { font-style: normal; font-size: 11px; font-weight: 700; color: #d6f0c8; text-shadow: 0 1px 1px #000; }
 .dplate.empty b { background: rgba(0,0,0,.25); border: 1px dashed rgba(255,255,255,.7); color: rgba(255,255,255,.8); }
 .dplate.now b { background: linear-gradient(180deg, #ffe45c, #f2c200); color: #2b2300; border-color: #fff; animation: focus-pulse 1.4s ease-in-out infinite; }
+.dplate.open b { background: rgba(0,0,0,.35); border: 1px dashed #f2c200; color: #ffe45c; }
+.dplate.done { opacity: .75; }
+.dplate.done em::after { content: " · re-drafted"; color: #ffe45c; }
 .dplate.sel b { background: linear-gradient(180deg, #fff, #dcdcdc); color: #111; }
 .dplate .delta { position: absolute; right: 2px; top: -12px; font-size: 13px; font-weight: 900; padding: 1px 5px; border-radius: 3px; opacity: 0; animation: pop .35s ease-out forwards; animation-delay: var(--d, 0ms); box-shadow: 0 2px 4px rgba(0,0,0,.5); }
 .dplate .delta.up { background: #4a9a0b; color: #fff; }
@@ -21,9 +26,10 @@
 .cards5 { flex: 1; display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; padding: 14px; background: #050505; align-items: stretch; min-height: 0; }
 .ccard { position: relative; display: flex; flex-direction: column; text-align: left; overflow: hidden; color: #1d1d1d;
   background: linear-gradient(180deg, #ffffff 0%, #ececec 55%, #d4d4d4 100%); box-shadow: inset 0 1px 0 #fff, 0 0 0 1px #000;
-  opacity: 0; animation: deal .35s ease-out forwards; animation-delay: var(--d, 0ms); transition: transform .15s; }
-.ccard:hover { transform: translateY(-3px); }
-.ccard.on { transform: translateY(-6px); box-shadow: inset 0 0 0 3px #f2c200, 0 0 0 1px #000, 0 10px 24px rgba(0,0,0,.6); }
+  opacity: 0; animation: deal .35s ease-out forwards; animation-delay: var(--d, 0ms); transition: box-shadow .15s; }
+.ccard:hover { box-shadow: inset 0 0 0 2px rgba(242,194,0,.6), 0 0 0 1px #000, 0 6px 16px rgba(0,0,0,.5); }
+/* The selected card is marked without moving, so it never slips out from under the pointer. */
+.ccard.on { box-shadow: inset 0 0 0 3px #f2c200, 0 0 0 1px #000, 0 10px 24px rgba(0,0,0,.6); }
 @keyframes deal { from { opacity: 0; transform: translateY(24px) rotateY(70deg); } to { opacity: 1; transform: none; } }
 .ccard .top { padding: 10px 12px 0; display: flex; justify-content: space-between; align-items: flex-start; }
 .ccard .r { font: 900 54px/1 Arial, sans-serif; letter-spacing: -.02em; }

@@ -3,9 +3,9 @@
 import { aiWindow, ensureMinimumSquad } from './ai';
 import type { GameData } from './data';
 import {
-  applyAutoLineup, EXTERNAL, type GameState, goToDeadline, marketPool, type PlayerState, simulate, transfer,
+  applyAutoLineup, type DevChange, EXTERNAL, type GameState, goToDeadline, marketPool, type PlayerState, simulate, transfer,
 } from './game';
-import { AREA, FORMATIONS, type Position, parsePositions, positionFit } from './positions';
+import { AREA, FORMATIONS, type Position, parsePositions } from './positions';
 import { type Rng, shuffle, stream } from './rng';
 
 export const CANDIDATES = 5;
@@ -23,15 +23,21 @@ export interface DraftPick {
 }
 
 export interface DraftState {
-  /** XI slots still to fill in the opening draft, in pick order */
+  /** XI slots still to fill in the opening draft, in the suggested order */
   queue: number[];
   /** slot being picked now, or null */
   slot: number | null;
   candidates: number[];
+  /** opening draft: candidates already drawn per slot, so switching positions never re-rolls them */
+  offers?: Record<number, number[]>;
+  /** every player offered this career */
+  shown?: number[];
   redraftsLeft: number;
+  /** slots re-drafted this summer: each position can be re-drafted once */
+  redrafted?: number[];
   picks: DraftPick[];
-  /** summer reveal for the XI: rating before and after */
-  reveal: { player: number; from: number; to: number }[];
+  /** summer reveal for the XI: rating before and after, and last season's form */
+  reveal: DevChange[];
 }
 
 export function redraftsPerSummer(state: GameState): number {
@@ -53,9 +59,15 @@ function slotsOf(state: GameState): Position[] {
   return FORMATIONS[state.clubs[state.user].formation];
 }
 
-/** Candidates play the slot's position naturally, so there is no hidden penalty. */
-function fits(p: PlayerState, slot: Position): boolean {
-  return positionFit(parsePositions(p.pos), slot) >= 1;
+/** Positions that are the same job on the pitch. */
+const SAME: Partial<Record<Position, Position[]>> = {
+  ST: ['CF'], CF: ['ST'], LB: ['LWB'], LWB: ['LB'], RB: ['RWB'], RWB: ['RB'], LW: ['LM'], LM: ['LW'], RW: ['RM'], RM: ['RW'],
+};
+
+/** Candidates are offered only in their main position, so a left-back is a real left-back. */
+export function fits(p: Pick<PlayerState, 'pos'>, slot: Position): boolean {
+  const main = parsePositions(p.pos)[0];
+  return main === slot || !!SAME[slot]?.includes(main);
 }
 
 /**
@@ -73,11 +85,15 @@ export function drawCandidates(state: GameState, data: GameData, slot: Position,
     pool.push(p);
   }
   const chosen: PlayerState[] = [];
+  // Players seen in recent careers come up only when there is nobody else of their kind.
+  const recent = new Set(state.recent ?? []);
   const take = (filter: (p: PlayerState) => boolean, n: number) => {
-    const options = shuffle(rng, pool.filter((p) => filter(p) && !chosen.includes(p)));
+    const all = pool.filter((p) => filter(p) && !chosen.includes(p));
+    const fresh = all.filter((p) => !recent.has(p.id));
+    const options = shuffle(rng, fresh.length >= n ? fresh : all);
     chosen.push(...options.slice(0, n));
   };
-  if (rng() < 0.55) take((p) => p.ovr >= 84, 1);
+  if (rng() < 0.45) take((p) => p.ovr >= 84, 1);
   take((p) => p.ovr >= 79 && p.ovr <= 83, rng() < 0.5 ? 1 : 2);
   take((p) => p.age <= 21 && p.pot >= 80 && p.ovr <= 77, rng() < 0.5 ? 1 : 2);
   take((p) => p.ovr >= 70 && p.ovr <= 79, CANDIDATES - chosen.length);
@@ -88,13 +104,29 @@ export function drawCandidates(state: GameState, data: GameData, slot: Position,
 function draw(state: GameState, data: GameData, slot: number): void {
   const d = state.draft!;
   d.slot = slot;
+  const taken = new Set(state.clubs[state.user].squad);
+  const kept = state.stage === 'draft' ? d.offers?.[slot]?.filter((id) => !taken.has(id)) : undefined;
+  if (kept && kept.length) {
+    d.candidates = kept;
+    return;
+  }
   const rng = stream(state.seed, 'draft', state.season, slot, d.picks.length);
   d.candidates = drawCandidates(state, data, slotsOf(state)[slot], rng);
+  if (state.stage === 'draft') (d.offers ??= {})[slot] = d.candidates;
+  d.shown = [...(d.shown ?? []), ...d.candidates];
+}
+
+/** Opening draft: switch to another position still to fill. */
+export function chooseSlot(state: GameState, data: GameData, slot: number): string | null {
+  const d = state.draft;
+  if (!d || state.stage !== 'draft' || !d.queue.includes(slot)) return 'That position is already filled.';
+  if (d.slot !== slot) draw(state, data, slot);
+  return null;
 }
 
 function nextPick(state: GameState, data: GameData): void {
   const d = state.draft!;
-  const slot = d.queue.shift();
+  const slot = d.queue[0];
   if (slot === undefined) {
     d.slot = null;
     d.candidates = [];
@@ -115,18 +147,20 @@ export function openDraftWindow(state: GameState, data: GameData): void {
     club.xi = slotsOf(state).map(() => -1);
     club.bench = [];
     aiWindow(state, data, 'open');
-    state.draft = { queue: pickOrder(slotsOf(state)), slot: null, candidates: [], redraftsLeft: 0, picks: [], reveal: [] };
+    state.draft = { queue: pickOrder(slotsOf(state)), slot: null, candidates: [], offers: {}, shown: [], redraftsLeft: 0, redrafted: [], picks: [], reveal: [] };
     state.stage = 'draft';
     nextPick(state, data);
     return;
   }
   aiWindow(state, data, 'open');
   const d = state.draft!;
-  const before = new Map(state.devReport.map((r) => [r.player, r.from]));
+  const report = new Map(state.devReport.map((r) => [r.player, r]));
   // Players who retired leave an empty slot.
   club.xi = club.xi.map((id) => (club.squad.includes(id) ? id : -1));
-  d.reveal = club.xi.filter((id) => id >= 0).map((id) => ({ player: id, from: before.get(id) ?? state.players[id].ovr, to: state.players[id].ovr }));
+  d.reveal = club.xi.filter((id) => id >= 0).map((id) => report.get(id) ?? { player: id, from: state.players[id].ovr, to: state.players[id].ovr });
   d.redraftsLeft = redraftsPerSummer(state);
+  d.redrafted = [];
+  d.offers = {};
   d.slot = null;
   d.candidates = [];
   d.queue = [];
@@ -144,7 +178,11 @@ export function pickCandidate(state: GameState, data: GameData, player: number):
   club.xi[d.slot] = player;
   club.bench = club.bench.filter((id) => id !== player);
   d.picks.push({ season: state.season, slot: d.slot, player, ovr: p.ovr });
-  if (state.stage === 'draft') nextPick(state, data);
+  if (state.stage === 'draft') {
+    const done = d.slot;
+    d.queue = d.queue.filter((s) => s !== done);
+    nextPick(state, data);
+  }
   else {
     d.slot = null;
     d.candidates = [];
@@ -158,6 +196,7 @@ export function startRedraft(state: GameState, data: GameData, slot: number): st
   const club = state.clubs[state.user];
   if (!d || state.stage !== 'summer' || d.slot !== null) return 'Not now.';
   const current = club.xi[slot];
+  if (d.redrafted?.includes(slot)) return 'You have already re-drafted this position this summer.';
   if (current >= 0) {
     if (d.redraftsLeft <= 0) return 'No re-drafts left this summer.';
     d.redraftsLeft--;
@@ -166,6 +205,7 @@ export function startRedraft(state: GameState, data: GameData, slot: number): st
     transfer(state, data, current, EXTERNAL, 0, 'Released');
     club.xi[slot] = -1;
   }
+  (d.redrafted ??= []).push(slot);
   draw(state, data, slot);
   return null;
 }

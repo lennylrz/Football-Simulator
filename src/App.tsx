@@ -8,14 +8,13 @@ import { NewClub } from './console/screens/NewClub';
 import { Results } from './console/screens/Results';
 import { Summary } from './console/screens/Summary';
 import { Summer } from './console/screens/Summer';
-import { HallOfFame } from './console/overlays';
-import { CommandBar, Stage } from './console/ui';
+import { Stage } from './console/ui';
 import { type GameData, loadGameData } from './game/data';
 import type { ClubInfo } from './game/clubs';
-import { type GameState, newGame, REAL_CLUBS, registerUserClub } from './game/game';
+import { type GameState, newGame, REAL_CLUBS } from './game/game';
 import type { Formation } from './game/positions';
 import { applySettings, loadSettings, rulesOf, saveSettings, type Settings } from './settings';
-import { loadRun, saveRun } from './storage';
+import { recentPlayers, rememberShown } from './storage';
 import { GameContext } from './ui/context';
 
 declare global {
@@ -33,12 +32,12 @@ async function fetchJson(file: string) {
   return res.json();
 }
 
-type Mode = 'welcome' | 'home' | 'setup' | 'menu' | 'clubs' | 'menu-hall' | 'play';
+type Mode = 'welcome' | 'home' | 'setup' | 'menu' | 'clubs' | 'play';
 
 export default function App() {
   const [data, setData] = useState<GameData | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [game, setGame] = useState<GameState | null>(() => loadRun());
+  const [game, setGame] = useState<GameState | null>(null);
   const [mode, setMode] = useState<Mode>('welcome');
   const [settings, setSettings] = useState<Settings>(loadSettings);
   // Actions run synchronously on a copy, so callers can read results right away.
@@ -48,23 +47,17 @@ export default function App() {
   const changeSettings = (s: Settings) => {
     saveSettings(s);
     setSettings(s);
-    // A saved career follows the rules too.
+    // A career in progress follows the rules too.
     const g = current.current;
     if (g) {
       const next = { ...g, rules: rulesOf(s) };
       current.current = next;
-      saveRun(next);
       setGame(next);
     }
   };
 
   useEffect(() => {
-    loadGameData(fetchJson).then((d) => {
-      // A saved career's own club joins the 20 real ones.
-      const saved = loadRun();
-      if (saved?.ownClub) registerUserClub(d, saved.ownClub);
-      setData(d);
-    }, (e) => setError(String(e)));
+    loadGameData(fetchJson).then(setData, (e) => setError(String(e)));
   }, []);
 
   const act = useCallback(
@@ -73,17 +66,19 @@ export default function App() {
       const next = structuredClone(current.current);
       fn(next, data);
       current.current = next;
-      saveRun(next);
+      if (next.draft?.shown) rememberShown(next.seed, next.draft.shown);
       setGame(next);
     },
     [data],
   );
 
-  const start = (club: ClubInfo, formation: Formation, seed: number) => {
+  // A typed-in seed replays exactly the same draft, so it ignores recent careers.
+  const start = (club: ClubInfo, formation: Formation, seed: number, shared: boolean) => {
     if (!data) return;
-    const g = newGame(data, REAL_CLUBS, seed, 'draft', formation, club, rulesOf(settings));
+    const g = newGame(data, REAL_CLUBS, seed, 'draft', formation, club, rulesOf(settings), shared ? [] : recentPlayers(seed));
     g.ownClub = club;
-    saveRun(g);
+    if (g.draft?.shown) rememberShown(g.seed, g.draft.shown);
+    current.current = g;
     setGame(g);
     setMode('play');
   };
@@ -94,17 +89,7 @@ export default function App() {
   if (mode === 'welcome') {
     return (
       <Stage tone="home">
-        <Welcome
-          data={data}
-          save={game}
-          settings={settings}
-          onSettings={changeSettings}
-          onDeleteSave={() => {
-            saveRun(null);
-            setGame(null);
-          }}
-          onPlay={() => setMode('home')}
-        />
+        <Welcome settings={settings} onSettings={changeSettings} onPlay={() => setMode('home')} />
       </Stage>
     );
   }
@@ -118,20 +103,14 @@ export default function App() {
   if (mode === 'setup') {
     return (
       <Stage>
-        <GameSetup settings={settings} onChange={changeSettings} onDone={() => setMode('menu')} onBack={() => setMode('home')} hasSave={!!game} />
+        <GameSetup settings={settings} onChange={changeSettings} onDone={() => setMode('menu')} onBack={() => setMode('home')} />
       </Stage>
     );
   }
-  if (mode === 'menu' || mode === 'menu-hall') {
+  if (mode === 'menu') {
     return (
       <Stage tone="light">
-        <MainMenu data={data} save={game} onNew={() => setMode('clubs')} onContinue={() => setMode('play')} onHall={() => setMode('menu-hall')} onSettings={() => setMode('setup')} onHome={() => setMode('home')} />
-        {mode === 'menu-hall' && game && (
-          <div style={{ position: 'absolute', inset: 0, zIndex: 6 }}>
-            <HallOfFame game={game} data={data} />
-            <CommandBar commands={[{ keys: ['Escape', 'Enter'], label: 'Close', primary: true, onPress: () => setMode('menu') }]} />
-          </div>
-        )}
+        <MainMenu onNew={() => setMode('clubs')} onSettings={() => setMode('setup')} onHome={() => setMode('home')} />
       </Stage>
     );
   }
@@ -143,15 +122,20 @@ export default function App() {
     );
   }
 
-  const toMenu = () => setMode('menu');
+  // Leaving a career ends it: there is nothing to continue.
+  const quit = () => {
+    current.current = null;
+    setGame(null);
+    setMode('menu');
+  };
   let screen;
   if (game.stage === 'results') screen = <Results />;
   else if (game.stage === 'summary') screen = <Summary onNewCareer={() => setMode('clubs')} />;
-  else if (game.draft?.slot !== null && game.draft?.slot !== undefined) screen = <Draft onMenu={toMenu} />;
-  else screen = <Summer onMenu={toMenu} />;
+  else if (game.draft?.slot !== null && game.draft?.slot !== undefined) screen = <Draft />;
+  else screen = <Summer />;
 
   return (
-    <GameContext.Provider value={{ data, game, act, quit: () => setMode('menu'), settings }}>
+    <GameContext.Provider value={{ data, game, act, quit, settings }}>
       <Stage>{screen}</Stage>
     </GameContext.Provider>
   );

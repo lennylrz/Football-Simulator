@@ -5,14 +5,14 @@ import {
   CL_ROUNDS, type CupResult, type Entrant, FA_ROUNDS, simulateChampionsLeague, simulateFaCup, WINNER,
 } from './cups';
 import { type GameData, NUM_SEASONS, SEASON_YEARS } from './data';
-import { developPlayer, retireChance } from './development';
-import { autoLineup, BENCH_SIZE, pickBench, pickXI, type PlayerLite } from './lineup';
+import { developPlayer, type Form, formBoost, retireChance } from './development';
+import { autoLineup, BENCH_SIZE, pickBench, pickXI, type PlayerLite, teamStrength } from './lineup';
 import { generateIncomingBids, generateOffers, type IncomingBid, type Offer } from './market';
 import { type DraftState, openDraftWindow } from './draft';
 import { FORMATIONS, type Formation, parsePositions, positionFit } from './positions';
 import { stream } from './rng';
 import { fixtures, type PlayerSeasonStats, type SeasonResult, simulateSeason, type TableRow } from './season';
-import type { MatchResult } from './match';
+import { expectedGoals, type MatchResult } from './match';
 import { marketValue } from './valuation';
 
 export const MAX_SQUAD = 26;
@@ -87,12 +87,18 @@ export interface SeasonHistory {
   userCupStats: PlayerSeasonStats[];
   repBefore: number;
   repAfter?: number;
+  /** where the user's XI ranked on paper before the season */
+  predicted?: number;
 }
 
 export interface DevChange {
   player: number;
   from: number;
   to: number;
+  /** last season's average match rating, for regulars */
+  avg?: number;
+  /** rating points that performance added or took away */
+  boost?: number;
 }
 
 export type Stage = 'window' | 'lineup' | 'draft' | 'summer' | 'results' | 'summary';
@@ -110,6 +116,8 @@ export interface GameState {
   ownClub?: ClubInfo;
   /** draft mode: re-drafts per summer and candidates per pick, from the settings */
   rules?: { redrafts: number; choices: number };
+  /** draft mode: players offered in recent careers, offered less often now */
+  recent?: number[];
   season: number;
   stage: Stage;
   /** 'open' before deadline day, 'deadline' after the AI's last round of deals */
@@ -207,6 +215,7 @@ export const REAL_CLUBS = 20;
 
 export function newGame(
   data: GameData, user: number, seed: number, mode?: 'draft', formation: Formation = '4-3-3', own?: ClubInfo, rules?: GameState['rules'],
+  recent?: number[],
 ): GameState {
   const state: GameState = {
     v: 1,
@@ -229,6 +238,7 @@ export function newGame(
   };
   if (mode) state.mode = mode;
   if (rules) state.rules = rules;
+  if (recent?.length) state.recent = recent;
   addNewPlayers(state, data);
   data.meta.gameClubs.slice(0, REAL_CLUBS).forEach((name, i) => {
     const info = CLUBS.find((c) => c.name === name)!;
@@ -257,8 +267,32 @@ function addNewPlayers(state: GameState, data: GameData): void {
   }
 }
 
+/** Last season's form of every player who played: league, plus cups for the user's. */
+function lastForm(state: GameState): Map<number, Form> {
+  const sums = new Map<number, { sum: number; apps: number; club: number }>();
+  const clubs = new Map<number, { sum: number; apps: number }>();
+  const league = { sum: 0, apps: 0 };
+  for (const st of state.result?.stats ?? []) {
+    const c = clubs.get(st.club) ?? { sum: 0, apps: 0 };
+    c.sum += st.ratingSum;
+    c.apps += st.apps;
+    clubs.set(st.club, c);
+    league.sum += st.ratingSum;
+    league.apps += st.apps;
+  }
+  const h = state.history[state.history.length - 1];
+  for (const st of [...(state.result?.stats ?? []), ...(h?.userCupStats ?? [])]) {
+    const t = sums.get(st.id) ?? { sum: 0, apps: 0, club: st.club };
+    t.sum += st.ratingSum;
+    t.apps += st.apps;
+    sums.set(st.id, t);
+  }
+  const avg = (x: { sum: number; apps: number } | undefined) => (x && x.apps ? x.sum / x.apps : undefined);
+  return new Map([...sums].map(([id, t]) => [id, { avg: t.sum / t.apps, apps: t.apps, team: avg(clubs.get(t.club)), league: avg(league) }]));
+}
+
 /** Season rollover for every player: development, retirements, academy. */
-function advancePlayers(state: GameState, data: GameData): void {
+function advancePlayers(state: GameState, data: GameData, form: Map<number, Form>): void {
   const rng = stream(state.seed, 'develop', state.season);
   const next = data.seasons[state.season];
   state.devReport = [];
@@ -276,8 +310,17 @@ function advancePlayers(state: GameState, data: GameData): void {
       p.club = EXTERNAL;
       continue;
     }
-    developPlayer(p, row, data.meta, rng);
-    if (p.club === state.user) state.devReport.push({ player: id, from: before, to: p.ovr });
+    const f = form.get(id);
+    const boost = formBoost(p, f);
+    developPlayer(p, row, data.meta, rng, f);
+    if (p.club === state.user) {
+      const change: DevChange = { player: id, from: before, to: p.ovr };
+      if (f && f.apps >= 8) {
+        change.avg = Math.round(f.avg * 100) / 100;
+        change.boost = Math.round(boost * 10) / 10;
+      }
+      state.devReport.push(change);
+    }
   }
   addNewPlayers(state, data);
   const youth = data.youth[String(SEASON_YEARS[state.season])] ?? {};
@@ -311,9 +354,10 @@ function openWindow(state: GameState, data: GameData): void {
   state.news = [];
   state.offers = [];
   state.bids = [];
+  const form = lastForm(state);
   state.result = null;
   if (state.season > 0) {
-    advancePlayers(state, data);
+    advancePlayers(state, data, form);
     const last = state.history[state.history.length - 1];
     state.clubs.forEach((c) => {
       const finish = last.table.findIndex((r) => r.club === c.id) + 1;
@@ -488,11 +532,54 @@ function addStats(map: Map<number, PlayerSeasonStats>, m: MatchResult, club: num
   }
 }
 
+export interface PaperRow {
+  club: number;
+  /** average rating of the XI in its positions */
+  rating: number;
+  /** expected goal difference per match against the rest of the league */
+  edge: number;
+}
+
+/** The league ranked on paper: each XI's strength against everyone else's. */
+export function paperTable(state: GameState): PaperRow[] {
+  const teams = state.clubs.map((c) => {
+    // AI clubs are judged on the XI they would pick from their squad today.
+    const lineup = c.id === state.user ? c : autoLineup(squadOf(state, c.id).map(lite), c.formation);
+    const slots = FORMATIONS[lineup.formation];
+    const eff = lineup.xi.map((id, i) => {
+      const p = state.players[id];
+      if (!p) return 0;
+      const pos = state.mode === 'draft' && c.id === state.user ? [slots[i]] : parsePositions(p.pos);
+      return p.ovr * positionFit(pos, slots[i]);
+    });
+    return { club: c.id, rating: eff.reduce((a, b) => a + b, 0) / eff.length, strength: teamStrength(slots, eff) };
+  });
+  return teams
+    .map((t) => {
+      let edge = 0;
+      for (const o of teams) {
+        if (o === t) continue;
+        const [f, a] = expectedGoals(t.strength, o.strength, 0, 0, true);
+        edge += f - a;
+      }
+      return { club: t.club, rating: Math.round(t.rating * 10) / 10, edge: edge / (teams.length - 1) };
+    })
+    .sort((a, b) => b.edge - a.edge || a.club - b.club);
+}
+
 export function simulate(state: GameState, data: GameData): void {
   for (const c of state.clubs) if (lineupProblems(state, c.id).length) repairLineup(state, c.id);
+  const predicted = state.user >= 0 ? paperTable(state).findIndex((r) => r.club === state.user) + 1 : undefined;
   const teams = state.clubs.map((c) => {
     const byId = (id: number) => lite(state.players[id]);
-    return { club: c.id, formation: c.formation, xi: c.xi.map(byId), bench: c.bench.map(byId) };
+    // A drafted player keeps the position he was drafted for, even if his listed positions change.
+    const drafted = state.mode === 'draft' && c.id === state.user;
+    const slots = FORMATIONS[c.formation];
+    const xi = c.xi.map((id, i) => {
+      const p = byId(id);
+      return drafted ? { ...p, pos: [slots[i], ...p.pos] } : p;
+    });
+    return { club: c.id, formation: c.formation, xi, bench: c.bench.map(byId) };
   });
   const league = simulateSeason(teams, stream(state.seed, 'season', state.season), seasonFixtures(state));
 
@@ -533,6 +620,7 @@ export function simulate(state: GameState, data: GameData): void {
     userStats: league.stats.filter((s) => s.club === state.user),
     userCupStats: result.cupStats,
     repBefore: state.user >= 0 ? state.clubs[state.user].rep : 0,
+    predicted,
   });
   state.stage = 'results';
 }

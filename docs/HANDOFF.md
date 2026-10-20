@@ -1,7 +1,8 @@
 # Handoff: Five Seasons
 
-Read this first in a new session. Repo: `lennylrz/Football-Simulator`, branch
-`claude/continue-0sh3ao` (all work so far is pushed there; no PR yet).
+Read this first in a new session. Repo: `lennylrz/Football-Simulator`. Work up
+to the welcome screen is on `claude/continue-0sh3ao`; the fairness and controls
+pass below is on `claude/wonderful-keller-ysc4qy` (no PR yet).
 
 ## What the game is
 
@@ -31,9 +32,9 @@ screen): ratings shown/hidden in the draft, pick timer (off by default;
 auto-picks the highlighted card), choices per pick (3-5), re-drafts per
 summer (default 2), match speed (normal/fast/instant), reduce motion
 (`.calm` on `<html>`). Re-drafts and choices are career rules copied into
-`GameState.rules` (new careers, and synced into a saved one on change);
+`GameState.rules` (new careers, and synced into the running one on change);
 the rest is read live from `GameContext.settings`. The welcome screen's
-Settings has reduce motion and delete saved career (press twice). Esc on the era home
+Settings has reduce motion. Esc on the era home
 with nothing hovered, or its "Main menu" link, goes back to the welcome.
 
 The era home (`src/console/home/`): clean paper/ink/blue look by default;
@@ -88,6 +89,38 @@ Browser checks: Playwright with Chromium at
   leaderboard, Ball Knowledge mode (ratings hidden), friend challenges.
 - Vercel is not connected yet; the owner will import the repo at
   vercel.com/new (team "PingPong Ltd") or say "you do it".
+
+## Fairness and controls pass (owner feedback: "far too random")
+
+- No saved careers. No Continue: Esc in a career asks "Leave Career?" and
+  leaving ends it (`quit` in `App.tsx`). `src/storage.ts` now only remembers
+  the players offered in the last 3 careers; `drawCandidates` avoids them
+  when others of the same kind exist (`GameState.recent`). A typed-in seed
+  ignores that list so shared seeds replay exactly.
+- Match engine (`ENGINE` in `match.ts`): season form sd 1.5 -> 0.6, match
+  form sd 2 -> 1.5, attack/midfield weights up a little. Strength now
+  predicts the table: the strongest XI on paper wins about half the time,
+  2nd about a third, 3rd and below rarely.
+- Drafted players keep the position they were drafted for (their listed
+  positions change between FIFA editions, which used to put them out of
+  position silently). Candidates are offered only in their main position
+  (`fits` in `draft.ts`, with ST/CF, LB/LWB, LW/LM-style equivalents).
+- Development (`development.ts`): real next-season rating, plus a form boost
+  from last season (`formBoost`: average match rating against team-mates and
+  half against the league, scaled by appearances, bigger for 23 and under,
+  smaller for 31+ and 88+), deviation persists at 75%, noise sd 1 (5%
+  chance of sd 2.5), and the game rating stays within -6/+7 of the real one
+  (cap 96 unless the real rating is higher).
+- Opening draft in any order: `chooseSlot`; offers per slot are kept in
+  `DraftState.offers`, so switching never re-rolls. Each position can be
+  re-drafted once a summer (`DraftState.redrafted`).
+- UI: clicking a button never focuses it (fixes Enter/Space double actions);
+  draft cards no longer move under the pointer; Enter/Esc work while typing
+  the club name. Summer screen shows "On paper" rank (`paperTable` in
+  `game.ts`), last season's Form per player and a Re-draft button per row.
+  Season review shows the predicted finish. `SortTable` (click headers to
+  sort) is used for squad stats, Club Legends and the Hall of Fame; Career
+  Summary seasons open a Season Report.
 
 ## Next task
 

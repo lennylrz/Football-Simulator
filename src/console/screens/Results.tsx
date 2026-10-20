@@ -2,40 +2,18 @@ import { useState } from 'react';
 import { type CupMatch, type Entrant, WINNER } from '../../game/cups';
 import { NUM_SEASONS } from '../../game/data';
 import { endSeason, seasonLabel, trophiesOf } from '../../game/game';
-import type { PlayerSeasonStats } from '../../game/season';
 import { useGame } from '../../ui/context';
-import { closeCommand, HallOfFame } from '../overlays';
+import { closeCommand, HallOfFame, LeaveCareer, leaveCommands, reachedText, seasonColumns, seasonPlayers } from '../overlays';
+import { SortTable } from '../SortTable';
 import '../results.css';
 import { SeasonViewer } from '../Viewer';
-import { clubOf, type Command, Frame, KeyCap, ordinal, primaryPos } from '../ui';
+import { clubOf, type Command, Frame, KeyCap, ordinal } from '../ui';
 
 const TABS = ['Table', 'Your Matches', 'Cups', 'Leaders', 'Squad'] as const;
 
-function reachedText(r: string | undefined): string {
-  if (!r) return 'Did not qualify';
-  if (r === WINNER) return 'Winners';
-  if (r === 'Final') return 'Runners-up';
-  return r;
-}
-
-function merge(a: PlayerSeasonStats[], b: PlayerSeasonStats[]): PlayerSeasonStats[] {
-  const map = new Map<number, PlayerSeasonStats>();
-  for (const s of [...a, ...b]) {
-    const m = map.get(s.id);
-    if (!m) map.set(s.id, { ...s });
-    else {
-      m.apps += s.apps;
-      m.starts += s.starts;
-      m.goals += s.goals;
-      m.assists += s.assists;
-      m.ratingSum += s.ratingSum;
-    }
-  }
-  return [...map.values()];
-}
-
 export function Results() {
-  const { data, game, act, settings } = useGame();
+  const { data, game, act, settings, quit } = useGame();
+  const [leaving, setLeaving] = useState(false);
   const [revealing, setRevealing] = useState(settings.matchSpeed !== 'instant');
   const [tab, setTab] = useState(0);
   const [hall, setHall] = useState(false);
@@ -49,12 +27,15 @@ export function Results() {
 
   if (revealing) return <SeasonViewer game={game} data={data} onDone={() => setRevealing(false)} fastStart={settings.matchSpeed === 'fast'} />;
 
-  const commands: Command[] = hall
+  const commands: Command[] = leaving
+    ? leaveCommands(quit, () => setLeaving(false))
+    : hall
     ? closeCommand(() => setHall(false))
     : [
         { keys: ['Space'], label: last ? 'Career Summary' : `On to ${seasonLabel(game.season + 1)}`, primary: true, onPress: () => act((s, d) => endSeason(s, d)) },
         { keys: ['Q', 'E'], label: 'Tabs', onPress: (k) => setTab((t) => (t + (k === 'Q' ? -1 : 1) + TABS.length) % TABS.length) },
         { keys: ['H'], label: 'Hall of Fame', onPress: () => setHall(true) },
+        { keys: ['Escape'], label: 'Leave Career', onPress: () => setLeaving(true) },
       ];
 
   const userMatches = (() => {
@@ -82,9 +63,6 @@ export function Results() {
     return (m.pens === 0) === (m.home === game.user) ? 'W' : 'L';
   };
 
-  const squad = merge(h.userStats, h.userCupStats)
-    .map((s) => ({ ...s, avg: s.ratingSum / s.apps }))
-    .sort((a, b) => b.avg - a.avg);
   const group = result.cl.groups?.find((g) => g.some((r) => r.team === game.user));
   const ko = result.cl.matches.filter((m) => m.round !== 'Group stage');
   const fa = result.fa.matches.filter((m) => m.home === game.user || m.away === game.user || /Quarter|Semi|Final/.test(m.round));
@@ -114,6 +92,9 @@ export function Results() {
             <span className="cap">League · Your Finish</span>
             <span className="big">{ordinal(finish)} · {h.table[finish - 1].pts} pts</span>
             <span className="kv"><span>Champions</span><b>{clubOf(data, h.table[0].club).name}</b></span>
+            {h.predicted !== undefined && (
+              <span className="kv"><span>On paper</span><b className={finish < h.predicted ? 'good' : finish > h.predicted ? 'bad' : ''}>Predicted {ordinal(h.predicted)}{finish < h.predicted ? ', beat it' : finish > h.predicted ? ', fell short' : ', spot on'}</b></span>
+            )}
             {won.length > 0 && <span className="kv"><span>Trophies</span><b className="gold">{won.map((t) => ({ league: 'League', fa: 'FA Cup', cl: 'Champions League' })[t]).join(' · ')}</b></span>}
           </div>
           <div className="sep" />
@@ -223,23 +204,14 @@ export function Results() {
           {tab === 4 && (
             <div className="pane dpanel">
               <div className="tblwrap scroll">
-                <table className="tbl">
-                  <thead><tr><th>Player</th><th>Pos</th><th className="n">Starts</th><th className="n">Sub</th><th className="n">Goals</th><th className="n">Assists</th><th className="n sort">Avg Rating</th></tr></thead>
-                  <tbody>
-                    {squad.map((s) => (
-                      <tr key={s.id}>
-                        <td className="ellip">{data.names[s.id][0]}</td><td>{primaryPos(game.players[s.id]?.pos ?? '')}</td><td className="n">{s.starts}</td><td className="n">{s.apps - s.starts}</td>
-                        <td className="n">{s.goals}</td><td className="n">{s.assists}</td><td className="n"><b>{s.avg.toFixed(2)}</b></td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                <SortTable rows={seasonPlayers(game, h.season)} columns={seasonColumns(game, data)} initial="avg" rowKey={(r) => r.id} />
               </div>
             </div>
           )}
         </div>
       </div>
       {hall && <HallOfFame game={game} data={data} />}
+      {leaving && <LeaveCareer />}
     </Frame>
   );
 }
