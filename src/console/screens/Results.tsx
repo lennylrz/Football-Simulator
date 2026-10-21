@@ -2,9 +2,10 @@ import { useState } from 'react';
 import { CL_ROUNDS, type CupMatch, type Entrant, FA_ROUNDS, type Tie, tiesOf, WINNER } from '../../game/cups';
 import { Bracket } from '../Bracket';
 import { NUM_SEASONS } from '../../game/data';
-import { endSeason, seasonLabel, trophiesOf } from '../../game/game';
+import { seasonLabel, trophiesOf } from '../../game/game';
 import { useGame } from '../../ui/context';
 import { closeCommand, HallOfFame, LeaveCareer, leaveCommands, reachedText, seasonColumns, seasonPlayers } from '../overlays';
+import { rivalCommand, RivalOverlay } from '../room';
 import { SortTable } from '../SortTable';
 import '../results.css';
 import { SeasonViewer } from '../Viewer';
@@ -13,7 +14,9 @@ import { clubOf, type Command, Frame, KeyCap, ordinal } from '../ui';
 const TABS = ['Table', 'Your Matches', 'Champions League', 'FA Cup', 'Leaders', 'Squad'] as const;
 
 export function Results() {
-  const { data, game, act, settings, quit } = useGame();
+  const { data, game, send, settings, quit, room } = useGame();
+  const [rival, setRival] = useState(false);
+  const waiting = !!room?.full.mp?.views[game.user]?.done;
   const [leaving, setLeaving] = useState(false);
   const [revealing, setRevealing] = useState(settings.matchSpeed !== 'instant');
   const [tab, setTab] = useState(0);
@@ -26,17 +29,22 @@ export function Results() {
   const last = game.season >= NUM_SEASONS - 1;
   const ent = (e: Entrant) => (typeof e === 'number' ? clubOf(data, e).short : e);
 
-  if (revealing) return <SeasonViewer game={game} data={data} onDone={() => setRevealing(false)} fastStart={settings.matchSpeed === 'fast'} />;
+  if (revealing) return <SeasonViewer game={game} data={data} onDone={() => setRevealing(false)} fastStart={settings.matchSpeed === 'fast'} rival={room?.rival} />;
 
   const commands: Command[] = leaving
     ? leaveCommands(quit, () => setLeaving(false))
     : hall
     ? closeCommand(() => setHall(false))
+    : rival
+    ? closeCommand(() => setRival(false))
     : [
-        { keys: ['Space'], label: last ? 'Career Summary' : `On to ${seasonLabel(game.season + 1)}`, primary: true, onPress: () => act((s, d) => endSeason(s, d)) },
+        waiting
+          ? { keys: ['Space'], label: 'Waiting for your rival…', primary: true, disabled: true, onPress: () => {} }
+          : { keys: ['Space'], label: last ? 'Career Summary' : `On to ${seasonLabel(game.season + 1)}`, primary: true, onPress: () => send({ t: 'continue' }) },
         { keys: ['Q', 'E'], label: 'Tabs', onPress: (k) => setTab((t) => (t + (k === 'Q' ? -1 : 1) + TABS.length) % TABS.length) },
         { keys: ['H'], label: 'Hall of Fame', onPress: () => setHall(true) },
-        { keys: ['Escape'], label: 'Leave Career', onPress: () => setLeaving(true) },
+        ...rivalCommand(room, () => setRival(true)),
+        { keys: ['Escape'], label: room ? 'Leave Room' : 'Leave Career', onPress: () => setLeaving(true) },
       ];
 
   const userMatches = (() => {
@@ -247,6 +255,7 @@ export function Results() {
       </div>
       {hall && <HallOfFame game={game} data={data} />}
       {leaving && <LeaveCareer />}
+      {rival && room && <RivalOverlay room={room} data={data} me={game.user} />}
     </Frame>
   );
 }

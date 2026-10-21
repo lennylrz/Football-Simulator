@@ -17,6 +17,8 @@ export interface Form {
   /** average match rating of his club's players, and of the whole league */
   team?: number;
   league?: number;
+  /** match rating his overall alone is worth against his team-mates (see ENGINE.quality) */
+  quality?: number;
 }
 
 /** Share of a player's deviation from his real rating that carries over. */
@@ -50,14 +52,17 @@ export function formBoost(p: Pick<Developing, 'age' | 'ovr'> & { pot?: number },
   const perf = form.team === undefined || form.league === undefined
     ? form.avg - PAR
     : form.avg - form.team + 0.5 * (form.team - form.league);
+  // Judged on what his rating predicts: a youngster among stars is not
+  // marked down for being less good than them, only for playing below himself.
+  const fair = perf - (form.quality ?? 0);
   const played = Math.min(1, form.apps / 25);
-  let b = clamp(perf * 4, -2, 3) * played;
+  let b = clamp(fair * 4, -2, 3) * played;
   if (p.age <= 23) {
     if (b > 0) {
       b *= p.age <= 20 ? 2 : 1.5;
       // Playing well unlocks potential.
       const headroom = Math.max(0, (p.pot ?? p.ovr) - p.ovr);
-      b += 0.3 * headroom * Math.min(1, perf / 0.5) * played;
+      b += 0.3 * headroom * Math.min(1, fair / 0.5) * played;
     }
     b = clamp(b, -2, p.age <= 20 ? 9 : 6);
   } else if (isPrime(p.age)) {

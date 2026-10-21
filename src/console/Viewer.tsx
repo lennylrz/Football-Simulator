@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { CupMatch, Entrant } from '../game/cups';
 import type { GameData } from '../game/data';
-import { type GameState, seasonLabel } from '../game/game';
+import { type GameState, type HeadToHead, seasonLabel } from '../game/game';
+import { LiveMatch } from './room';
 import { clubOf, type Command, Frame } from './ui';
 import './viewer.css';
 
@@ -71,7 +72,7 @@ function tables(game: GameState): { club: number; p: number; pts: number; gd: nu
   });
 }
 
-export function SeasonViewer({ game, data, onDone, fastStart }: { game: GameState; data: GameData; onDone: () => void; fastStart?: boolean }) {
+export function SeasonViewer({ game, data, onDone, fastStart, rival }: { game: GameState; data: GameData; onDone: () => void; fastStart?: boolean; rival?: number }) {
   const steps = useMemo(() => buildSteps(game), [game]);
   const standings = useMemo(() => tables(game), [game]);
   const [i, setI] = useState(0);
@@ -81,9 +82,15 @@ export function SeasonViewer({ game, data, onDone, fastStart }: { game: GameStat
   const step = steps[i];
   const name = (e: Entrant) => (typeof e === 'number' ? clubOf(data, e).short : e);
   const leagueDays = steps.filter((s) => s.kind === 'league').length;
+  // Two-player room: a match against the rival is played out live first.
+  const h2h = game.history[game.history.length - 1]?.h2h ?? [];
+  const meeting = (s: Step): HeadToHead | undefined =>
+    rival === undefined ? undefined : h2h.find((m) => (s.kind === 'league' ? m.comp.startsWith('League') && m.slot === s.matchday : m.slot === s.time && m.comp.startsWith(s.comp)));
+  const [watched, setWatched] = useState<Set<number>>(() => new Set());
+  const live = !watched.has(i) ? meeting(step) : undefined;
 
   useEffect(() => {
-    if (paused) return;
+    if (paused || live) return;
     if (i >= steps.length - 1) {
       const t = setTimeout(onDone, fast ? 900 : 2200);
       return () => clearTimeout(t);
@@ -92,7 +99,7 @@ export function SeasonViewer({ game, data, onDone, fastStart }: { game: GameStat
     const wait = step.kind === 'cup' ? (fast ? 650 : 1700) : fast ? 380 : mine ? 1250 : 900;
     const t = setTimeout(() => setI((x) => x + 1), wait);
     return () => clearTimeout(t);
-  }, [i, paused, fast, steps.length, step, game.user, onDone]);
+  }, [i, paused, fast, steps.length, step, game.user, onDone, live]);
 
   const outcome = (m: Score) => {
     const mine = m.home === game.user ? m.hg - m.ag : m.ag - m.hg;
@@ -102,7 +109,10 @@ export function SeasonViewer({ game, data, onDone, fastStart }: { game: GameStat
   };
   const WORD = { w: 'WIN', d: 'DRAW', l: 'LOSS' } as const;
 
-  const commands: Command[] = [
+  const commands: Command[] = live ? [
+    { keys: ['Enter'], label: 'Skip to Full Time', primary: true, onPress: () => setWatched((w) => new Set(w).add(i)) },
+    { keys: ['F'], label: fast ? 'Normal Speed' : 'Fast', onPress: () => setFast(!fast) },
+  ] : [
     { keys: ['Enter'], label: 'Skip to Results', primary: true, onPress: onDone },
     { keys: ['Space'], label: paused ? 'Resume' : 'Pause', onPress: () => setPaused(!paused) },
     { keys: ['Left', 'Right'], label: 'Step', onPress: (k) => { setPaused(true); setI((x) => Math.max(0, Math.min(steps.length - 1, x + (k === 'Left' ? -1 : 1)))); } },
@@ -135,7 +145,7 @@ export function SeasonViewer({ game, data, onDone, fastStart }: { game: GameStat
             {!mine && step.kind === 'league' && <div className="mine bye"><span className="h">{info.short}</span><span className="sc">–</span><span>No match this week</span><span className="word">BYE</span></div>}
             <div className="others">
               {step.matches.filter((m) => m !== mine).map((m, k) => (
-                <div key={k} className="res">
+                <div key={k} className={`res ${rival !== undefined && (m.home === rival || m.away === rival) ? 'rivalrow' : ''}`}>
                   <span className="h">{name(m.home)}</span>
                   <span className="sc">{m.hg}–{m.ag}{m.pens !== undefined ? ' p' : ''}</span>
                   <span>{name(m.away)}</span>
@@ -156,6 +166,7 @@ export function SeasonViewer({ game, data, onDone, fastStart }: { game: GameStat
         </div>
         {paused && <div className="paused gbar">PAUSED</div>}
       </div>
+      {live && <LiveMatch game={game} data={data} match={live} season={game.season} fast={fast} onDone={() => setWatched((w) => new Set(w).add(i))} />}
     </Frame>
   );
 }

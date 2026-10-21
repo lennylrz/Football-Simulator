@@ -7,7 +7,7 @@ import { drawShards } from '../shards';
 import { browse, Frame } from '../ui';
 
 interface Tab {
-  id: 'new' | 'settings';
+  id: 'new' | 'multi' | 'settings';
   label: string;
   desc: string;
   flag: string;
@@ -22,10 +22,11 @@ const TABS: Tab[] = [
     },
     flag: 'Start here',
   },
+  { id: 'multi', label: 'Play a Friend', desc: 'Host a room and share its code, or join a friend\'s. You both draft (never the same players), play the same league and meet twice a season.', flag: 'Two managers' },
   { id: 'settings', label: 'Settings', desc: 'Hidden ratings, the pick timer, re-drafts per summer, match speed and more.', flag: 'Your rules' },
 ];
 
-export function MainMenu({ onNew, onSettings, onHome }: { onNew: () => void; onSettings: () => void; onHome: () => void }) {
+export function MainMenu({ onNew, onMulti, onSettings, onHome }: { onNew: () => void; onMulti: () => void; onSettings: () => void; onHome: () => void }) {
   const canvas = useRef<HTMLCanvasElement>(null);
   const rail = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -41,7 +42,7 @@ export function MainMenu({ onNew, onSettings, onHome }: { onNew: () => void; onS
     if (el) setLeft(60 + el.offsetLeft + 24);
   }, [index, tabs.length]);
 
-  const go = (t: Tab) => (t.id === 'new' ? onNew() : onSettings());
+  const go = (t: Tab) => (t.id === 'new' ? onNew() : t.id === 'multi' ? onMulti() : onSettings());
 
   return (
     <div className="mm">

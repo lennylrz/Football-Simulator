@@ -1,0 +1,35 @@
+/* Two-player rooms: rival lineup, head-to-heads, live match, lobby. */
+.overlay .win:has(.rival) { width: 1100px; max-height: 620px; }
+.rival { display: grid; grid-template-columns: 420px 1fr; gap: 14px; padding: 14px; min-height: 0; }
+.rival-pitch { display: flex; flex-direction: column; gap: 8px; }
+.rival-pitch .dpitch { height: 440px; }
+.rival-h2h { display: flex; flex-direction: column; min-height: 0; max-height: 520px; }
+.rival-h2h .tblwrap { flex: 1; min-height: 0; }
+
+.overlay .win:has(.live-match) { width: 900px; }
+.live-match { padding: 18px 22px 22px; display: flex; flex-direction: column; gap: 14px; color: #fff; }
+.lm-score { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 18px; font: 700 26px Arial, sans-serif; }
+.lm-team { border-left: 8px solid; padding-left: 12px; }
+.lm-team:last-child { border-left: 0; border-right: 8px solid; padding: 0 12px 0 0; text-align: right; }
+.lm-goals { font-size: 54px; letter-spacing: .02em; min-width: 150px; text-align: center; }
+.lm-clock { position: relative; text-align: center; font: 700 20px ui-monospace, Menlo, monospace; padding: 6px 0 10px; color: #cfe0ff; }
+.lm-clock i { position: absolute; left: 0; bottom: 0; height: 4px; background: #4d8fd6; transition: width .15s linear; }
+.lm-feed { height: 300px; overflow: hidden; display: flex; flex-direction: column; gap: 6px; }
+.lm-ev { display: flex; gap: 14px; padding: 8px 12px; background: rgba(255,255,255,.05); font-size: 18px; animation: lm-in .3s ease-out; }
+.lm-ev .m { font-family: ui-monospace, Menlo, monospace; color: #9fb4d0; min-width: 40px; }
+.lm-ev.goal { background: linear-gradient(90deg, #1d5a9b, #23609f); font-weight: 700; }
+.lm-ev.card span:last-child::before { content: ''; display: inline-block; width: 10px; height: 14px; background: #f2c200; margin-right: 8px; vertical-align: -1px; }
+.lm-ev.away { flex-direction: row-reverse; text-align: right; }
+@keyframes lm-in { from { opacity: 0; transform: translateY(-6px); } }
+
+.viewer .res.rivalrow { outline: 2px solid #f2c200; outline-offset: -2px; }
+
+.lobby { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; padding: 18px; height: 100%; }
+.lobby .card { display: flex; flex-direction: column; gap: 14px; padding: 26px; }
+.lobby .card h3 { margin: 0; font: 700 28px Arial, sans-serif; }
+.lobby .card p { margin: 0; font-size: 18px; line-height: 1.45; color: #cfd6df; }
+.lobby input.code { font: 700 46px ui-monospace, Menlo, monospace; letter-spacing: .35em; text-transform: uppercase; width: 100%; padding: 10px 16px; }
+.lobby .err { color: #ff8a8a; font-weight: 700; }
+.lobby .bigcode { font: 700 96px ui-monospace, Menlo, monospace; letter-spacing: .2em; color: #fff; text-align: center; margin: 12px 0; }
+.lobby button.go { align-self: flex-start; font: 700 20px Arial, sans-serif; padding: 12px 22px; background: linear-gradient(180deg, #4d8fd6 0%, #23609f 48%, #164a83 52%, #1d5a9b 100%); color: #fff; border: 0; cursor: pointer; }
+.lobby button.go:disabled { opacity: .45; cursor: default; }

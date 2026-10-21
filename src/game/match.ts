@@ -10,6 +10,8 @@ export interface MatchTeam {
   bench: PlayerLite[];
   /** season-long form offset */
   form?: number;
+  /** a squad-rotating manager (the user's drafted club): chance each starter is rested */
+  rotation?: number;
   /** teams outside the 20 clubs have a fixed strength and no players */
   fixed?: Strength;
 }
@@ -21,6 +23,8 @@ export interface PlayerLine {
   goals: number;
   assists: number;
   rating: number;
+  /** the part of the rating that is just his quality against his team-mates (see ENGINE.quality) */
+  par: number;
 }
 
 export interface MatchResult {
@@ -52,6 +56,8 @@ export const ENGINE = {
   /** how far below the starter a bench player may be and still get rotated in */
   rotationGap: 12,
   assistShare: 0.75,
+  /** match rating points per rating point a player is above his team-mates on the pitch */
+  quality: 0.035,
 };
 
 const SCORE_W: Record<Position, number> = {
@@ -91,11 +97,14 @@ function lineUp(team: MatchTeam, rng: Rng): { on: OnPitch[]; strength: Strength 
   };
 
   // Rotation: a bench player who plays the position starts now and then.
+  // A rotating manager also trusts subs in related positions.
+  const minFit = team.rotation ? 0.88 : 0.95;
+  const gap = team.rotation ? ENGINE.rotationGap + 4 : ENGINE.rotationGap;
   const rotate = (p: PlayerLite, slot: Position): PlayerLite | undefined => {
     if (slot === 'GK') return undefined;
     const eff = p.ovr * positionFit(p.pos, slot);
-    const bi = bench.findIndex((b) => positionFit(b.pos, slot) >= 0.95 && b.ovr * positionFit(b.pos, slot) >= eff - ENGINE.rotationGap);
-    return bi >= 0 && rng() < ENGINE.rotation ? bench.splice(bi, 1)[0] : undefined;
+    const bi = bench.findIndex((b) => positionFit(b.pos, slot) >= minFit && b.ovr * positionFit(b.pos, slot) >= eff - gap);
+    return bi >= 0 && rng() < (team.rotation ?? ENGINE.rotation) ? bench.splice(bi, 1)[0] : undefined;
   };
   // Knocks and rotation: a starter sometimes misses the match.
   const on: OnPitch[] = team.xi.map((p, i) => {
@@ -162,14 +171,23 @@ function attribute(on: OnPitch[], rng: Rng, goals: number, side: 0 | 1, out: Mat
   }
 }
 
+/** What a player's quality alone adds to his match rating, as rate() applies it. */
+function par(o: OnPitch, teamAvg: number): number {
+  const q = (o.eff - teamAvg) * ENGINE.quality;
+  return o.started ? q : q * SUB_WEIGHT;
+}
+
+/** A sub is rated on what he did in his minutes, a little less sure either way. */
+const SUB_WEIGHT = 0.85;
+
 function rate(o: OnPitch, scored: number, conceded: number, teamAvg: number, rng: Rng): number {
   const area = AREA[o.slot];
   let r = 6.4 + (scored > conceded ? 0.35 : scored < conceded ? -0.35 : 0);
-  r += o.goals * 0.9 + o.assists * 0.55 + (o.eff - teamAvg) * 0.035;
+  r += o.goals * 0.9 + o.assists * 0.55 + (o.eff - teamAvg) * ENGINE.quality;
   if (area === 'GK' || area === 'DEF') r += conceded === 0 ? 0.55 : -0.22 * conceded;
   if (area === 'ATT' && scored === 0) r -= 0.2;
   r += normal(rng, 0, 0.5);
-  if (!o.started) r = 6.3 + (r - 6.4) * 0.6;
+  if (!o.started) r = 6.4 + (r - 6.4) * SUB_WEIGHT;
   return Math.round(clamp(r, 3.5, 10) * 10) / 10;
 }
 
@@ -192,7 +210,7 @@ export function simulateMatch(home: MatchTeam, away: MatchTeam, rng: Rng, neutra
     if (side.on.length === 0) continue;
     const avg = side.on.reduce((s, o) => s + o.eff, 0) / side.on.length;
     for (const o of side.on) {
-      result.lines.push({ id: o.p.id, club, started: o.started, goals: o.goals, assists: o.assists, rating: rate(o, scored, conceded, avg, rng) });
+      result.lines.push({ id: o.p.id, club, started: o.started, goals: o.goals, assists: o.assists, rating: rate(o, scored, conceded, avg, rng), par: Math.round(par(o, avg) * 100) / 100 });
     }
   }
   return result;

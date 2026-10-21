@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
-import { chooseSlot, isBench, pickCandidate, redraftsPerSummer, XI } from '../../game/draft';
+import { isBench, redraftsPerSummer, XI } from '../../game/draft';
 import { seasonLabel } from '../../game/game';
 import { FORMATIONS } from '../../game/positions';
 import { useGame } from '../../ui/context';
-import { LeaveCareer, leaveCommands } from '../overlays';
+import { closeCommand, LeaveCareer, leaveCommands } from '../overlays';
+import { rivalCommand, RivalOverlay } from '../room';
 import { BenchStrip, Pitch, type PlateInfo } from '../Pitch';
 import { browse, clubOf, type Command, Frame, moneyShort, primaryPos } from '../ui';
 
@@ -14,8 +15,9 @@ const SLOT_NAMES: Record<string, string> = {
 };
 
 export function Draft() {
-  const { data, game, act, settings, quit } = useGame();
+  const { data, game, send, settings, quit, room } = useGame();
   const [leaving, setLeaving] = useState(false);
+  const [rival, setRival] = useState(false);
   const hidden = settings.hiddenRatings;
   const club = game.clubs[game.user];
   const d = game.draft!;
@@ -63,10 +65,10 @@ export function Draft() {
     return { rating: p.ovr, name: data.names[id][0], label: primaryPos(p.pos) };
   });
 
-  const pick = (i: number) => act((s, dd) => void pickCandidate(s, dd, s.draft!.candidates[i]));
+  const pick = (i: number) => d.candidates[i] !== undefined && send({ t: 'pick', player: d.candidates[i] });
   autoPick.current = () => pick(index);
   const redrafts = redraftsPerSummer(game);
-  const switchTo = (slot: number) => act((s, dd) => void chooseSlot(s, dd, slot));
+  const switchTo = (slot: number) => send({ t: 'slot', slot });
   const order = open.slice().sort((a, b) => a - b);
   const cycle = (dir: 1 | -1) => {
     const at = order.indexOf(d.slot!);
@@ -74,11 +76,14 @@ export function Draft() {
   };
   const commands: Command[] = leaving
     ? leaveCommands(quit, () => setLeaving(false))
+    : rival
+    ? closeCommand(() => setRival(false))
     : [
         { keys: ['Enter'], label: 'Pick', primary: true, onPress: () => pick(index) },
         browse('Browse', () => setIndex(Math.max(0, index - 1)), () => setIndex(Math.min(d.candidates.length - 1, index + 1)), true),
         { keys: ['Q', 'E'], label: 'Position', hidden: order.length < 2, disabled: order.length < 2, onPress: (k) => cycle(k === 'Q' ? -1 : 1) },
-        { keys: ['Escape'], label: 'Leave Career', onPress: () => setLeaving(true) },
+        ...rivalCommand(room, () => setRival(true)),
+        { keys: ['Escape'], label: room ? 'Leave Room' : 'Leave Career', onPress: () => setLeaving(true) },
       ];
 
   return (
@@ -141,6 +146,7 @@ export function Draft() {
         </div>
       </div>
       {leaving && <LeaveCareer />}
+      {rival && room && <RivalOverlay room={room} data={data} me={game.user} />}
     </Frame>
   );
 }

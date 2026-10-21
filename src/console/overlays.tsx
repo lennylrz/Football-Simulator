@@ -1,10 +1,11 @@
-import { useMemo } from 'react';
+import { useContext, useMemo } from 'react';
 import { type CareerPlayer, career, careerScore, mergeStats } from '../game/career';
 import { WINNER } from '../game/cups';
 import { EXTERNAL, type GameState, seasonLabel, topTransfers, trophiesOf } from '../game/game';
 import type { GameData } from '../game/data';
 import { type Column, SortTable } from './SortTable';
 import { clubOf, type Command, money, ordinal, Overlay, primaryPos } from './ui';
+import { GameContext } from '../ui/context';
 
 export function AroundTheLeague({ game, data }: { game: GameState; data: GameData }) {
   const top = topTransfers(game, game.season);
@@ -104,10 +105,13 @@ export function closeCommand(close: () => void): Command[] {
 
 /** Asks before leaving a career, which ends it. */
 export function LeaveCareer() {
+  const room = useContext(GameContext)?.room;
   return (
-    <Overlay title="Leave This Career?">
+    <Overlay title={room ? 'Leave This Room?' : 'Leave This Career?'}>
       <div className="empty" style={{ color: '#fff' }}>
-        Careers are not saved. If you leave now, this one is over and you start again from a new club.
+        {room
+          ? `The room carries on without you. Come back any time: Play a Friend, then join with code ${room.code} on this device.`
+          : 'Careers are not saved. If you leave now, this one is over and you start again from a new club.'}
       </div>
     </Overlay>
   );
@@ -115,7 +119,7 @@ export function LeaveCareer() {
 
 export function leaveCommands(leave: () => void, stay: () => void): Command[] {
   return [
-    { keys: ['Enter'], label: 'Leave Career', primary: true, onPress: leave },
+    { keys: ['Enter'], label: 'Leave', primary: true, onPress: leave },
     { keys: ['Escape'], label: 'Stay', onPress: stay },
   ];
 }

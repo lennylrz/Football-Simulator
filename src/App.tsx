@@ -9,6 +9,10 @@ import { Results } from './console/screens/Results';
 import { Summary } from './console/screens/Summary';
 import { Summer } from './console/screens/Summer';
 import { Stage } from './console/ui';
+import { type Action, applyAction, type RoomManager } from './game/actions';
+import { RoomSession } from './console/RoomSession';
+import { Lobby } from './console/screens/Lobby';
+import { createRoom, getRoom, hasJoined, normalizeCode, playerId, type Room } from './net/room';
 import { type Era, type GameData, loadGameData } from './game/data';
 import type { ClubInfo } from './game/clubs';
 import { activateEra, type GameState, newGame, REAL_CLUBS } from './game/game';
@@ -32,7 +36,10 @@ async function fetchJson(file: string) {
   return res.json();
 }
 
-type Mode = 'welcome' | 'home' | 'setup' | 'menu' | 'clubs' | 'play';
+type Mode = 'welcome' | 'home' | 'setup' | 'menu' | 'clubs' | 'play' | 'lobby' | 'roomclub' | 'room';
+
+/** An invite link: ?room=CODE */
+const INVITE = normalizeCode(new URLSearchParams(location.search).get('room') ?? '');
 
 /** Each era's data, fetched the first time it is picked. */
 const eraData = new Map<Era, Promise<GameData>>();
@@ -44,6 +51,21 @@ export default function App() {
   const [game, setGame] = useState<GameState | null>(null);
   const [mode, setMode] = useState<Mode>('welcome');
   const [settings, setSettings] = useState<Settings>(loadSettings);
+  // Two-player rooms: the room, the club to join it with, and the lobby's state.
+  const [room, setRoom] = useState<Room | null>(null);
+  const [pendingRoom, setPendingRoom] = useState<Room | null>(null);
+  const [joinAs, setJoinAs] = useState<RoomManager | undefined>(undefined);
+  const [lobby, setLobby] = useState<{ busy: boolean; error: string | null; code: string }>({ busy: false, error: null, code: INVITE });
+
+  // An invite link opens the lobby in the room's era, code filled in.
+  useEffect(() => {
+    if (!INVITE) return;
+    getRoom(INVITE).then((r) => {
+      if (!r) return;
+      setEra(r.era as Era);
+      setMode('lobby');
+    }, () => {});
+  }, []);
   // Actions run synchronously on a copy, so callers can read results right away.
   const current = useRef(game);
   current.current = game;
@@ -80,11 +102,11 @@ export default function App() {
     };
   }, [era]);
 
-  const act = useCallback(
-    (fn: (s: GameState, d: GameData) => void) => {
+  const send = useCallback(
+    (a: Action) => {
       if (!current.current || !data) return;
       const next = structuredClone(current.current);
-      fn(next, data);
+      applyAction(next, data, next.user, a);
       current.current = next;
       if (next.draft?.shown) rememberShown(next.seed, next.draft.shown);
       setGame(next);
@@ -101,6 +123,57 @@ export default function App() {
     current.current = g;
     setGame(g);
     setMode('play');
+  };
+
+  const joinRoom = async (code: string) => {
+    setLobby({ busy: true, error: null, code });
+    try {
+      const r = await getRoom(code);
+      if (!r) {
+        setLobby({ busy: false, error: 'No room with that code.', code });
+        return;
+      }
+      setEra(r.era as Era);
+      setLobby({ busy: false, error: null, code });
+      // The host, or a guest coming back, carries on; a new guest makes a club first.
+      if (r.host.pid === playerId() || (await hasJoined(code))) {
+        setJoinAs(undefined);
+        setRoom(r);
+        setMode('room');
+      } else {
+        setPendingRoom(r);
+        setMode('roomclub');
+      }
+    } catch (e) {
+      setLobby({ busy: false, error: String(e), code });
+    }
+  };
+  const roomClub = async (club: ClubInfo, formation: Formation) => {
+    if (pendingRoom) {
+      setJoinAs({ club, formation });
+      setRoom(pendingRoom);
+      setPendingRoom(null);
+      setMode('room');
+      return;
+    }
+    setLobby((l) => ({ ...l, busy: true, error: null }));
+    try {
+      const r = await createRoom(era!, rulesOf(settings), { club, formation });
+      setLobby((l) => ({ ...l, busy: false }));
+      setJoinAs(undefined);
+      setRoom(r);
+      setMode('room');
+    } catch (e) {
+      setLobby((l) => ({ ...l, busy: false, error: String(e) }));
+      setMode('lobby');
+    }
+  };
+  const leaveRoom = () => {
+    setRoom(null);
+    setPendingRoom(null);
+    setJoinAs(undefined);
+    if (location.search) history.replaceState(null, '', location.pathname);
+    setMode('menu');
   };
 
   if (error) return <Stage><div className="empty" style={{ padding: 60 }}>Couldn't load the game data. {error}</div></Stage>;
@@ -137,9 +210,36 @@ export default function App() {
   if (mode === 'menu') {
     return (
       <Stage tone="light">
-        <MainMenu onNew={() => setMode('clubs')} onSettings={() => setMode('setup')} onHome={() => setMode('home')} />
+        <MainMenu onNew={() => setMode('clubs')} onMulti={() => setMode('lobby')} onSettings={() => setMode('setup')} onHome={() => setMode('home')} />
       </Stage>
     );
+  }
+  if (mode === 'lobby') {
+    return (
+      <Stage>
+        <Lobby
+          initialCode={lobby.code}
+          busy={lobby.busy}
+          error={lobby.error}
+          onHost={() => {
+            setPendingRoom(null);
+            setMode('roomclub');
+          }}
+          onJoin={(code) => void joinRoom(code)}
+          onBack={() => setMode('menu')}
+        />
+      </Stage>
+    );
+  }
+  if (mode === 'roomclub') {
+    return (
+      <Stage>
+        <NewClub room={pendingRoom ? 'guest' : 'host'} busy={lobby.busy} onStart={(club, formation) => void roomClub(club, formation)} onBack={() => setMode('lobby')} settings={settings} />
+      </Stage>
+    );
+  }
+  if (mode === 'room' && room) {
+    return <RoomSession room={room} data={data} settings={settings} joinAs={joinAs} onLeave={leaveRoom} />;
   }
   if (mode === 'clubs' || !game) {
     return (
@@ -162,7 +262,7 @@ export default function App() {
   else screen = <Summer />;
 
   return (
-    <GameContext.Provider value={{ data, game, act, quit, settings }}>
+    <GameContext.Provider value={{ data, game, send, quit, settings }}>
       <Stage>{screen}</Stage>
     </GameContext.Provider>
   );

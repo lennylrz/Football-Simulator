@@ -1,24 +1,25 @@
 import { useMemo, useState } from 'react';
 import { career } from '../../game/career';
-import { emptySlots, inSpot, isBench, playDraftSeason, redraftsPerSummer, startRedraft, swapSpots, XI } from '../../game/draft';
+import { emptySlots, inSpot, isBench, redraftsPerSummer, XI } from '../../game/draft';
 import { paperTable, seasonLabel, trophiesOf } from '../../game/game';
 import { FORMATIONS, parsePositions, positionFit } from '../../game/positions';
 import { useGame } from '../../ui/context';
 import { AroundTheLeague, closeCommand, HallOfFame, LeaveCareer, leaveCommands } from '../overlays';
+import { rivalCommand, RivalOverlay, rivalStatus } from '../room';
 import { BenchStrip, Pitch, type PlateInfo } from '../Pitch';
 import { browse, clubOf, type Command, Frame, ordinal, Overlay, useListNav } from '../ui';
 
 const TROPHY = { league: 'League', fa: 'FA Cup', cl: 'Champions League' } as const;
 
 export function Summer() {
-  const { data, game, act, quit } = useGame();
+  const { data, game, send, quit, room } = useGame();
   const club = game.clubs[game.user];
   const d = game.draft!;
   const slots = FORMATIONS[club.formation];
   // Spots 0-10 are the XI, 11 and up the bench, in one list.
   const spots = [...club.xi.map((_, i) => i), ...club.bench.map((_, j) => XI + j)];
   const nav = useListNav(spots.length);
-  const [overlay, setOverlay] = useState<'confirm' | 'around' | 'hall' | 'leave' | null>(null);
+  const [overlay, setOverlay] = useState<'confirm' | 'around' | 'hall' | 'leave' | 'rival' | null>(null);
   /** the spot picked first when swapping two players */
   const [swapFrom, setSwapFrom] = useState<number | null>(null);
   const info = clubOf(data, game.user);
@@ -50,7 +51,7 @@ export function Summer() {
   const plates = club.xi.map((id, i) => plate(id, i));
   const subs = club.bench.map((id, j) => plate(id, XI + j));
 
-  const redraft = (i: number) => act((s, dd) => void startRedraft(s, dd, i));
+  const redraft = (i: number) => send({ t: 'redraft', slot: i });
   /** Re-drafts a position: straight away when it is empty, after a confirmation otherwise. */
   const ask = (i: number) => {
     if (!can(i)) return;
@@ -63,8 +64,20 @@ export function Summer() {
     const from = swapFrom;
     setSwapFrom(null);
     nav.setIndex(i);
-    act((s) => void swapSpots(s, from, i));
+    send({ t: 'swap', a: from, b: i });
   };
+  // In a room both managers say they are ready, then the host plays the season.
+  const ready = !!room?.full.mp?.views[game.user]?.ready;
+  const rivalReady = !!room?.full.mp?.views[room.rival]?.ready;
+  const seasonCommands: Command[] = !room
+    ? [{ keys: ['Space'], label: 'Play the Season', primary: true, disabled: empty.length > 0, onPress: () => send({ t: 'play' }) }]
+    : [
+        { keys: ['Space'], label: ready ? 'Not Ready' : 'Ready', primary: !ready, disabled: empty.length > 0, onPress: () => send({ t: 'ready', on: !ready }) },
+        ...(room.isHost
+          ? [{ keys: ['P'], label: ready && rivalReady ? 'Play the Season' : 'Play (both ready)', primary: ready && rivalReady, disabled: !(ready && rivalReady), onPress: () => send({ t: 'simulate' }) } as Command]
+          : []),
+      ];
+
   /** Clicking a spot: completes a swap, otherwise selects it (or acts on it when already selected). */
   const click = (i: number) => (swapFrom !== null ? swapTo(i) : i === nav.index ? ask(i) : nav.setIndex(i));
   const commands: Command[] =
@@ -84,13 +97,14 @@ export function Summer() {
         : overlay
           ? closeCommand(() => setOverlay(null))
           : [
-              { keys: ['Space'], label: 'Play the Season', primary: true, disabled: empty.length > 0, onPress: () => act((s, dd) => void playDraftSeason(s, dd)) },
+              ...seasonCommands,
               { keys: ['Enter'], label: sel < 0 ? 'Draft' : 'Re-draft', disabled: !can(nav.index), onPress: () => ask(nav.index) },
               { keys: ['S'], label: 'Swap', hidden: !club.bench.length, disabled: sel < 0 || empty.length > 0, onPress: () => setSwapFrom(nav.index) },
               browse('Browse', nav.up, nav.down),
               { keys: ['T'], label: 'Transfers', onPress: () => setOverlay('around') },
               { keys: ['H'], label: 'Hall of Fame', onPress: () => setOverlay('hall') },
-              { keys: ['Escape'], label: 'Leave Career', onPress: () => setOverlay('leave') },
+              ...rivalCommand(room, () => setOverlay('rival')),
+              { keys: ['Escape'], label: room ? 'Leave Room' : 'Leave Career', onPress: () => setOverlay('leave') },
             ];
 
   const finish = last ? last.table.findIndex((r) => r.club === game.user) + 1 : 0;
@@ -192,7 +206,9 @@ export function Summer() {
                 </table>
               </div>
               <div className="note">
-                {empty.length
+                {room && !empty.length
+                  ? <b>{ready ? (rivalReady ? (room.isHost ? 'Both ready: press P to play the season.' : 'Both ready: waiting for the host to play the season.') : `You're ready. Rival: ${rivalStatus(room)}.`) : 'Press Space when your XI is set. Changing anything takes back your ready.'}</b>
+                  : empty.length
                   ? <b>Fill every position before the season.</b>
                   : game.season > 0
                     ? 'Form is last season\'s average match rating, judged against team-mates: young players who play well grow fastest. Swap a substitute into your XI for free; re-drafting is a gamble.'
@@ -212,6 +228,7 @@ export function Summer() {
       {overlay === 'around' && <AroundTheLeague game={game} data={data} />}
       {overlay === 'hall' && <HallOfFame game={game} data={data} />}
       {overlay === 'leave' && <LeaveCareer />}
+      {overlay === 'rival' && room && <RivalOverlay room={room} data={data} me={game.user} />}
     </Frame>
   );
 }

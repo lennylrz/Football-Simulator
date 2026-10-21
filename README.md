@@ -21,6 +21,23 @@ five, seeing only their rating and age at the start. Then play five seasons.
 Players develop as they really did, give or take: next season's real FIFA
 rating is the expected value, with random noise around it.
 
+## Play a Friend
+
+Two-player rooms (main menu, Play a Friend). The host creates a club and gets
+a five-letter code (or an invite link, `?room=CODE`); the guest joins with
+their own club. Both draft in their own time and are never offered the same
+player, then press Ready; the host plays the season. Both clubs join the
+league (22 clubs), each manager can look at the other's lineup and their
+head-to-heads (V), and matches between them are played out minute by minute.
+
+Rooms live in a Supabase project (`five-seasons`): a `rooms` row (era, seed,
+the host's rules and club) and an append-only `room_actions` log. Each
+browser replays the log, in order, through the same game engine
+(`src/game/actions.ts`), so both always agree; anyone with the code can read
+a room and add moves, nothing can be changed or deleted. A browser keeps its
+player id in localStorage, so leaving and joining again with the code carries
+on.
+
 ## Development
 
 ```sh

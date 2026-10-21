@@ -8,6 +8,7 @@ export interface SeasonTeam {
   formation: Formation;
   xi: PlayerLite[];
   bench: PlayerLite[];
+  rotation?: number;
 }
 
 const BYE = -99;
@@ -31,6 +32,8 @@ export interface PlayerSeasonStats {
   goals: number;
   assists: number;
   ratingSum: number;
+  /** sum of PlayerLine.par: what his quality alone added to his ratings */
+  parSum?: number;
 }
 
 export interface SeasonResult {
@@ -78,7 +81,7 @@ export function simulateSeason(teams: SeasonTeam[], rng: Rng, schedule?: [number
   const byClub = new Map<number, MatchTeam>();
   for (const t of teams) {
     const form = normal(rng, 0, ENGINE.seasonFormSd);
-    byClub.set(t.club, { club: t.club, slots: FORMATIONS[t.formation], xi: t.xi, bench: t.bench, form });
+    byClub.set(t.club, { club: t.club, slots: FORMATIONS[t.formation], xi: t.xi, bench: t.bench, form, rotation: t.rotation });
   }
   const table = new Map<number, TableRow>();
   for (const t of teams) table.set(t.club, { club: t.club, p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, pts: 0 });
@@ -110,6 +113,7 @@ export function simulateSeason(teams: SeasonTeam[], rng: Rng, schedule?: [number
         s.goals += line.goals;
         s.assists += line.assists;
         s.ratingSum += line.rating;
+        s.parSum = (s.parSum ?? 0) + line.par;
       }
     }
     rounds.push(out);

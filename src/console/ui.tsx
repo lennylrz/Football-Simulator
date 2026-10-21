@@ -27,7 +27,7 @@ export function Stage({ tone = 'dark', children }: { tone?: 'dark' | 'light' | '
   );
 }
 
-export type KeyName = 'Enter' | 'Escape' | 'Space' | 'Up' | 'Down' | 'Left' | 'Right' | 'Q' | 'E' | 'T' | 'A' | 'H' | 'R' | 'S' | 'F';
+export type KeyName = 'Enter' | 'Escape' | 'Space' | 'Up' | 'Down' | 'Left' | 'Right' | 'Q' | 'E' | 'T' | 'A' | 'H' | 'R' | 'S' | 'F' | 'V' | 'P';
 
 export interface Command {
   keys: KeyName[];
@@ -42,7 +42,7 @@ export interface Command {
 
 const KEY_OF: Record<string, KeyName> = {
   Enter: 'Enter', Escape: 'Escape', ' ': 'Space', ArrowUp: 'Up', ArrowDown: 'Down', ArrowLeft: 'Left', ArrowRight: 'Right',
-  q: 'Q', e: 'E', t: 'T', a: 'A', h: 'H', r: 'R', s: 'S', f: 'F',
+  q: 'Q', e: 'E', t: 'T', a: 'A', h: 'H', r: 'R', s: 'S', f: 'F', v: 'V', p: 'P',
 };
 
 const ARROWS: Partial<Record<KeyName, string>> = { Up: 'M3 10l5-5 5 5', Down: 'M3 6l5 5 5-5', Left: 'M10 3l-5 5 5 5', Right: 'M6 3l5 5-5 5' };
