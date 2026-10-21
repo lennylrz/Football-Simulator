@@ -23,7 +23,12 @@ function codeOf(name: string): string {
   return code.toUpperCase().padEnd(3, 'X');
 }
 
-export function NewClub({ onStart, onBack, settings }: { onStart: (club: ClubInfo, formation: Formation, seed: number, shared: boolean) => void; onBack: () => void; settings: Settings }) {
+export function NewClub({ onStart, onBack, settings, room, busy }: {
+  onStart: (club: ClubInfo, formation: Formation, seed: number, shared: boolean) => void; onBack: () => void; settings: Settings;
+  /** creating a club to host or join a two-player room */
+  room?: 'host' | 'guest';
+  busy?: boolean;
+}) {
   const [name, setName] = useState('Five Seasons FC');
   const [colour, setColour] = useState(0);
   const [formation, setFormation] = useState<Formation>('4-3-3');
@@ -44,15 +49,16 @@ export function NewClub({ onStart, onBack, settings }: { onStart: (club: ClubInf
         { keys: ['Escape'], label: 'Clear', onPress: () => { setSeedText(''); setSeedOpen(false); } },
       ]
     : [
-        { keys: ['Enter'], label: 'Start the Draft', primary: true, onPress: start },
+        { keys: ['Enter'], label: busy ? 'Connecting…' : room === 'host' ? 'Create the Room' : room === 'guest' ? 'Join the Room' : 'Start the Draft', primary: true, disabled: busy, onPress: start },
         { keys: ['Q', 'E'], label: 'Colours', onPress: (k) => setColour((colour + (k === 'Q' ? -1 : 1) + COLOURS.length) % COLOURS.length) },
         browse('Formation', () => setFormation(FORMATION_NAMES[(fIndex + 4) % 5]), () => setFormation(FORMATION_NAMES[(fIndex + 1) % 5]), true),
-        { keys: ['S'], label: 'Replay Seed', onPress: () => setSeedOpen(true) },
+        { keys: ['S'], label: 'Replay Seed', hidden: !!room, disabled: !!room, onPress: () => setSeedOpen(true) },
         { keys: ['Escape'], label: 'Back', onPress: onBack },
       ];
 
   return (
-    <Frame club={info} title={clubName} sub="New Career · the 21st club" commands={commands} info={<><span>Seed</span><b>{seedText || 'Random'}</b></>}>
+    <Frame club={info} title={clubName} sub={room === 'host' ? 'Play a Friend · host a room' : room === 'guest' ? 'Play a Friend · join a room' : 'New Career · the 21st club'} commands={commands}
+      info={room ? <><span>Two managers</span><b>One league</b></> : <><span>Seed</span><b>{seedText || 'Random'}</b></>}>
       <div className="draft newclub">
         <Pitch formation={formation} plates={Array.from({ length: 11 }, () => ({ label: '', state: 'empty' as const }))} />
         <div className="win">
@@ -65,7 +71,7 @@ export function NewClub({ onStart, onBack, settings }: { onStart: (club: ClubInf
                 value={name}
                 maxLength={24}
                 onChange={(e) => setName(e.target.value)}
-                onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); start(); } }}
+                onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); if (!busy) start(); } }}
               />
               <span className="kv"><span>Colours · {c0}</span>
                 <span className="swatches">
@@ -80,7 +86,7 @@ export function NewClub({ onStart, onBack, settings }: { onStart: (club: ClubInf
             <div className="pane dpanel">
               <div className="ph gbar">How it works</div>
               <div className="kvlist">
-                <div><span>The league</span><b>Your XI joins the 20 clubs of {seasonLabel(0)}</b></div>
+                <div><span>The league</span><b>{room ? 'Both clubs join' : 'Your XI joins'} the 20 clubs of {seasonLabel(0)}</b></div>
                 <div><span>The draft</span><b>Pick 1 of {settings.choices} real players per position{settings.hiddenRatings ? ', ratings hidden' : ''}</b></div>
                 <div><span>Each summer</span><b>{settings.redrafts ? `See who grew, gamble on ${settings.redrafts} re-draft${settings.redrafts > 1 ? 's' : ''}` : 'See who grew, no re-drafts'}</b></div>
                 <div><span>Formation</span><b className="tabs" style={{ display: 'flex', gap: 4 }}>

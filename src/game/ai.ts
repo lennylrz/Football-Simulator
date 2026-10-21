@@ -5,7 +5,7 @@
 import { BIG_SIX, capacity } from './clubs';
 import { type GameData, SEASON_YEARS } from './data';
 import {
-  type ClubState, EXTERNAL, type GameState, MAX_SQUAD, MIN_SQUAD, lite, marketPool, type PlayerState, squadOf, transfer,
+  type ClubState, EXTERNAL, type GameState, isHuman, MAX_SQUAD, MIN_SQUAD, lite, marketPool, type PlayerState, squadOf, transfer,
 } from './game';
 import { pickXI } from './lineup';
 import { AREA, FORMATIONS, parsePositions, type Position, positionFit } from './positions';
@@ -94,7 +94,6 @@ function tryBuy(state: GameState, data: GameData, c: ClubState, rng: Rng): boole
   if (!need) return false;
   const big = isBig(state, data, c.id);
   const cap = capacity(c.rep);
-  const user = state.user;
 
   const hasStar = state.transfers.some((t) => t.season === state.season && t.to === c.id && t.ovr >= STAR);
   type Cand = { p: PlayerState; fee: number; score: number };
@@ -115,7 +114,7 @@ function tryBuy(state: GameState, data: GameData, c: ClubState, rng: Rng): boole
   }
   // Players at smaller rivals, who would sell for a premium.
   for (const other of state.clubs) {
-    if (other.id === c.id || other.id === user || other.rep > c.rep - 4) continue;
+    if (other.id === c.id || isHuman(state, other.id) || other.rep > c.rep - 4) continue;
     for (const id of other.squad) {
       const p = state.players[id];
       if (other.squad.length > MIN_SQUAD + 2) consider(p, roundFee(p.value * 1.3));
@@ -142,7 +141,7 @@ function tryBuy(state: GameState, data: GameData, c: ClubState, rng: Rng): boole
 
 export function aiWindow(state: GameState, data: GameData, phase: 'open' | 'deadline'): void {
   const rng = stream(state.seed, 'ai', state.season, phase);
-  const clubs = shuffle(rng, state.clubs.filter((c) => c.id !== state.user));
+  const clubs = shuffle(rng, state.clubs.filter((c) => !isHuman(state, c.id)));
   for (const c of clubs) {
     const big = isBig(state, data, c.id);
     if (phase === 'open') {

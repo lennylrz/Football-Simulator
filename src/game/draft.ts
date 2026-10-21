@@ -4,7 +4,8 @@
 import { aiWindow, ensureMinimumSquad } from './ai';
 import type { GameData } from './data';
 import {
-  applyAutoLineup, type DevChange, EXTERNAL, type GameState, goToDeadline, type PlayerState, simulate, transfer,
+  applyAutoLineup, asUser, type DevChange, EXTERNAL, type GameState, goToDeadline, humansOf, isHuman, type PlayerState, simulate,
+  transfer,
 } from './game';
 import { FORMATIONS, type Position, parsePositions } from './positions';
 import { type Rng, shuffle, stream } from './rng';
@@ -95,12 +96,29 @@ export function fits(p: Pick<PlayerState, 'pos'>, slot: Position): boolean {
 }
 
 /**
+ * Players no draw may offer the acting manager: everyone at a manager's club,
+ * and in a two-player room everyone the other manager has on offer, so the
+ * two never see the same player.
+ */
+function blocked(state: GameState): Set<number> {
+  const out = new Set<number>();
+  for (const h of humansOf(state)) {
+    for (const id of state.clubs[h].squad) out.add(id);
+    const d = h === state.user ? null : state.mp?.views[h]?.draft;
+    if (!d) continue;
+    for (const id of d.candidates) out.add(id);
+    for (const list of Object.values(d.offers ?? {})) for (const id of list) out.add(id);
+  }
+  return out;
+}
+
+/**
  * Candidates for a slot (five unless the rules say fewer), mixed so the choice is hard: a star only
  * sometimes, a couple of established players, a couple of youngsters with a
  * future, and the rest ordinary.
  */
 export function drawCandidates(state: GameState, data: GameData, slot: Position, rng: Rng): number[] {
-  const taken = new Set(state.clubs[state.user].squad);
+  const taken = blocked(state);
   const rows = data.seasons[state.season];
   const pool: PlayerState[] = [];
   for (const key in rows) {
@@ -130,7 +148,7 @@ export function drawCandidates(state: GameState, data: GameData, slot: Position,
  * starters, with an experienced squad player or two.
  */
 export function drawBenchCandidates(state: GameState, data: GameData, rng: Rng): number[] {
-  const taken = new Set(state.clubs[state.user].squad);
+  const taken = blocked(state);
   const rows = data.seasons[state.season];
   const recent = new Set(state.recent ?? []);
   const pool: PlayerState[] = [];
@@ -155,13 +173,13 @@ export function drawBenchCandidates(state: GameState, data: GameData, rng: Rng):
 function draw(state: GameState, data: GameData, slot: number): void {
   const d = state.draft!;
   d.slot = slot;
-  const taken = new Set(state.clubs[state.user].squad);
+  const taken = blocked(state);
   const kept = state.stage === 'draft' ? d.offers?.[slot]?.filter((id) => !taken.has(id)) : undefined;
   if (kept && kept.length) {
     d.candidates = kept;
     return;
   }
-  const rng = stream(state.seed, 'draft', state.season, slot, d.picks.length);
+  const rng = stream(state.seed, 'draft', state.season, slot, d.picks.length, ...(state.mp ? [state.user] : []));
   d.candidates = isBench(slot) ? drawBenchCandidates(state, data, rng) : drawCandidates(state, data, slotsOf(state)[slot], rng);
   if (state.stage === 'draft') (d.offers ??= {})[slot] = d.candidates;
   d.shown = [...(d.shown ?? []), ...d.candidates];
@@ -189,21 +207,31 @@ function nextPick(state: GameState, data: GameData): void {
 
 /** Called from openWindow in draft mode, instead of the transfer window. */
 export function openDraftWindow(state: GameState, data: GameData): void {
+  if (state.season === 0) {
+    // The clubs' real squads leave; those players can turn up in later draws.
+    for (const h of humansOf(state)) {
+      const club = state.clubs[h];
+      for (const id of club.squad) state.players[id].club = EXTERNAL;
+      club.squad = [];
+    }
+  }
+  aiWindow(state, data, 'open');
+  for (const h of humansOf(state)) asUser(state, h, () => prepareDraft(state, data));
+  if (state.mp) state.stage = state.season === 0 ? 'draft' : 'summer';
+}
+
+/** The acting manager's opening draft, or his summer of reveals and re-drafts. */
+function prepareDraft(state: GameState, data: GameData): void {
   const club = state.clubs[state.user];
   if (state.season === 0) {
-    // The club's real squad leaves; those players can turn up in later draws.
-    for (const id of club.squad) state.players[id].club = EXTERNAL;
-    club.squad = [];
     club.xi = slotsOf(state).map(() => -1);
     club.bench = Array.from({ length: benchSize(state) }, () => -1);
-    aiWindow(state, data, 'open');
     const queue = [...pickOrder(slotsOf(state)), ...club.bench.map((_, j) => XI + j)];
     state.draft = { queue, slot: null, candidates: [], offers: {}, shown: [], redraftsLeft: 0, redrafted: [], picks: [], reveal: [], home: {} };
     state.stage = 'draft';
     nextPick(state, data);
     return;
   }
-  aiWindow(state, data, 'open');
   const d = state.draft!;
   const report = new Map(state.devReport.map((r) => [r.player, r]));
   // Players who retired leave an empty slot.
@@ -279,10 +307,10 @@ export function swapSpots(state: GameState, a: number, b: number): string | null
 
 /** Deadline day for the AI, then the season is played. */
 export function playDraftSeason(state: GameState, data: GameData): string | null {
-  if (emptySlots(state).length) return 'Fill every position first.';
+  if (humansOf(state).some((h) => asUser(state, h, () => emptySlots(state).length))) return 'Fill every position first.';
   goToDeadline(state, data);
   for (const c of state.clubs) {
-    if (c.id === state.user) continue;
+    if (isHuman(state, c.id)) continue;
     ensureMinimumSquad(state, data, c.id);
     applyAutoLineup(state, c.id);
   }
