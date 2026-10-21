@@ -17,8 +17,11 @@ const asset = (re) => {
 const js = asset(/<script type="module" crossorigin src="\/([^"]+)"/);
 const css = asset(/<link rel="stylesheet" crossorigin href="\/([^"]+)"/);
 const dataDir = join(root, 'public/data');
+// Keys are paths under public/data, e.g. "2015/meta.json", as the game fetches them.
 const data = Object.fromEntries(
-  readdirSync(dataDir).filter((f) => f.endsWith('.json')).map((f) => [f, JSON.parse(readFileSync(join(dataDir, f), 'utf8'))]),
+  readdirSync(dataDir, { recursive: true })
+    .filter((f) => f.endsWith('.json'))
+    .map((f) => [f.split('\\').join('/'), JSON.parse(readFileSync(join(dataDir, f), 'utf8'))]),
 );
 const safe = (s) => s.replace(/<\/script/gi, '<\\/script');
 

@@ -135,7 +135,7 @@ export function Draft() {
               : hidden
               ? 'Ratings are hidden: pick on name, age and club alone. You see his rating once he is yours.'
               : opening
-                ? 'Draft in any order: click a position on the pitch or press Q and E. Ratings are 2015/16; who grows is down to your ball knowledge.'
+                ? `Draft in any order: click a position on the pitch or press Q and E. Ratings are ${seasonLabel(0)}; who grows is down to your ball knowledge.`
                 : 'Your old player has gone. Pick his replacement.'}
           </div>
         </div>

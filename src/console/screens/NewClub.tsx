@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import type { ClubInfo } from '../../game/clubs';
+import { seasonLabel } from '../../game/data';
 import { FORMATION_NAMES, type Formation } from '../../game/positions';
 import { Pitch } from '../Pitch';
 import type { Settings } from '../../settings';
@@ -79,7 +80,7 @@ export function NewClub({ onStart, onBack, settings }: { onStart: (club: ClubInf
             <div className="pane dpanel">
               <div className="ph gbar">How it works</div>
               <div className="kvlist">
-                <div><span>The league</span><b>Your XI joins the 20 clubs of 2015/16</b></div>
+                <div><span>The league</span><b>Your XI joins the 20 clubs of {seasonLabel(0)}</b></div>
                 <div><span>The draft</span><b>Pick 1 of {settings.choices} real players per position{settings.hiddenRatings ? ', ratings hidden' : ''}</b></div>
                 <div><span>Each summer</span><b>{settings.redrafts ? `See who grew, gamble on ${settings.redrafts} re-draft${settings.redrafts > 1 ? 's' : ''}` : 'See who grew, no re-drafts'}</b></div>
                 <div><span>Formation</span><b className="tabs" style={{ display: 'flex', gap: 4 }}>

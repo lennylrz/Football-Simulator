@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { career as computeCareer } from '../../game/career';
+import { eraSeasons } from '../../game/data';
 import { seasonLabel } from '../../game/game';
 import { useGame } from '../../ui/context';
 import { downloadBlob, drawShareCard, shareOrDownload } from '../../ui/shareCard';
@@ -54,7 +55,7 @@ export function Summary({ onNewCareer }: { onNewCareer: () => void }) {
   const legends = c.players.filter((p) => p.apps >= 10);
 
   return (
-    <Frame club={info} title={info.name} sub="Career Complete" right={<><small>Seasons</small>2015/16 – 2019/20</>} commands={commands}
+    <Frame club={info} title={info.name} sub="Career Complete" right={<><small>Seasons</small>{eraSeasons()}</>} commands={commands}
       info={<><span>Legacy</span><b>{c.score.toLocaleString('en-GB')}</b></>}>
       <canvas ref={canvas} style={{ display: 'none' }} />
       <div className="win">

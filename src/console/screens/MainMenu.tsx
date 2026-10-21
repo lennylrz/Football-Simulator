@@ -1,4 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
+import { eraYears, SEASON_YEARS } from '../../game/data';
+
+const FIFA: Record<number, string> = { 2010: 'FIFA 11-15', 2015: 'FIFA 16-20', 2020: 'FIFA 21-FC 25' };
 import '../menu.css';
 import { drawShards } from '../shards';
 import { browse, Frame } from '../ui';
@@ -14,7 +17,9 @@ const TABS: Tab[] = [
   {
     id: 'new',
     label: 'New Career',
-    desc: 'Create your own club, draft an XI of real 2015 players and take on the 20 clubs of the English top flight for five seasons.',
+    get desc() {
+      return `Create your own club, draft an XI of real ${SEASON_YEARS[0]} players and take on the 20 clubs of the English top flight for five seasons.`;
+    },
     flag: 'Start here',
   },
   { id: 'settings', label: 'Settings', desc: 'Hidden ratings, the pick timer, re-drafts per summer, match speed and more.', flag: 'Your rules' },
@@ -42,10 +47,10 @@ export function MainMenu({ onNew, onSettings, onHome }: { onNew: () => void; onS
     <div className="mm">
       <canvas ref={canvas} width={1280} height={720} aria-hidden />
       <div className="title">
-        FIVE SEASONS<span>2015 · 2020 CAREER</span>
+        FIVE SEASONS<span>{eraYears(' · ')} CAREER</span>
       </div>
       <p className="tagline">
-        Draft real players from 2015, watch who becomes a star, and gamble each summer. Five seasons to build a legacy. <em>Can you win the treble?</em>
+        Draft real players from {SEASON_YEARS[0]}, watch who becomes a star, and gamble each summer. Five seasons to build a legacy. <em>Can you win the treble?</em>
       </p>
       <div className="desc" style={{ left }}>
         {tab.desc}
@@ -65,7 +70,7 @@ export function MainMenu({ onNew, onSettings, onHome }: { onNew: () => void; onS
           browse('Move', () => setIndex(Math.max(0, index - 1)), () => setIndex(Math.min(tabs.length - 1, index + 1)), true),
           { keys: ['Escape'], label: 'All Eras', onPress: onHome },
         ]}
-        info={<>Unofficial fan game · FIFA 16-20 ratings</>}
+        info={<>Unofficial fan game · {FIFA[SEASON_YEARS[0]]} ratings</>}
       >
         {null}
       </Frame>
