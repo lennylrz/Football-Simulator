@@ -4,6 +4,10 @@
 export type Row = [number, number, number, number, number, string, number];
 
 export interface Meta {
+  /** first season's start year */
+  era: number;
+  /** each season's start year */
+  years: number[];
   seasons: string[];
   clubNames: string[];
   gameClubs: string[];
@@ -14,12 +18,13 @@ export interface Meta {
 }
 
 export interface GameData {
+  era: number;
   meta: Meta;
   /** id -> [short name, nationality] */
   names: Record<string, [string, string]>;
-  /** index 0..4 = 2015/16..2019/20; id -> row */
+  /** index 0..4 = the era's five seasons; id -> row */
   seasons: Record<string, Row>[];
-  /** 2015/16 squads by club name */
+  /** squads at the start of the era, by club name */
   squads: Record<string, number[]>;
   /** season start year -> club name -> academy graduates */
   youth: Record<string, Record<string, number[]>>;
@@ -34,19 +39,41 @@ export interface SeasonTeams {
   europe: [string, string, number][];
 }
 
-export const SEASON_YEARS = [2015, 2016, 2017, 2018, 2019];
-export const NUM_SEASONS = SEASON_YEARS.length;
+/** The playable eras, by first season's start year. */
+export const ERAS = [2010, 2015, 2020] as const;
+export type Era = (typeof ERAS)[number];
 
-export async function loadGameData(load: (file: string) => Promise<unknown>): Promise<GameData> {
+/** The current era's season start years (see activateEra in game.ts). */
+export const SEASON_YEARS: number[] = [2015, 2016, 2017, 2018, 2019];
+export const NUM_SEASONS = 5;
+
+export function seasonLabel(season: number): string {
+  const y = SEASON_YEARS[season];
+  return `${y}/${String(y + 1).slice(2)}`;
+}
+
+/** "2015/16 – 2019/20" */
+export function eraSeasons(): string {
+  return `${seasonLabel(0)} – ${seasonLabel(NUM_SEASONS - 1)}`;
+}
+
+/** "2015 – 2020" */
+export function eraYears(sep = ' – '): string {
+  return `${SEASON_YEARS[0]}${sep}${SEASON_YEARS[NUM_SEASONS - 1] + 1}`;
+}
+
+export async function loadGameData(load: (file: string) => Promise<unknown>, era: Era = 2015): Promise<GameData> {
+  const years = Array.from({ length: NUM_SEASONS }, (_, i) => era + i);
   const [meta, names, squads, youth, teams, ...seasons] = await Promise.all([
-    load('meta.json'),
-    load('players.json'),
-    load('squads_2015.json'),
-    load('youth.json'),
-    load('teams.json'),
-    ...SEASON_YEARS.map((y) => load(`season_${y}.json`)),
+    load(`${era}/meta.json`),
+    load(`${era}/players.json`),
+    load(`${era}/squads.json`),
+    load(`${era}/youth.json`),
+    load(`${era}/teams.json`),
+    ...years.map((y) => load(`${era}/season_${y}.json`)),
   ]);
   return {
+    era,
     meta: meta as Meta,
     names: names as GameData['names'],
     squads: squads as GameData['squads'],

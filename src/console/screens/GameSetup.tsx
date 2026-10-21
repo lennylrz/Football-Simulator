@@ -1,3 +1,4 @@
+import { eraYears } from '../../game/data';
 import { DEFAULT_SETTINGS, OPTIONS, type Settings, step } from '../../settings';
 import '../setup.css';
 import { browse, type Command, Frame, KeyCap, useListNav } from '../ui';
@@ -21,7 +22,7 @@ export function GameSetup({
 
   let group = '';
   return (
-    <Frame title="Game Settings" sub="2015 – 2020 · Five Seasons" commands={commands} info={<>{isDefault ? 'Default settings' : 'Custom settings'}</>}>
+    <Frame title="Game Settings" sub={`${eraYears()} · Five Seasons`} commands={commands} info={<>{isDefault ? 'Default settings' : 'Custom settings'}</>}>
       <div className="setup">
         <div className="win">
           <div className="win-title">Settings</div>

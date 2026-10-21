@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import type { Era } from '../../game/data';
 import { useCommands } from '../ui';
 import './home.css';
 import { Preview, PREVIEWS } from './Previews';
@@ -8,16 +9,16 @@ type EraKey = keyof typeof PREVIEWS;
 const ERAS: { key: EraKey; years: string; style: string; live: boolean }[] = [
   { key: 2000, years: '2000–2005', style: 'The desktop era', live: false },
   { key: 2005, years: '2005–2010', style: 'The chrome era', live: false },
-  { key: 2010, years: '2010–2015', style: 'The tiles era', live: false },
+  { key: 2010, years: '2010–2015', style: 'The tiles era', live: true },
   { key: 2015, years: '2015–2020', style: 'The console era', live: true },
-  { key: 2020, years: '2020–now', style: 'The modern era', live: false },
+  { key: 2020, years: '2020–2025', style: 'The modern era', live: true },
 ];
 
-export function Home({ onPlay, onBack }: { onPlay: () => void; onBack: () => void }) {
+export function Home({ onPlay, onBack }: { onPlay: (era: Era) => void; onBack: () => void }) {
   // null: nothing hovered, the clean home page shows.
   const [index, setIndex] = useState<number | null>(null);
   const era = index === null ? null : ERAS[index];
-  const go = () => era?.live && onPlay();
+  const go = () => era?.live && onPlay(era.key as Era);
   useCommands([
     {
       keys: ['Left', 'Right'],
@@ -51,7 +52,7 @@ export function Home({ onPlay, onBack }: { onPlay: () => void; onBack: () => voi
             key={e.key}
             className={`era ${i === index ? 'on' : ''} ${e.live ? 'live' : ''}`}
             onMouseEnter={() => setIndex(i)}
-            onClick={() => (e.live ? onPlay() : setIndex(i))}
+            onClick={() => (e.live ? onPlay(e.key as Era) : setIndex(i))}
             tabIndex={-1}
           >
             <span className="years">{e.years}</span>

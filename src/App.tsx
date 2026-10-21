@@ -9,9 +9,9 @@ import { Results } from './console/screens/Results';
 import { Summary } from './console/screens/Summary';
 import { Summer } from './console/screens/Summer';
 import { Stage } from './console/ui';
-import { type GameData, loadGameData } from './game/data';
+import { type Era, type GameData, loadGameData } from './game/data';
 import type { ClubInfo } from './game/clubs';
-import { type GameState, newGame, REAL_CLUBS } from './game/game';
+import { activateEra, type GameState, newGame, REAL_CLUBS } from './game/game';
 import type { Formation } from './game/positions';
 import { applySettings, loadSettings, rulesOf, saveSettings, type Settings } from './settings';
 import { recentPlayers, rememberShown } from './storage';
@@ -34,7 +34,11 @@ async function fetchJson(file: string) {
 
 type Mode = 'welcome' | 'home' | 'setup' | 'menu' | 'clubs' | 'play';
 
+/** Each era's data, fetched the first time it is picked. */
+const eraData = new Map<Era, Promise<GameData>>();
+
 export default function App() {
+  const [era, setEra] = useState<Era | null>(null);
   const [data, setData] = useState<GameData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [game, setGame] = useState<GameState | null>(null);
@@ -57,8 +61,24 @@ export default function App() {
   };
 
   useEffect(() => {
-    loadGameData(fetchJson).then(setData, (e) => setError(String(e)));
-  }, []);
+    if (era === null) return;
+    if (!eraData.has(era)) eraData.set(era, loadGameData(fetchJson, era));
+    let live = true;
+    eraData.get(era)!.then(
+      (d) => {
+        if (!live) return;
+        activateEra(d);
+        setData(d);
+      },
+      (e) => {
+        eraData.delete(era);
+        if (live) setError(String(e));
+      },
+    );
+    return () => {
+      live = false;
+    };
+  }, [era]);
 
   const act = useCallback(
     (fn: (s: GameState, d: GameData) => void) => {
@@ -84,7 +104,6 @@ export default function App() {
   };
 
   if (error) return <Stage><div className="empty" style={{ padding: 60 }}>Couldn't load the game data. {error}</div></Stage>;
-  if (!data) return <Stage><div className="empty" style={{ padding: 60 }}>Loading players…</div></Stage>;
 
   if (mode === 'welcome') {
     return (
@@ -96,10 +115,18 @@ export default function App() {
   if (mode === 'home') {
     return (
       <Stage tone="home">
-        <Home onPlay={() => setMode('setup')} onBack={() => setMode('welcome')} />
+        <Home
+          onPlay={(e) => {
+            setEra(e);
+            setMode('setup');
+          }}
+          onBack={() => setMode('welcome')}
+        />
       </Stage>
     );
   }
+  // Every screen past the era picker shows that era's data.
+  if (!data || data.era !== era) return <Stage><div className="empty" style={{ padding: 60 }}>Loading players…</div></Stage>;
   if (mode === 'setup') {
     return (
       <Stage>

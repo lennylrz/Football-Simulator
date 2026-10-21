@@ -1,7 +1,7 @@
 // Draws the end-of-run share card (1080x1350, a 4:5 portrait image).
 import type { Career, Trophy } from '../game/career';
 import type { ClubInfo } from '../game/clubs';
-import { SEASON_YEARS } from '../game/data';
+import { eraSeasons, SEASON_YEARS } from '../game/data';
 
 export interface CardInput {
   club: ClubInfo;
@@ -113,7 +113,7 @@ export function drawShareCard(canvas: HTMLCanvasElement, input: CardInput): void
   ctx.fillRect(pad, 150, W - pad * 2, 180);
   ctx.fillStyle = '#5b5e63';
   ctx.font = `700 22px ${FONT}`;
-  ctx.fillText('FIVE SEASONS · 2015/16 – 2019/20', pad + 28, 196);
+  ctx.fillText(`FIVE SEASONS · ${eraSeasons()}`, pad + 28, 196);
   ctx.fillStyle = treble ? '#4a2f00' : '#1d1d1d';
   ctx.font = `900 ${treble ? 78 : 64}px ${FONT}`;
   const headline = treble

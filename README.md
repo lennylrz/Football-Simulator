@@ -1,9 +1,9 @@
 # Five Seasons
 
-A football draft game for the browser. Create your own club, the 21st club
-of the 2015/16 English top flight, and draft an XI of real players: for
-each position you pick one of five, seeing only their 2015 rating and age.
-Then play five seasons, 2015/16 to 2019/20.
+A football draft game for the browser. Pick an era (2010-2015, 2015-2020 or
+2020-2025), create your own club, the 21st club of that era's English top
+flight, and draft an XI of real players: for each position you pick one of
+five, seeing only their rating and age at the start. Then play five seasons.
 
 - **The draft.** Strikers first, goalkeeper last. Each set of five mixes a
   star (sometimes), established players and youngsters. Who becomes great is
@@ -39,12 +39,16 @@ the keyboard: the bar along the bottom lists the keys for each screen.
 
 ## Data
 
-Player data comes from the "FIFA 23 complete player dataset" (Stefano Leone,
-Kaggle, CC0): FIFA 16 ratings for 2015/16 through FIFA 20 for 2019/20.
+Player data comes from Kaggle datasets: FIFA 11-15 ratings from the European
+Soccer Database (Hugo Mathien, ODbL) and FIFA 15, FIFA 16-20 from the "FIFA 23
+complete player dataset" (Stefano Leone, CC0), FIFA 21-FC 24 from his "EA
+Sports FC 24 complete player dataset" (CC0) and FC 25 from the "EA Sports FC
+25 database" (nyagami, Apache 2.0).
 
 ```sh
-scripts/fetch_data.sh             # Kaggle CLI -> data/raw/ (gitignored)
-python3 scripts/process_data.py   # -> public/data/*.json (committed, ~1.1 MB)
+scripts/fetch_data.sh                  # Kaggle CLI -> data/raw/ (gitignored)
+python3 scripts/process_data.py        # -> public/data/<era>/*.json (committed, ~1 MB each)
+python3 scripts/process_data.py 2020   # one era only
 ```
 
 See [docs/DATA.md](docs/DATA.md) for what is extracted and a summary.

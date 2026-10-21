@@ -25,10 +25,11 @@ made website. No real logos, crests, kits, typefaces or league branding.
 
 ## Multiple starting points
 
-Later, a run can start in 2000, 2005, 2010, 2015 or 2020, each with its own
-starting style that then progresses with the years. Needs data for each
-era (FIFA editions for the matching seasons; the current dataset covers
-FIFA 15 to 23, so 2014/15 to 2022/23; earlier starts need another source).
+A run can start in 2010, 2015 or 2020 (done, October 2026; see docs/DATA.md
+for the sources). All three use the 2015 console style for now; each era's
+own starting style, progressing with the years, is still to build. 2000 and
+2005 need data: no open dataset found has ratings from before FIFA 11
+(sofifa.com goes back to FIFA 07).
 
 ## Other saved ideas
 

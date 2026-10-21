@@ -1,10 +1,10 @@
 // Game state and the season flow: transfer window -> lineup -> simulation.
 import { aiWindow, ensureMinimumSquad } from './ai';
-import { type ClubInfo, CLUBS } from './clubs';
+import { type ClubInfo, CLUBS, setEraClubs } from './clubs';
 import {
   CL_ROUNDS, type CupResult, type Entrant, FA_ROUNDS, simulateChampionsLeague, simulateFaCup, WINNER,
 } from './cups';
-import { type GameData, NUM_SEASONS, SEASON_YEARS } from './data';
+import { type GameData, NUM_SEASONS, SEASON_YEARS, seasonLabel } from './data';
 import { developPlayer, type Form, formBoost, retireChance } from './development';
 import { autoLineup, BENCH_SIZE, pickBench, pickXI, type PlayerLite, teamStrength } from './lineup';
 import { generateIncomingBids, generateOffers, type IncomingBid, type Offer } from './market';
@@ -138,9 +138,15 @@ export interface GameState {
   income: number;
 }
 
-export function seasonLabel(season: number): string {
-  const y = SEASON_YEARS[season];
-  return `${y}/${String(y + 1).slice(2)}`;
+export { seasonLabel };
+
+/**
+ * Makes an era's data the current one: its season years and its 20 clubs.
+ * Call once its data has loaded, before any screen shows it.
+ */
+export function activateEra(data: GameData): void {
+  SEASON_YEARS.splice(0, SEASON_YEARS.length, ...data.meta.years);
+  setEraClubs(data.era);
 }
 
 export function lite(p: PlayerState): PlayerLite {
@@ -210,7 +216,7 @@ export function registerUserClub(data: GameData, info: ClubInfo): number {
   return index;
 }
 
-/** The 20 real clubs of 2015/16 come first; a draft club is number 20. */
+/** The era's 20 real clubs come first; a draft club is number 20. */
 export const REAL_CLUBS = 20;
 
 export function newGame(
@@ -239,6 +245,7 @@ export function newGame(
   if (mode) state.mode = mode;
   if (rules) state.rules = rules;
   if (recent?.length) state.recent = recent;
+  activateEra(data);
   addNewPlayers(state, data);
   data.meta.gameClubs.slice(0, REAL_CLUBS).forEach((name, i) => {
     const info = CLUBS.find((c) => c.name === name)!;
@@ -507,12 +514,16 @@ export function seasonFixtures(state: GameState): [number, number][][] {
   return fixtures(state.clubs.map((c) => c.id), stream(state.seed, 'fixtures', state.season));
 }
 
-/** The four clubs that entered the Champions League in 2015/16 (2014/15 top four). */
-const CL_2015 = ['Chelsea', 'Manchester City', 'Arsenal', 'Manchester United'];
+/** The English clubs in each era's first Champions League: the previous season's top four. */
+const FIRST_CL: Record<number, string[]> = {
+  2010: ['Chelsea', 'Manchester United', 'Arsenal', 'Tottenham Hotspur'],
+  2015: ['Chelsea', 'Manchester City', 'Arsenal', 'Manchester United'],
+  2020: ['Liverpool', 'Manchester City', 'Manchester United', 'Chelsea'],
+};
 
 export function championsLeagueEntrants(state: GameState, data: GameData): number[] {
   const last = state.history[state.history.length - 1];
-  if (!last) return CL_2015.map((n) => data.meta.gameClubs.indexOf(n));
+  if (!last) return FIRST_CL[data.era].map((n) => data.meta.gameClubs.indexOf(n));
   return last.table.slice(0, 4).map((r) => r.club);
 }
 
