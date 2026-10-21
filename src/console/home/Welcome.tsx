@@ -7,14 +7,14 @@ type ItemId = 'single' | 'multi' | 'how' | 'settings' | 'about' | 'legal';
 
 const ITEMS: { id: ItemId; label: string; note: string }[] = [
   { id: 'single', label: 'Singleplayer', note: 'Pick an era and start a career' },
-  { id: 'multi', label: 'Multiplayer', note: 'Draft against friends' },
+  { id: 'multi', label: 'Multiplayer', note: 'Host a room or join with a code' },
   { id: 'how', label: 'How to Play', note: 'The rules in one minute' },
   { id: 'settings', label: 'Settings', note: 'Motion' },
   { id: 'about', label: 'About & Credits', note: 'Who made this, and with what' },
   { id: 'legal', label: 'Legal', note: 'Unofficial fan game, data licence' },
 ];
 
-export function Welcome({ settings, onSettings, onPlay }: { settings: Settings; onSettings: (s: Settings) => void; onPlay: () => void }) {
+export function Welcome({ settings, onSettings, onPlay, onMulti }: { settings: Settings; onSettings: (s: Settings) => void; onPlay: () => void; onMulti: () => void }) {
   const [index, setIndex] = useState(0);
   // 'panel' while the arrow keys move through the settings instead of the menu.
   const [focus, setFocus] = useState<'menu' | 'panel'>('menu');
@@ -24,6 +24,7 @@ export function Welcome({ settings, onSettings, onPlay }: { settings: Settings; 
   const select = (i: number) => setIndex(i);
   const choose = (id: ItemId) => {
     if (id === 'single') onPlay();
+    else if (id === 'multi') onMulti();
     else if (id === 'settings') {
       setFocus('panel');
       setRow(0);
@@ -57,9 +58,10 @@ export function Welcome({ settings, onSettings, onPlay }: { settings: Settings; 
   } else if (item.id === 'multi') {
     panel = (
       <>
-        <h2>Multiplayer <span className="w-soon">Coming soon</span></h2>
-        <p className="lead">Draft against friends from the same pool of players, then let five seasons decide who had the better eye.</p>
-        <p className="muted">Not playable yet. Singleplayer has everything for now.</p>
+        <h2>Multiplayer</h2>
+        <p className="lead">Draft against a friend from the same pool of players, then let five seasons decide who had the better eye.</p>
+        <div className="w-save fresh"><span className="dot" />Host a room and send the five-letter code, or join a friend's. You never get offered the same players, you play in the same league and meet twice a season, live.</div>
+        <button className="w-cta" onClick={onMulti} tabIndex={-1}>Host or join a room <span className="kbd">Enter</span></button>
       </>
     );
   } else if (item.id === 'how') {
@@ -138,7 +140,7 @@ export function Welcome({ settings, onSettings, onPlay }: { settings: Settings; 
             }}
             tabIndex={-1}
           >
-            <span className="w-label">{it.label}{it.id === 'multi' && <span className="w-soon">Soon</span>}</span>
+            <span className="w-label">{it.label}</span>
             <span className="w-note">{it.note}</span>
           </button>
         ))}
