@@ -19,6 +19,8 @@ export const MAX_SQUAD = 26;
 export const MIN_SQUAD = 16;
 /** Academy graduates promoted per club per season. */
 const MAX_YOUTH = 2;
+/** Chance the drafted club rests each starter for a substitute who can play there. */
+const DRAFT_ROTATION = 0.2;
 /** Club index for players outside the 20 clubs. */
 export const EXTERNAL = -1;
 
@@ -185,7 +187,8 @@ export function transfer(state: GameState, data: GameData, player: number, to: n
     const c = state.clubs[from];
     c.squad = c.squad.filter((id) => id !== player);
     c.xi = c.xi.map((id) => (id === player ? -1 : id));
-    c.bench = c.bench.filter((id) => id !== player);
+    // A drafted bench keeps its spots: the leaver's spot is left empty.
+    c.bench = state.mode === 'draft' && from === state.user ? c.bench.map((id) => (id === player ? -1 : id)) : c.bench.filter((id) => id !== player);
     c.cash += fee;
   }
   if (to !== EXTERNAL) {
@@ -276,7 +279,7 @@ function addNewPlayers(state: GameState, data: GameData): void {
 
 /** Last season's form of every player who played: league, plus cups for the user's. */
 function lastForm(state: GameState): Map<number, Form> {
-  const sums = new Map<number, { sum: number; apps: number; club: number }>();
+  const sums = new Map<number, { sum: number; apps: number; par: number; club: number }>();
   const clubs = new Map<number, { sum: number; apps: number }>();
   const league = { sum: 0, apps: 0 };
   for (const st of state.result?.stats ?? []) {
@@ -289,13 +292,17 @@ function lastForm(state: GameState): Map<number, Form> {
   }
   const h = state.history[state.history.length - 1];
   for (const st of [...(state.result?.stats ?? []), ...(h?.userCupStats ?? [])]) {
-    const t = sums.get(st.id) ?? { sum: 0, apps: 0, club: st.club };
+    const t = sums.get(st.id) ?? { sum: 0, apps: 0, par: 0, club: st.club };
     t.sum += st.ratingSum;
+    t.par += st.parSum ?? 0;
     t.apps += st.apps;
     sums.set(st.id, t);
   }
   const avg = (x: { sum: number; apps: number } | undefined) => (x && x.apps ? x.sum / x.apps : undefined);
-  return new Map([...sums].map(([id, t]) => [id, { avg: t.sum / t.apps, apps: t.apps, team: avg(clubs.get(t.club)), league: avg(league) }]));
+  return new Map([...sums].map(([id, t]) => {
+    const quality = t.par / t.apps;
+    return [id, { avg: t.sum / t.apps, apps: t.apps, team: avg(clubs.get(t.club)), league: avg(league), quality }];
+  }));
 }
 
 /** Season rollover for every player: development, retirements, academy. */
@@ -540,6 +547,7 @@ function addStats(map: Map<number, PlayerSeasonStats>, m: MatchResult, club: num
     s.goals += line.goals;
     s.assists += line.assists;
     s.ratingSum += line.rating;
+    s.parSum = (s.parSum ?? 0) + line.par;
   }
 }
 
@@ -595,7 +603,9 @@ export function simulate(state: GameState, data: GameData): void {
     const slots = FORMATIONS[c.formation];
     const xi = c.xi.map((id, i) => engineLite(state, c.id, id, slots[i]));
     const bench = c.bench.filter((id) => id >= 0).map((id) => engineLite(state, c.id, id));
-    return { club: c.id, formation: c.formation, xi, bench };
+    // The drafted club rotates its small squad, so the bench plays its part.
+    const rotation = state.mode === 'draft' && c.id === state.user ? DRAFT_ROTATION : undefined;
+    return { club: c.id, formation: c.formation, xi, bench, rotation };
   });
   const league = simulateSeason(teams, stream(state.seed, 'season', state.season), seasonFixtures(state));
 
@@ -608,7 +618,7 @@ export function simulate(state: GameState, data: GameData): void {
   for (const [name, , r] of opponents.europe) ratings[name] = r;
   const cupStats = new Map<number, PlayerSeasonStats>();
   const ctx = (tag: string) => ({
-    team: (club: number) => ({ club, slots: FORMATIONS[teams[club].formation], xi: teams[club].xi, bench: teams[club].bench }),
+    team: (club: number) => ({ club, slots: FORMATIONS[teams[club].formation], xi: teams[club].xi, bench: teams[club].bench, rotation: teams[club].rotation }),
     ratings,
     rng: stream(state.seed, tag, state.season),
     onMatch: (m: MatchResult) => addStats(cupStats, m, state.user),

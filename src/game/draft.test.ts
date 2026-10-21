@@ -158,3 +158,47 @@ describe('bench', () => {
     expect(s.draft!.candidates.length).toBe(5);
   });
 });
+
+describe('bench re-drafts', () => {
+  it('keeps the other substitutes when one is re-drafted', () => {
+    const s = newGame(data, REAL_CLUBS, 21, 'draft', '4-3-3');
+    autoDraft(s, data);
+    playDraftSeason(s, data);
+    endSeason(s, data);
+    const club = s.clubs[s.user];
+    const before = club.bench.slice();
+    expect(before).toHaveLength(3);
+    expect(startRedraft(s, data, XI)).toBeNull();
+    autoDraft(s, data);
+    expect(club.bench).toHaveLength(3);
+    expect(club.bench.slice(1)).toEqual(before.slice(1));
+    expect(club.bench.every((id) => id >= 0 && club.squad.includes(id))).toBe(true);
+    expect(club.squad).toHaveLength(14);
+  });
+});
+
+describe('the drafted bench', () => {
+  it('gets real starts, and its youngsters grow', () => {
+    let starts = 0;
+    let subs = 0;
+    let youngGrowth = 0;
+    let young = 0;
+    for (let r = 0; r < 12; r++) {
+      const s = newGame(data, REAL_CLUBS, 300 + r, 'draft', '4-3-3');
+      autoDraft(s, data);
+      const bench = s.clubs[s.user].bench.slice();
+      const before = new Map(bench.map((id) => [id, { ...s.players[id] }]));
+      playDraftSeason(s, data);
+      for (const id of bench) starts += s.history[0].userStats.find((x) => x.id === id)?.starts ?? 0;
+      subs += bench.length;
+      endSeason(s, data);
+      for (const [id, p] of before) {
+        if (p.age > 21) continue;
+        young++;
+        youngGrowth += s.players[id].ovr - p.ovr;
+      }
+    }
+    expect(starts / subs).toBeGreaterThan(15);
+    expect(youngGrowth / young).toBeGreaterThan(0.8);
+  });
+});
