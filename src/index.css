@@ -41,6 +41,8 @@ input { font: inherit; }
 .f-head .right small { font-size: 14px; text-transform: uppercase; letter-spacing: .08em; color: rgba(255,255,255,.75); margin-right: 6px; }
 .f-body { position: absolute; left: 32px; right: 32px; top: 72px; bottom: 62px; z-index: 1; }
 .f-body.full { top: 22px; }
+/* An empty body (the main menu draws its own) must not cover what is under it. */
+.f-body:empty { pointer-events: none; }
 
 .cmdbar { position: absolute; left: 0; right: 0; bottom: 0; height: 50px; display: flex; align-items: stretch; z-index: 5;
   background: linear-gradient(180deg, #fdfdfd 0%, #e8e9eb 48%, #d3d5d8 52%, #c6c8cc 100%); box-shadow: 0 -1px 0 rgba(0,0,0,.5), inset 0 1px 0 #fff; color: #222428; }
