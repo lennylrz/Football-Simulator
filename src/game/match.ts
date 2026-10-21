@@ -35,18 +35,22 @@ export interface MatchResult {
 
 // Tuned by the balancing tests (src/game/balance.test.ts).
 export const ENGINE = {
-  base: 1.22,
+  base: 1.2,
   home: 0.13,
-  attack: 0.05,
-  midfield: 0.03,
+  attack: 0.056,
+  midfield: 0.034,
   /** match-to-match form, in rating points */
-  formSd: 2,
+  formSd: 1.5,
   /** season-long form of a team (a hot or cold season), in rating points */
-  seasonFormSd: 1.5,
+  seasonFormSd: 0.6,
   /** how strongly a player's rating drives his share of goals and assists */
   starPower: 14,
   missChance: 0.05,
   missChanceGk: 0.015,
+  /** chance a starter is rested when the bench has someone for his position */
+  rotation: 0.12,
+  /** how far below the starter a bench player may be and still get rotated in */
+  rotationGap: 12,
   assistShare: 0.75,
 };
 
@@ -86,18 +90,26 @@ function lineUp(team: MatchTeam, rng: Rng): { on: OnPitch[]; strength: Strength 
     return bi >= 0 ? bench.splice(bi, 1)[0] : undefined;
   };
 
+  // Rotation: a bench player who plays the position starts now and then.
+  const rotate = (p: PlayerLite, slot: Position): PlayerLite | undefined => {
+    if (slot === 'GK') return undefined;
+    const eff = p.ovr * positionFit(p.pos, slot);
+    const bi = bench.findIndex((b) => positionFit(b.pos, slot) >= 0.95 && b.ovr * positionFit(b.pos, slot) >= eff - ENGINE.rotationGap);
+    return bi >= 0 && rng() < ENGINE.rotation ? bench.splice(bi, 1)[0] : undefined;
+  };
   // Knocks and rotation: a starter sometimes misses the match.
   const on: OnPitch[] = team.xi.map((p, i) => {
     const slot = team.slots[i];
     const miss = slot === 'GK' ? ENGINE.missChanceGk : ENGINE.missChance;
     let player = p;
     if (rng() < miss) player = take(slot) ?? p;
+    else player = rotate(p, slot) ?? p;
     return { p: player, slot, eff: player.ovr * positionFit(player.pos, slot), share: 1, started: true, goals: 0, assists: 0 };
   });
-  const strength = teamStrength(team.slots, on.map((o) => o.eff));
 
   // Up to three substitutions in the last half hour.
   const subs: OnPitch[] = [];
+  const subFor: number[] = [];
   for (let k = 0; k < 3 && bench.length > 0; k++) {
     if (rng() > 0.8) continue;
     const outfield = on.filter((o) => o.slot !== 'GK' && o.share === 1);
@@ -107,8 +119,13 @@ function lineUp(team: MatchTeam, rng: Rng): { on: OnPitch[]; strength: Strength 
     if (!sub) break;
     const minute = 55 + Math.floor(rng() * 30);
     off.share = minute / 90;
+    subFor.push(on.indexOf(off));
     subs.push({ p: sub, slot: off.slot, eff: sub.ovr * positionFit(sub.pos, off.slot), share: 1 - minute / 90, started: false, goals: 0, assists: 0 });
   }
+  // Each position's strength is what was on the pitch there, weighted by minutes: the bench counts.
+  const eff = on.map((o) => o.eff * o.share);
+  subs.forEach((s, k) => (eff[subFor[k]] += s.eff * s.share));
+  const strength = teamStrength(team.slots, eff);
   return { on: [...on, ...subs], strength };
 }
 

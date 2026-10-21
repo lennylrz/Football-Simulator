@@ -65,6 +65,9 @@ input { font: inherit; }
   background: linear-gradient(180deg, #4f74ad 0%, #284f8c 48%, #163b74 52%, #1f4682 100%); box-shadow: inset 0 1px 0 rgba(255,255,255,.4); }
 .office { flex: none; height: 150px; display: grid; grid-template-columns: 1fr 1px 1.25fr; gap: 0 34px; align-items: center; padding: 0 36px; color: #1d1d1d;
   background: linear-gradient(180deg, #ffffff 0%, #f1f1f1 55%, #dcdcdc 100%); }
+.office.three { grid-template-columns: 1fr 1px 1fr 1px 1fr; gap: 0 24px; padding: 0 26px; }
+.office.three .big { font-size: 24px; }
+.office.three .kv { font-size: 16px; gap: 10px; }
 .office .col { display: grid; gap: 2px; font-size: 18px; line-height: 1.3; min-width: 0; }
 .office .cap { font-size: 14px; letter-spacing: .06em; text-transform: uppercase; color: #5b5e63; }
 .office .big { font-size: 28px; font-weight: 700; line-height: 1.05; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -96,8 +99,17 @@ input { font: inherit; }
 .tbl td { padding: 5px 10px; border-bottom: 1px solid #262729; white-space: nowrap; }
 .tbl td.ellip { max-width: 1px; width: 100%; overflow: hidden; text-overflow: ellipsis; }
 .tbl tbody tr { cursor: pointer; }
+.tbl thead th.click { cursor: pointer; }
+.tbl thead th.click:hover { background: linear-gradient(180deg, #6a6c70, #45474b); }
+.tbl thead th.sort::after { content: " \25BE"; font-size: 13px; }
+.tbl thead th.sort.asc::after { content: " \25B4"; }
+.rowbtn { font-size: 14px; font-weight: 700; text-transform: uppercase; padding: 2px 10px; color: #fff; border: 1px solid rgba(255,255,255,.35); background: linear-gradient(180deg, #4b4d51, #2d2e31); border-radius: 2px; cursor: pointer; }
+.rowbtn:hover:not(:disabled) { border-color: #f2c200; color: #ffe45c; }
+.rowbtn:disabled { opacity: .45; cursor: default; }
+.tbl tr.sel .rowbtn { background: linear-gradient(180deg, #2f6fc2, #0a438b); border-color: #0a438b; }
 .tbl tbody tr:hover td { background: rgba(255,255,255,.07); }
 .tbl tbody tr.sel td { background: linear-gradient(180deg, #ffffff, #dedede); color: #111; }
+.tbl tbody tr.star td:first-child { color: #ffe45c; font-weight: 700; }
 .tbl tbody tr.mute td { color: #75787d; }
 .tbl tbody tr.sel.mute td { color: #555; }
 .tbl tbody tr.div td { border-top: 2px solid #4a4c50; }

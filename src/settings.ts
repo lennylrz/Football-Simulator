@@ -11,6 +11,8 @@ export interface Settings {
   redrafts: number;
   /** candidates offered per pick */
   choices: number;
+  /** substitutes drafted alongside the XI */
+  bench: number;
   /** how the season viewer starts */
   matchSpeed: MatchSpeed;
   /** turns off animations and cross-fades */
@@ -22,6 +24,7 @@ export const DEFAULT_SETTINGS: Settings = {
   pickTimer: 0,
   redrafts: 2,
   choices: 5,
+  bench: 3,
   matchSpeed: 'normal',
   reduceMotion: false,
 };
@@ -53,6 +56,11 @@ export const OPTIONS: AnyOption[] = [
     key: 'choices', group: 'Draft', label: 'Choices per Pick', values: [3, 4, 5],
     show: (v) => `${v} players`,
     desc: 'How many candidates you choose from for each position. Fewer choices, harder draft.',
+  },
+  {
+    key: 'bench', group: 'Draft', label: 'Bench Size', values: [3, 5],
+    show: (v) => `${v} substitutes`,
+    desc: 'How many substitutes you draft after your XI. They come on as subs, start now and then in their position, and can be moved into the XI each summer. Takes effect in a new career.',
   },
   {
     key: 'redrafts', group: 'Draft', label: 'Re-drafts per Summer', values: [0, 1, 2, 3, 4, 5],
@@ -94,8 +102,8 @@ export function applySettings(s: Settings): void {
 }
 
 /** The settings that are rules of the career itself. */
-export function rulesOf(s: Settings): { redrafts: number; choices: number } {
-  return { redrafts: s.redrafts, choices: s.choices };
+export function rulesOf(s: Settings): { redrafts: number; choices: number; bench: number } {
+  return { redrafts: s.redrafts, choices: s.choices, bench: s.bench };
 }
 
 /** The next or previous value of an option. */

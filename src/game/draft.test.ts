@@ -1,6 +1,6 @@
 import { beforeAll, describe, expect, it } from 'vitest';
 import type { GameData } from './data';
-import { autoDraft, emptySlots, pickCandidate, playDraftSeason, startRedraft } from './draft';
+import { autoDraft, chooseSlot, emptySlots, fits, pickCandidate, playDraftSeason, startRedraft, swapSpots, XI } from './draft';
 import { endSeason, type GameState, newGame, REAL_CLUBS, trophiesOf } from './game';
 import { loadTestData } from './testData';
 
@@ -36,7 +36,8 @@ describe('draft mode', () => {
     autoDraft(s, data);
     expect(s.stage).toBe('summer');
     expect(s.clubs[s.user].xi.every((id) => id >= 0)).toBe(true);
-    expect(s.clubs[s.user].bench).toHaveLength(5);
+    expect(s.clubs[s.user].bench).toHaveLength(3);
+    expect(s.clubs[s.user].bench.every((id) => id >= 0)).toBe(true);
     expect(playDraftSeason(s, data)).toBeNull();
     const h = s.history[0];
     expect(h.table).toHaveLength(21);
@@ -80,5 +81,80 @@ describe('draft mode', () => {
     console.log(JSON.stringify({ seasons, titles, trebles }));
     expect(titles / seasons).toBeLessThan(0.6);
     expect(trebles / seasons).toBeLessThan(0.1);
+  });
+});
+
+describe('draft rules', () => {
+  it('offers candidates in their main position only', () => {
+    for (let seed = 0; seed < 5; seed++) {
+      const s = newGame(data, REAL_CLUBS, 40 + seed, 'draft', '4-3-3');
+      const slots = ['GK', 'LB', 'CB', 'CB', 'RB', 'CM', 'CDM', 'CM', 'LW', 'ST', 'RW'];
+      while (s.draft!.slot !== null) {
+        const slot = slots[s.draft!.slot];
+        if (slot) for (const id of s.draft!.candidates) expect(fits(s.players[id], slot as never), `${s.players[id].pos} at ${slot}`).toBe(true);
+        pickCandidate(s, data, s.draft!.candidates[0]);
+      }
+    }
+  });
+
+  it('lets the user choose the order of the opening draft without re-rolling', () => {
+    const s = newGame(data, REAL_CLUBS, 8, 'draft', '4-3-3');
+    const first = s.draft!.candidates.slice();
+    expect(chooseSlot(s, data, 0)).toBeNull();
+    expect(s.draft!.slot).toBe(0);
+    const keepers = s.draft!.candidates.slice();
+    expect(chooseSlot(s, data, 9)).toBeNull();
+    expect(s.draft!.candidates).toEqual(first);
+    pickCandidate(s, data, first[0]);
+    expect(chooseSlot(s, data, 9)).not.toBeNull();
+    expect(chooseSlot(s, data, 0)).toBeNull();
+    expect(s.draft!.candidates).toEqual(keepers);
+    pickCandidate(s, data, keepers[0]);
+    expect(s.clubs[s.user].xi[0]).toBe(keepers[0]);
+    autoDraft(s, data);
+    expect(s.stage).toBe('summer');
+  });
+
+  it('allows one re-draft per position each summer', () => {
+    const s = newGame(data, REAL_CLUBS, 9, 'draft', '4-3-3', undefined, { redrafts: 3, choices: 5 });
+    autoDraft(s, data);
+    playDraftSeason(s, data);
+    endSeason(s, data);
+    expect(startRedraft(s, data, 4)).toBeNull();
+    pickCandidate(s, data, s.draft!.candidates[0]);
+    expect(startRedraft(s, data, 4)).not.toBeNull();
+    expect(startRedraft(s, data, 5)).toBeNull();
+  });
+
+  it('steers recent careers\' players away from the draw', () => {
+    const a = newGame(data, REAL_CLUBS, 11, 'draft', '4-3-3');
+    autoDraft(a, data);
+    const seen = a.draft!.shown!;
+    const b = newGame(data, REAL_CLUBS, 11, 'draft', '4-3-3', undefined, undefined, seen);
+    autoDraft(b, data);
+    const again = b.draft!.shown!.filter((id) => seen.includes(id)).length;
+    expect(again / b.draft!.shown!.length).toBeLessThan(0.2);
+  });
+});
+
+describe('bench', () => {
+  it('drafts substitutes who play some matches, and swaps them into the XI in the summer', () => {
+    const s = newGame(data, REAL_CLUBS, 21, 'draft', '4-3-3', undefined, { redrafts: 2, choices: 5, bench: 5 });
+    autoDraft(s, data);
+    const club = s.clubs[s.user];
+    expect(club.bench).toHaveLength(5);
+    playDraftSeason(s, data);
+    const apps = new Map(s.history[0].userStats.map((x) => [x.id, x.apps]));
+    for (const id of club.bench) expect(apps.get(id) ?? 0).toBeGreaterThan(0);
+    endSeason(s, data);
+    const starter = club.xi[9];
+    const sub = s.clubs[s.user].bench[0];
+    expect(swapSpots(s, 9, XI)).toBeNull();
+    expect(s.clubs[s.user].xi[9]).toBe(sub);
+    expect(s.clubs[s.user].bench[0]).toBe(starter);
+    expect(swapSpots(s, XI, XI + 1)).not.toBeNull();
+    // A substitute can be re-drafted too.
+    expect(startRedraft(s, data, XI + 1)).toBeNull();
+    expect(s.draft!.candidates.length).toBe(5);
   });
 });

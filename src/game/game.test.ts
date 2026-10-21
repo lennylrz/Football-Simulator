@@ -88,9 +88,10 @@ describe('game flow', () => {
     }
     const mean = sum / n;
     const sd = Math.sqrt(sumSq / n - mean * mean);
-    expect(Math.abs(mean)).toBeLessThan(0.3);
-    expect(sd).toBeGreaterThan(1.8);
-    expect(sd).toBeLessThan(3.5);
+    // Close to history, with performance and a little luck on top.
+    expect(Math.abs(mean)).toBeLessThan(0.4);
+    expect(sd).toBeGreaterThan(0.8);
+    expect(sd).toBeLessThan(2.2);
   });
 });
 

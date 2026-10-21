@@ -1,50 +1,33 @@
 import { useEffect, useRef, useState } from 'react';
-import type { GameData } from '../../game/data';
-import { type GameState, seasonLabel } from '../../game/game';
 import '../menu.css';
 import { drawShards } from '../shards';
-import { browse, clubOf, Frame } from '../ui';
+import { browse, Frame } from '../ui';
 
 interface Tab {
-  id: 'new' | 'continue' | 'hall' | 'settings';
+  id: 'new' | 'settings';
   label: string;
   desc: string;
   flag: string;
 }
 
-export function MainMenu({
-  data, save, onNew, onContinue, onHall, onSettings, onHome,
-}: { data: GameData; save: GameState | null; onNew: () => void; onContinue: () => void; onHall: () => void; onSettings: () => void; onHome: () => void }) {
+const TABS: Tab[] = [
+  {
+    id: 'new',
+    label: 'New Career',
+    desc: 'Create your own club, draft an XI of real 2015 players and take on the 20 clubs of the English top flight for five seasons.',
+    flag: 'Start here',
+  },
+  { id: 'settings', label: 'Settings', desc: 'Hidden ratings, the pick timer, re-drafts per summer, match speed and more.', flag: 'Your rules' },
+];
+
+export function MainMenu({ onNew, onSettings, onHome }: { onNew: () => void; onSettings: () => void; onHome: () => void }) {
   const canvas = useRef<HTMLCanvasElement>(null);
   const rail = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (canvas.current) drawShards(canvas.current);
   }, []);
-
-  const club = save && save.user >= 0 ? clubOf(data, save.user) : null;
-  const tabs: Tab[] = [
-    {
-      id: 'new',
-      label: 'New Career',
-      desc: 'Create your own club, draft an XI of real 2015 players and take on the 20 clubs of the English top flight for five seasons.',
-      flag: save ? 'Replaces your saved career' : 'Start here',
-    },
-  ];
-  if (save && club) {
-    const where =
-      save.stage === 'summary' ? 'your five seasons are complete' : `season ${save.season + 1} of 5, ${seasonLabel(save.season)}`;
-    tabs.push(
-      {
-        id: 'continue',
-        label: 'Continue',
-        desc: `Pick up where you left off: ${club.name}, ${where}.`,
-        flag: save.stage === 'summary' ? 'Career complete' : 'Career in progress',
-      },
-      { id: 'hall', label: 'Hall of Fame', desc: 'Your trophies, your best players and your best and worst signings so far.', flag: 'Treble watch' },
-    );
-  }
-  tabs.push({ id: 'settings', label: 'Settings', desc: 'Hidden ratings, the pick timer, re-drafts per summer, match speed and more.', flag: 'Your rules' });
-  const [index, setIndex] = useState(save ? 1 : 0);
+  const tabs = TABS;
+  const [index, setIndex] = useState(0);
   const [left, setLeft] = useState(60);
   const tab = tabs[Math.min(index, tabs.length - 1)];
 
@@ -53,7 +36,7 @@ export function MainMenu({
     if (el) setLeft(60 + el.offsetLeft + 24);
   }, [index, tabs.length]);
 
-  const go = (t: Tab) => (t.id === 'new' ? onNew() : t.id === 'continue' ? onContinue() : t.id === 'settings' ? onSettings() : onHall());
+  const go = (t: Tab) => (t.id === 'new' ? onNew() : onSettings());
 
   return (
     <div className="mm">
@@ -64,11 +47,6 @@ export function MainMenu({
       <p className="tagline">
         Draft real players from 2015, watch who becomes a star, and gamble each summer. Five seasons to build a legacy. <em>Can you win the treble?</em>
       </p>
-      {club && save && (
-        <div className="stamp">
-          Saved career<b>{club.short} · {save.stage === 'summary' ? 'Complete' : seasonLabel(save.season)}</b>
-        </div>
-      )}
       <div className="desc" style={{ left }}>
         {tab.desc}
         <span className="flag">{tab.flag}</span>

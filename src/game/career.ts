@@ -169,3 +169,20 @@ export function career(state: GameState): Career {
   };
 }
 
+
+/** League and cup stats of the same players, added together. */
+export function mergeStats(...lists: PlayerSeasonStats[][]): PlayerSeasonStats[] {
+  const map = new Map<number, PlayerSeasonStats>();
+  for (const s of lists.flat()) {
+    const m = map.get(s.id);
+    if (!m) map.set(s.id, { ...s });
+    else {
+      m.apps += s.apps;
+      m.starts += s.starts;
+      m.goals += s.goals;
+      m.assists += s.assists;
+      m.ratingSum += s.ratingSum;
+    }
+  }
+  return [...map.values()];
+}

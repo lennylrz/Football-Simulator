@@ -13,7 +13,14 @@ export function Stage({ tone = 'dark', children }: { tone?: 'dark' | 'light' | '
   }, []);
   return (
     <div className="stage-wrap">
-      <div className={`stage ${tone}`} style={{ '--s': scale } as React.CSSProperties}>
+      <div
+        className={`stage ${tone}`}
+        style={{ '--s': scale } as React.CSSProperties}
+        // Clicking a button never focuses it, so Enter and Space afterwards only run the screen's command.
+        onMouseDown={(e) => {
+          if ((e.target as Element).closest('button')) e.preventDefault();
+        }}
+      >
         {children}
       </div>
     </div>
@@ -57,9 +64,11 @@ export function useCommands(commands: Command[]) {
   ref.current = commands;
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.target instanceof HTMLInputElement || e.metaKey || e.ctrlKey || e.altKey) return;
+      if (e.defaultPrevented || e.metaKey || e.ctrlKey || e.altKey) return;
       const k = KEY_OF[e.key.length === 1 ? e.key.toLowerCase() : e.key] ?? KEY_OF[e.key];
       if (!k) return;
+      // While typing, only Enter and Esc reach the screen: letters, Space and arrows edit the text.
+      if (e.target instanceof HTMLInputElement && k !== 'Enter' && k !== 'Escape') return;
       const cmd = ref.current.find((c) => c.keys.includes(k) && !c.disabled);
       if (!cmd) return;
       e.preventDefault();

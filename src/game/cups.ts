@@ -61,7 +61,7 @@ export const WINNER = 'Winner';
 
 /** Adjustment to outside clubs' best-XI rating; tuned so English clubs win
  * the Champions League about as often as they did in 2015-2020. */
-export const OUTSIDE_BONUS = { value: 1 };
+export const OUTSIDE_BONUS = { value: 0.6 };
 
 function fixedStrength(rating: number): Strength {
   const r = rating + OUTSIDE_BONUS.value;
@@ -132,7 +132,8 @@ export function simulateFaCup(ctx: CupContext, clubs: number[], lower: [string, 
     for (let i = 0; i < alive.length; i += 2) {
       next.push(single(ctx, alive[i], alive[i + 1], FA_SLOTS[r], round, neutral, matches));
     }
-    alive = shuffle(rng, next);
+    // Winners of neighbouring ties meet next, so the draw reads as a bracket.
+    alive = next;
   });
   markReached(reached, alive, WINNER);
   return { matches, winner: alive[0], reached, ratings: ctx.ratings };
@@ -187,7 +188,6 @@ export function simulateChampionsLeague(ctx: CupContext, english: number[], euro
   winners.forEach((w, i) => alive.push(twoLegs(ctx, runners[order[i]], w, CL_KO_SLOTS[0], CL_ROUNDS[1], matches)));
   for (let r = 2; r <= 3; r++) {
     markReached(reached, alive, CL_ROUNDS[r]);
-    alive = shuffle(rng, alive);
     const next: Entrant[] = [];
     for (let i = 0; i < alive.length; i += 2) next.push(twoLegs(ctx, alive[i], alive[i + 1], CL_KO_SLOTS[r - 1], CL_ROUNDS[r], matches));
     alive = next;
@@ -200,4 +200,40 @@ export function simulateChampionsLeague(ctx: CupContext, english: number[], euro
 
 export function entrantName(e: Entrant, clubName: (club: number) => string): string {
   return typeof e === 'number' ? clubName(e) : e;
+}
+
+/** A knockout tie: one match, or two legs added up. */
+export interface Tie {
+  round: string;
+  a: Entrant;
+  b: Entrant;
+  /** goals for a and b, over both legs */
+  ga: number;
+  gb: number;
+  winner: Entrant;
+  pens: boolean;
+  legs: CupMatch[];
+}
+
+/** The ties of a knockout round, in draw order. */
+export function tiesOf(matches: CupMatch[], round: string): Tie[] {
+  const list = matches.filter((m) => m.round === round);
+  const out: Tie[] = [];
+  for (let i = 0; i < list.length; i++) {
+    const m = list[i];
+    if (m.leg === 1) {
+      const second = list[i + 1];
+      i++;
+      const ga = m.hg + second.ag;
+      const gb = m.ag + second.hg;
+      const pens = second.pens !== undefined;
+      const winner = pens ? (second.pens === 0 ? second.home : second.away) : ga > gb ? m.home : m.away;
+      out.push({ round, a: m.home, b: m.away, ga, gb, winner, pens, legs: [m, second] });
+    } else {
+      const pens = m.pens !== undefined;
+      const winner = pens ? (m.pens === 0 ? m.home : m.away) : m.hg > m.ag ? m.home : m.away;
+      out.push({ round, a: m.home, b: m.away, ga: m.hg, gb: m.ag, winner, pens, legs: [m] });
+    }
+  }
+  return out;
 }

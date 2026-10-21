@@ -23,7 +23,7 @@ export interface PlateInfo {
   rating?: number;
   name?: string;
   label: string;
-  state?: 'empty' | 'now' | 'sel';
+  state?: 'empty' | 'open' | 'now' | 'sel' | 'done';
   delta?: number;
   delay?: number;
 }
@@ -42,7 +42,7 @@ export function Pitch({ formation, plates, onPick, children }: { formation: Form
         </g>
       </svg>
       {plates.map((p, i) => (
-        <div key={i} className={`dplate ${p.state ?? ''}`} style={{ left: `${at[i].x}%`, top: `${at[i].y}%` }} onClick={() => onPick?.(i)}>
+        <div key={i} className={`dplate ${p.state ?? ''} ${onPick ? 'click' : ''}`} style={{ left: `${at[i].x}%`, top: `${at[i].y}%` }} onClick={() => onPick?.(i)}>
           <b>{p.rating ?? '?'}</b>
           <span>{p.name ?? 'Empty'}</span>
           <em>{p.label}</em>
@@ -54,6 +54,28 @@ export function Pitch({ formation, plates, onPick, children }: { formation: Form
         </div>
       ))}
       {children}
+    </div>
+  );
+}
+
+/** The substitutes, in a row under the pitch. */
+export function BenchStrip({ plates, onPick }: { plates: PlateInfo[]; onPick?: (j: number) => void }) {
+  if (!plates.length) return null;
+  return (
+    <div className="bench-strip">
+      <span className="cap">Bench</span>
+      {plates.map((p, j) => (
+        <div key={j} className={`dplate ${p.state ?? ''} ${onPick ? 'click' : ''}`} onClick={() => onPick?.(j)}>
+          <b>{p.rating ?? '?'}</b>
+          <span>{p.name ?? 'Empty'}</span>
+          <em>{p.label}</em>
+          {p.delta !== undefined && (
+            <i className={`delta ${p.delta > 0 ? 'up' : p.delta < 0 ? 'down' : 'same'}`} style={{ '--d': `${p.delay ?? 0}ms` } as React.CSSProperties}>
+              {p.delta > 0 ? `+${p.delta}` : p.delta === 0 ? '=' : p.delta}
+            </i>
+          )}
+        </div>
+      ))}
     </div>
   );
 }
