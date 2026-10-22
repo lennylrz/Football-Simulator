@@ -56,9 +56,6 @@ export function GameSetup({
             <p>{opt.desc}</p>
             <span className="kv"><span>Default</span><b>{(opt.show as (v: unknown) => string)(DEFAULT_SETTINGS[opt.key])}</b></span>
           </div>
-          <div className="note">
-            Settings are saved in this browser. You can change them later from the main menu.
-          </div>
         </div>
       </div>
     </Frame>

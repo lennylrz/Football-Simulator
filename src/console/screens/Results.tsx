@@ -196,7 +196,6 @@ export function Results() {
                 ) : (
                   <div className="empty">You didn't qualify this season. Finish in the top four to play in it next season.</div>
                 )}
-                <div className="note">The top two of each group go through to the Round of 16.</div>
                 {clRun.length > 0 && (
                   <>
                     <div className="ph gbar">Your Knockout Ties<small>{result.cl.winner === game.user ? 'Champions' : ''}</small></div>

@@ -6,12 +6,13 @@ import { useGame } from '../../ui/context';
 import { downloadBlob, drawShareCard, shareOrDownload } from '../../ui/shareCard';
 import { careerColumns, closeCommand, HallOfFame, SeasonReport } from '../overlays';
 import { SortTable } from '../SortTable';
-import { browse, clubOf, type Command, Frame, ordinal, useListNav } from '../ui';
+import { browse, clubOf, type Command, Frame, ordinal, useListNav, useTheme } from '../ui';
 
 const TROPHY = { league: 'League', fa: 'FA Cup', cl: 'Europe' } as const;
 
 export function Summary({ onNewCareer }: { onNewCareer: () => void }) {
   const { data, game } = useGame();
+  const theme = useTheme();
   const info = clubOf(data, game.user);
   const c = useMemo(() => computeCareer(game), [game]);
   const canvas = useRef<HTMLCanvasElement>(null);
@@ -23,9 +24,15 @@ export function Summary({ onNewCareer }: { onNewCareer: () => void }) {
 
   useEffect(() => {
     if (!canvas.current) return;
-    drawShareCard(canvas.current, { club: info, career: c, name: (id) => data.names[id][0], seed: game.seed, site: window.location.host });
-    setPreview(canvas.current.toDataURL('image/png'));
-  }, [info, c, data, game.seed]);
+    const draw = () => {
+      if (!canvas.current) return;
+      drawShareCard(canvas.current, { club: info, career: c, name: (id) => data.names[id][0], seed: game.seed, site: window.location.host, theme });
+      setPreview(canvas.current.toDataURL('image/png'));
+    };
+    draw();
+    // Redraw once the era's web fonts have loaded.
+    document.fonts?.ready.then(draw);
+  }, [info, c, data, game.seed, theme]);
 
   const file = `five-seasons-${info.code.toLowerCase()}.png`;
   const share = async () => {
@@ -82,10 +89,6 @@ export function Summary({ onNewCareer }: { onNewCareer: () => void }) {
             <div className="ph gbar">Club Legends<small>All competitions</small></div>
             <div className="tblwrap scroll">
               <SortTable rows={legends} columns={careerColumns(data)} initial="score" rowKey={(p) => p.id} rowClass={(p) => (p.id === c.playerOfCareer?.id ? 'star' : '')} />
-            </div>
-            <div className="note">
-              {c.bestPick && <>Best pick: <b>{data.names[c.bestPick.player][0]} {c.bestPick.from} → {c.bestPick.to}</b>. </>}
-              {c.worstPick && <>Worst pick: {data.names[c.worstPick.player][0]} {c.worstPick.from} → {c.worstPick.to}.</>}
             </div>
           </div>
         </div>

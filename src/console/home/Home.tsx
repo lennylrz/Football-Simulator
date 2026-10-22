@@ -10,7 +10,7 @@ const ERAS: { key: EraKey; years: string; style: string; live: boolean }[] = [
   { key: 2000, years: '2000–2005', style: 'The desktop era', live: false },
   { key: 2005, years: '2005–2010', style: 'The chrome era', live: false },
   { key: 2010, years: '2010–2015', style: 'The console era', live: true },
-  { key: 2015, years: '2015–2020', style: 'The editorial era', live: true },
+  { key: 2015, years: '2015–2020', style: 'The career hub era', live: true },
   { key: 2020, years: '2020–2025', style: 'The modern era', live: true },
 ];
 

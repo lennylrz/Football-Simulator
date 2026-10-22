@@ -146,3 +146,7 @@ input { font: inherit; }
 
 /* Settings: reduce motion. */
 .calm *, .calm *::before, .calm *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+
+/* A player's name that opens his card. */
+.plink { cursor: pointer; }
+.plink:hover { text-decoration: underline; text-underline-offset: 3px; }
