@@ -150,3 +150,9 @@ input { font: inherit; }
 /* A player's name that opens his card. */
 .plink { cursor: pointer; }
 .plink:hover { text-decoration: underline; text-underline-offset: 3px; }
+
+/* Summer: what the dressing room is talking about. */
+.sq-notes { flex: none; display: grid; gap: 5px; padding: 10px 14px 12px; border-top: 1px solid #262729; }
+.sq-notes .cap { font-size: 12px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: #8f9297; }
+.sq-notes p { margin: 0; font-size: 15px; line-height: 1.35; color: #d6d8dc; padding-left: 12px; position: relative; }
+.sq-notes p::before { content: ""; position: absolute; left: 0; top: 8px; width: 5px; height: 5px; background: #f2c200; }

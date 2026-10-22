@@ -5,6 +5,7 @@ import { paperTable, seasonLabel, trophiesOf } from '../../game/game';
 import { FORMATIONS, parsePositions, positionFit } from '../../game/positions';
 import { useGame } from '../../ui/context';
 import { PlayerCard } from '../awards';
+import { squadNotes } from '../../game/squadStories';
 import { AroundTheLeague, closeCommand, HallOfFame, LeaveCareer, leaveCommands } from '../overlays';
 import { rivalCommand, RivalOverlay, rivalStatus } from '../room';
 import { STYLE_ORDER, STYLES } from '../../game/styles';
@@ -27,6 +28,8 @@ export function Summer() {
   const [swapFrom, setSwapFrom] = useState<number | null>(null);
   /** a player whose card is open */
   const [card, setCard] = useState<number | null>(null);
+  // The dressing room this summer: worked out once, so swaps and re-drafts don't reshuffle it.
+  const [notes] = useState(() => squadNotes(game, data, game.user));
   const info = clubOf(data, game.user);
   const reveal = new Map(d.reveal.map((r) => [r.player, r]));
   const empty = emptySlots(game);
@@ -214,6 +217,12 @@ export function Summer() {
                   </tbody>
                 </table>
               </div>
+              {!room && !empty.length && notes.length > 0 && (
+                <div className="sq-notes">
+                  <span className="cap">Dressing room</span>
+                  {notes.slice(0, 3).map((n) => <p key={n.text}>{n.text}</p>)}
+                </div>
+              )}
               {(room || empty.length > 0) && (
                 <div className="note">
                   {room && !empty.length
