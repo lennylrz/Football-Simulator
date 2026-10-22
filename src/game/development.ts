@@ -79,8 +79,10 @@ export function formBoost(p: Pick<Developing, 'age' | 'ovr'> & { pot?: number },
  * value, adjusted by how he played; without one, he follows the average
  * change for his age. In his prime, only part of the real change applies.
  */
-export function developPlayer(p: Developing, next: Row | undefined, meta: Meta, rng: Rng, form?: Form): void {
-  const boost = formBoost(p, form);
+export function developPlayer(p: Developing, next: Row | undefined, meta: Meta, rng: Rng, form?: Form, growth = 1): void {
+  const raw0 = formBoost(p, form);
+  // A play style turns good seasons into bigger (or smaller) gains for some players.
+  const boost = raw0 > 0 ? raw0 * growth : raw0;
   const age = p.age;
   let expected: number;
   if (next) {

@@ -17,6 +17,7 @@ import { type Era, type GameData, loadGameData } from './game/data';
 import type { ClubInfo } from './game/clubs';
 import { activateEra, type GameState, newGame, REAL_CLUBS } from './game/game';
 import type { Formation } from './game/positions';
+import type { PlayStyle } from './game/styles';
 import { applySettings, loadSettings, rulesOf, saveSettings, type Settings } from './settings';
 import { recentPlayers, rememberShown } from './storage';
 import { GameContext } from './ui/context';
@@ -118,9 +119,10 @@ export default function App() {
   );
 
   // A typed-in seed replays exactly the same draft, so it ignores recent careers.
-  const start = (club: ClubInfo, formation: Formation, seed: number, shared: boolean) => {
+  const start = (club: ClubInfo, formation: Formation, seed: number, shared: boolean, style: PlayStyle) => {
     if (!data) return;
     const g = newGame(data, REAL_CLUBS, seed, 'draft', formation, club, rulesOf(settings), shared ? [] : recentPlayers(seed));
+    g.clubs[g.user].style = style;
     g.ownClub = club;
     if (g.draft?.shown) rememberShown(g.seed, g.draft.shown);
     current.current = g;
@@ -151,9 +153,9 @@ export default function App() {
       setLobby({ busy: false, error: String(e), code });
     }
   };
-  const roomClub = async (club: ClubInfo, formation: Formation) => {
+  const roomClub = async (club: ClubInfo, formation: Formation, style: PlayStyle) => {
     if (pendingRoom) {
-      setJoinAs({ club, formation });
+      setJoinAs({ club, formation, style });
       setRoom(pendingRoom);
       setPendingRoom(null);
       setMode('room');
@@ -161,7 +163,7 @@ export default function App() {
     }
     setLobby((l) => ({ ...l, busy: true, error: null }));
     try {
-      const r = await createRoom(era!, rulesOf(settings), { club, formation });
+      const r = await createRoom(era!, rulesOf(settings), { club, formation, style });
       setLobby((l) => ({ ...l, busy: false }));
       setJoinAs(undefined);
       setRoom(r);
@@ -257,7 +259,7 @@ export default function App() {
   if (mode === 'roomclub') {
     return (
       <Stage>
-        <NewClub room={pendingRoom ? 'guest' : 'host'} busy={lobby.busy} onStart={(club, formation) => void roomClub(club, formation)} onBack={() => setMode('lobby')} settings={settings} />
+        <NewClub room={pendingRoom ? 'guest' : 'host'} busy={lobby.busy} onStart={(club, formation, _seed, _shared, style) => void roomClub(club, formation, style)} onBack={() => setMode('lobby')} settings={settings} />
       </Stage>
     );
   }

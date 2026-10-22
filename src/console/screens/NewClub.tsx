@@ -2,6 +2,7 @@ import { useState } from 'react';
 import type { ClubInfo } from '../../game/clubs';
 import { seasonLabel } from '../../game/data';
 import { FORMATION_NAMES, type Formation } from '../../game/positions';
+import { type PlayStyle, STYLE_ORDER, STYLES } from '../../game/styles';
 import { Pitch } from '../Pitch';
 import type { Settings } from '../../settings';
 import { browse, type Command, Frame, KeyCap, Overlay } from '../ui';
@@ -24,7 +25,7 @@ function codeOf(name: string): string {
 }
 
 export function NewClub({ onStart, onBack, settings, room, busy }: {
-  onStart: (club: ClubInfo, formation: Formation, seed: number, shared: boolean) => void; onBack: () => void; settings: Settings;
+  onStart: (club: ClubInfo, formation: Formation, seed: number, shared: boolean, style: PlayStyle) => void; onBack: () => void; settings: Settings;
   /** creating a club to host or join a two-player room */
   room?: 'host' | 'guest';
   busy?: boolean;
@@ -32,6 +33,7 @@ export function NewClub({ onStart, onBack, settings, room, busy }: {
   const [name, setName] = useState('Five Seasons FC');
   const [colour, setColour] = useState(0);
   const [formation, setFormation] = useState<Formation>('4-3-3');
+  const [style, setStyle] = useState<PlayStyle>('tiki');
   const [seedOpen, setSeedOpen] = useState(false);
   const [seedText, setSeedText] = useState('');
   const [c0, c1, c2] = COLOURS[colour];
@@ -40,7 +42,7 @@ export function NewClub({ onStart, onBack, settings, room, busy }: {
 
   const start = () => {
     const parsed = Number.parseInt(seedText, 10);
-    onStart(info, formation, Number.isFinite(parsed) ? parsed >>> 0 : Math.floor(Math.random() * 2 ** 32), Number.isFinite(parsed));
+    onStart(info, formation, Number.isFinite(parsed) ? parsed >>> 0 : Math.floor(Math.random() * 2 ** 32), Number.isFinite(parsed), style);
   };
   const fIndex = FORMATION_NAMES.indexOf(formation);
   const commands: Command[] = seedOpen
@@ -52,6 +54,7 @@ export function NewClub({ onStart, onBack, settings, room, busy }: {
         { keys: ['Enter'], label: busy ? 'Connecting…' : room === 'host' ? 'Create the Room' : room === 'guest' ? 'Join the Room' : 'Start the Draft', primary: true, disabled: busy, onPress: start },
         { keys: ['Q', 'E'], label: 'Colours', onPress: (k) => setColour((colour + (k === 'Q' ? -1 : 1) + COLOURS.length) % COLOURS.length) },
         browse('Formation', () => setFormation(FORMATION_NAMES[(fIndex + 4) % 5]), () => setFormation(FORMATION_NAMES[(fIndex + 1) % 5]), true),
+        { keys: ['A'], label: `Style · ${STYLES[style].name}`, onPress: () => setStyle(STYLE_ORDER[(STYLE_ORDER.indexOf(style) + 1) % STYLE_ORDER.length]) },
         { keys: ['S'], label: 'Replay Seed', hidden: !!room, disabled: !!room, onPress: () => setSeedOpen(true) },
         { keys: ['Escape'], label: 'Back', onPress: onBack },
       ];
@@ -96,6 +99,13 @@ export function NewClub({ onStart, onBack, settings, room, busy }: {
                   ))}
                   <KeyCap k="Right" />
                 </b></div>
+                <div><span>Play style</span><b className="tabs" style={{ display: 'flex', gap: 4 }}>
+                  <KeyCap k="A" />
+                  {STYLE_ORDER.map((k) => (
+                    <button key={k} className={`t ${k === style ? 'on' : ''}`} onClick={() => setStyle(k)} tabIndex={-1} style={{ height: 30, padding: '0 12px', fontSize: 14 }}>{STYLES[k].name}</button>
+                  ))}
+                </b></div>
+                <div><span /><small style={{ textAlign: 'right', opacity: 0.8 }}>{STYLES[style].desc} You can change it every summer.</small></div>
                 <div className="head">The ultimate goal</div>
                 <div><span>The Treble</span><b>League, FA Cup and Champions League</b></div>
               </div>

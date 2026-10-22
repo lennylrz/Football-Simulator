@@ -6,6 +6,7 @@ import { FORMATIONS, parsePositions, positionFit } from '../../game/positions';
 import { useGame } from '../../ui/context';
 import { AroundTheLeague, closeCommand, HallOfFame, LeaveCareer, leaveCommands } from '../overlays';
 import { rivalCommand, RivalOverlay, rivalStatus } from '../room';
+import { STYLE_ORDER, STYLES } from '../../game/styles';
 import { BenchStrip, Pitch, type PlateInfo } from '../Pitch';
 import { browse, clubOf, type Command, Frame, ordinal, Overlay, useListNav } from '../ui';
 
@@ -14,6 +15,7 @@ const TROPHY = { league: 'League', fa: 'FA Cup', cl: 'Champions League' } as con
 export function Summer() {
   const { data, game, send, quit, room } = useGame();
   const club = game.clubs[game.user];
+  const style = club.style ?? 'tiki';
   const d = game.draft!;
   const slots = FORMATIONS[club.formation];
   // Spots 0-10 are the XI, 11 and up the bench, in one list.
@@ -99,8 +101,9 @@ export function Summer() {
           : [
               ...seasonCommands,
               { keys: ['Enter'], label: sel < 0 ? 'Draft' : 'Re-draft', disabled: !can(nav.index), onPress: () => ask(nav.index) },
+              { keys: ['A'], label: 'Style', onPress: () => send({ t: 'style', style: STYLE_ORDER[(STYLE_ORDER.indexOf(style) + 1) % STYLE_ORDER.length] }) },
               { keys: ['S'], label: 'Swap', hidden: !club.bench.length, disabled: sel < 0 || empty.length > 0, onPress: () => setSwapFrom(nav.index) },
-              browse('Browse', nav.up, nav.down),
+              { ...browse('Browse', nav.up, nav.down), hidden: true },
               { keys: ['T'], label: 'Transfers', onPress: () => setOverlay('around') },
               { keys: ['H'], label: 'Hall of Fame', onPress: () => setOverlay('hall') },
               ...rivalCommand(room, () => setOverlay('rival')),
@@ -139,6 +142,7 @@ export function Summer() {
               <span className="cap">On paper</span>
               <span className="big">{empty.length ? 'XI incomplete' : `${ordinal(rank)} of ${paper.length}`}</span>
               <span className="kv"><span>XI rating {paper[rank - 1]?.rating.toFixed(1)} · best {paper[0].rating.toFixed(1)}</span></span>
+              <span className="kv" title={STYLES[style].desc}><span>Style</span><b>{STYLES[style].name}</b></span>
             </div>
             <div className="sep" />
             <div className="col">

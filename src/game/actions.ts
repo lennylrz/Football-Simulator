@@ -6,12 +6,15 @@ import type { GameData } from './data';
 import { chooseSlot, emptySlots, pickCandidate, playDraftSeason, startRedraft, swapSpots } from './draft';
 import { asUser, endSeason, type GameState, newGame, REAL_CLUBS, type Stage } from './game';
 import type { Formation } from './positions';
+import { type PlayStyle, STYLES } from './styles';
 
 export type Action =
   | { t: 'pick'; player: number }
   | { t: 'slot'; slot: number }
   | { t: 'redraft'; slot: number }
   | { t: 'swap'; a: number; b: number }
+  /** the club's play style, before a season */
+  | { t: 'style'; style: PlayStyle }
   /** single player: play the season */
   | { t: 'play' }
   /** room: XI set (or not), waiting for the host */
@@ -25,6 +28,7 @@ export type Action =
 export interface RoomManager {
   club: ClubInfo;
   formation: Formation;
+  style?: PlayStyle;
 }
 
 /** The host's club is the 21st, the guest's the 22nd. */
@@ -37,10 +41,13 @@ export function newRoomGame(data: GameData, seed: number, rules: GameState['rule
   const taken = new Set([...data.meta.gameClubs.slice(0, REAL_CLUBS), host.club.name]);
   let club = guest.club;
   for (let n = 2; taken.has(club.name); n++) club = { ...guest.club, name: `${guest.club.name} ${n}` };
-  return newGame(data, HOST, seed, 'draft', host.formation, host.club, rules, [], { club, formation: guest.formation });
+  const state = newGame(data, HOST, seed, 'draft', host.formation, host.club, rules, [], { club, formation: guest.formation });
+  if (host.style && STYLES[host.style]) state.clubs[HOST].style = host.style;
+  if (guest.style && STYLES[guest.style]) state.clubs[GUEST].style = guest.style;
+  return state;
 }
 
-const CHANGES = new Set<Action['t']>(['pick', 'slot', 'redraft', 'swap']);
+const CHANGES = new Set<Action['t']>(['pick', 'slot', 'redraft', 'swap', 'style']);
 
 /** Applies one manager's action. Returns why it was refused, or null. */
 export function applyAction(state: GameState, data: GameData, club: number, a: Action): string | null {
@@ -56,6 +63,11 @@ export function applyAction(state: GameState, data: GameData, club: number, a: A
         case 'slot': return chooseSlot(state, data, a.slot);
         case 'redraft': return startRedraft(state, data, a.slot);
         case 'swap': return swapSpots(state, a.a, a.b);
+        case 'style':
+          if (!STYLES[a.style]) return 'No such style.';
+          if (state.stage !== 'draft' && state.stage !== 'summer') return 'Not during the season.';
+          state.clubs[state.user].style = a.style;
+          return null;
       }
       return null;
     });

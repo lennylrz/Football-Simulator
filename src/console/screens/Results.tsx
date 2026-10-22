@@ -9,13 +9,15 @@ import { rivalCommand, RivalOverlay } from '../room';
 import { SortTable } from '../SortTable';
 import '../results.css';
 import { SeasonViewer } from '../Viewer';
+import { PlayerCard, SeasonStory } from '../awards';
 import { clubOf, type Command, Frame, KeyCap, ordinal } from '../ui';
 
-const TABS = ['Table', 'Your Matches', 'Champions League', 'FA Cup', 'Leaders', 'Squad'] as const;
+const TABS = ['Story', 'Table', 'Your Matches', 'Champions League', 'FA Cup', 'Leaders', 'Squad'] as const;
 
 export function Results() {
   const { data, game, send, settings, quit, room } = useGame();
   const [rival, setRival] = useState(false);
+  const [card, setCard] = useState<number | null>(null);
   const waiting = !!room?.full.mp?.views[game.user]?.done;
   const [leaving, setLeaving] = useState(false);
   const [revealing, setRevealing] = useState(settings.matchSpeed !== 'instant');
@@ -134,7 +136,8 @@ export function Results() {
           </div>
         </div>
         <div className="content">
-          {tab === 0 && (
+          {tab === 0 && <SeasonStory h={h} data={data} user={game.user} game={game} />}
+          {tab === 1 && (
             <div className="pane dpanel">
               <div className="tblwrap scroll">
                 <table className="tbl">
@@ -151,7 +154,7 @@ export function Results() {
               </div>
             </div>
           )}
-          {tab === 1 && (
+          {tab === 2 && (
             <div className="pane dpanel">
               <div className="tblwrap scroll">
                 <table className="tbl">
@@ -174,7 +177,7 @@ export function Results() {
               </div>
             </div>
           )}
-          {tab === 2 && (
+          {tab === 3 && (
             <>
               <div className="pane dpanel" style={{ flex: 'none', width: 400 }}>
                 <div className="ph gbar">{group ? 'Your Group' : 'Group Stage'}<small>{reachedText(h.clReached[game.user])}</small></div>
@@ -209,7 +212,7 @@ export function Results() {
               </div>
             </>
           )}
-          {tab === 3 && (
+          {tab === 4 && (
             <>
               <div className="pane dpanel" style={{ flex: 'none', width: 400 }}>
                 <div className="ph gbar">Your Cup Run<small>{reachedText(h.faReached[game.user])}</small></div>
@@ -226,7 +229,7 @@ export function Results() {
               </div>
             </>
           )}
-          {tab === 4 && (
+          {tab === 5 && (
             <>
               {([['Top Scorers', h.topScorers], ['Top Assists', h.topAssists]] as const).map(([label, list]) => (
                 <div key={label} className="pane dpanel">
@@ -244,10 +247,10 @@ export function Results() {
               ))}
             </>
           )}
-          {tab === 5 && (
+          {tab === 6 && (
             <div className="pane dpanel">
               <div className="tblwrap scroll">
-                <SortTable rows={seasonPlayers(game, h.season)} columns={seasonColumns(game, data)} initial="avg" rowKey={(r) => r.id} />
+                <SortTable rows={seasonPlayers(game, h.season)} columns={seasonColumns(game, data)} initial="avg" rowKey={(r) => r.id} onRow={(r) => setCard(r.id)} />
               </div>
             </div>
           )}
@@ -256,6 +259,7 @@ export function Results() {
       {hall && <HallOfFame game={game} data={data} />}
       {leaving && <LeaveCareer />}
       {rival && room && <RivalOverlay room={room} data={data} me={game.user} />}
+      {card !== null && <PlayerCard game={game} data={data} id={card} onClose={() => setCard(null)} />}
     </Frame>
   );
 }

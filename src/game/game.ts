@@ -9,11 +9,15 @@ import { developPlayer, type Form, formBoost, retireChance } from './development
 import { autoLineup, BENCH_SIZE, pickBench, pickXI, type PlayerLite, teamStrength } from './lineup';
 import { generateIncomingBids, generateOffers, type IncomingBid, type Offer } from './market';
 import { type DraftState, openDraftWindow } from './draft';
-import { FORMATIONS, type Formation, parsePositions, type Position, positionFit } from './positions';
+import { AREA, FORMATIONS, type Formation, parsePositions, type Position, positionFit } from './positions';
+import { type PlayStyle, styleGrowth } from './styles';
 import { stream } from './rng';
 import { fixtures, type PlayerSeasonStats, type SeasonResult, simulateSeason, type TableRow } from './season';
 import { expectedGoals, type MatchResult } from './match';
 import { marketValue } from './valuation';
+import { type BallonEntry, ballonDor, playerOfSeason } from './awards';
+import { mergeStats } from './career';
+import { seasonStory } from './story';
 
 export const MAX_SQUAD = 26;
 export const MIN_SQUAD = 16;
@@ -39,6 +43,9 @@ export interface PlayerState {
 
 export interface ClubState {
   id: number;
+  /** a manager's play style, and the player it was built around last season */
+  style?: PlayStyle;
+  star?: number;
   rep: number;
   /** transfer budget, €k */
   cash: number;
@@ -91,7 +98,7 @@ export interface HeadToHead {
 }
 
 /** One manager's side of a season, kept per manager in a two-player room. */
-export type UserSeason = Pick<SeasonHistory, 'userStats' | 'userCupStats' | 'repBefore' | 'repAfter' | 'predicted'>;
+export type UserSeason = Pick<SeasonHistory, 'userStats' | 'userCupStats' | 'repBefore' | 'repAfter' | 'predicted' | 'pots' | 'story' | 'ratings'>;
 
 export interface SeasonHistory {
   season: number;
@@ -114,6 +121,14 @@ export interface SeasonHistory {
   byUser?: Record<number, UserSeason>;
   /** two-player room: the managers' matches against each other */
   h2h?: HeadToHead[];
+  /** the user's player of the season */
+  pots?: number;
+  /** the user's season in a few lines */
+  story?: string[];
+  /** [player, overall] of the user's squad when the season was played */
+  ratings?: [number, number][];
+  /** the Ballon d'Or podium */
+  ballon?: BallonEntry[];
 }
 
 export interface DevChange {
@@ -332,11 +347,11 @@ export function newGame(
   if (mode === 'draft') {
     const id = registerUserClub(data, own ?? { name: 'Five Seasons FC', short: 'Five Seasons', code: 'FSF', primary: '#1d4f91', secondary: '#ffffff', rep: 72, budget: 0 });
     state.user = id;
-    state.clubs.push({ id, rep: own?.rep ?? 72, cash: 0, squad: [], formation, xi: [], bench: [] });
+    state.clubs.push({ id, rep: own?.rep ?? 72, cash: 0, squad: [], formation, xi: [], bench: [], style: 'tiki' });
     if (rival) {
       // A two-player room: the guest's club is the 22nd.
       const other = registerUserClub(data, rival.club, id + 1);
-      state.clubs.push({ id: other, rep: rival.club.rep, cash: 0, squad: [], formation: rival.formation, xi: [], bench: [] });
+      state.clubs.push({ id: other, rep: rival.club.rep, cash: 0, squad: [], formation: rival.formation, xi: [], bench: [], style: 'tiki' });
       const view = (): HumanView => ({ draft: null, stage: 'draft', devReport: [] });
       state.mp = { humans: [id, other], views: { [id]: view(), [other]: view() } };
     }
@@ -405,8 +420,12 @@ function advancePlayers(state: GameState, data: GameData, form: Map<number, Form
       continue;
     }
     const f = form.get(id);
-    const boost = formBoost(p, f);
-    developPlayer(p, row, data.meta, rng, f);
+    const club = p.club === EXTERNAL ? undefined : state.clubs[p.club];
+    const area = AREA[parsePositions(p.pos)[0] ?? 'CM'];
+    const growth = styleGrowth(club?.style, area, club?.star === id);
+    const raw = formBoost(p, f);
+    const boost = raw > 0 ? raw * growth : raw;
+    developPlayer(p, row, data.meta, rng, f, growth);
     const report = reports.get(p.club);
     if (report) {
       const change: DevChange = { player: id, from: before, to: p.ovr };
@@ -690,7 +709,13 @@ export function simulate(state: GameState, data: GameData): void {
     const bench = c.bench.filter((id) => id >= 0).map((id) => engineLite(state, c.id, id));
     // The drafted club rotates its small squad, so the bench plays its part.
     const rotation = state.mode === 'draft' && isHuman(state, c.id) ? DRAFT_ROTATION : undefined;
-    return { club: c.id, formation: c.formation, xi, bench, rotation };
+    // The star of a style built around him: the best attacking starter.
+    if (c.style) {
+      const lean = (i: number) => ({ ATT: 3, MID: ['CAM', 'LM', 'RM'].includes(slots[i]) ? 1 : -3, DEF: -10, GK: -99 })[AREA[slots[i]]];
+      const order = c.xi.map((id, i) => ({ id, key: id >= 0 ? state.players[id].ovr + lean(i) : -999 })).sort((a, b) => b.key - a.key || a.id - b.id);
+      c.star = order[0]?.id;
+    }
+    return { club: c.id, formation: c.formation, xi, bench, rotation, style: c.style, star: c.star };
   });
   const league = simulateSeason(teams, stream(state.seed, 'season', state.season), seasonFixtures(state));
 
@@ -703,7 +728,7 @@ export function simulate(state: GameState, data: GameData): void {
   for (const [name, , r] of opponents.europe) ratings[name] = r;
   const cupStatsBy = new Map(humansOf(state).map((h) => [h, new Map<number, PlayerSeasonStats>()]));
   const ctx = (tag: string) => ({
-    team: (club: number) => ({ club, slots: FORMATIONS[teams[club].formation], xi: teams[club].xi, bench: teams[club].bench, rotation: teams[club].rotation }),
+    team: (club: number) => ({ ...teams[club], slots: FORMATIONS[teams[club].formation] }),
     ratings,
     rng: stream(state.seed, tag, state.season),
     onMatch: (m: MatchResult) => {
@@ -738,6 +763,17 @@ export function simulate(state: GameState, data: GameData): void {
     predicted,
   });
   for (const v of Object.values(state.mp?.views ?? {})) Object.assign(v, { stage: 'results', ready: false, done: false });
+  // Awards and each manager's story of the season.
+  const h = state.history[state.history.length - 1];
+  h.ballon = ballonDor(state, data, league, fa, cl);
+  const told = (club: number) => {
+    const stats = mergeStats(league.stats.filter((s) => s.club === club), cupList(club));
+    const pots = playerOfSeason(stats);
+    const story = seasonStory({ state, data, club, league, fa, cl, stats, predicted: predictedOf(club), pots, ballon: h.ballon!, rival: state.mp?.humans.find((x) => x !== club) });
+    const ratings = state.clubs[club].squad.map((id) => [id, state.players[id].ovr] as [number, number]);
+    return { pots, story, ratings };
+  };
+  if (state.user >= 0) Object.assign(h, told(state.user));
   if (state.mp) {
     const [a, b] = state.mp.humans;
     const pair = (x: unknown, y: unknown) => (x === a && y === b) || (x === b && y === a);
@@ -758,6 +794,7 @@ export function simulate(state: GameState, data: GameData): void {
       userCupStats: cupList(h),
       repBefore: state.clubs[h].rep,
       predicted: predictedOf(h),
+      ...told(h),
     }]));
   }
   state.stage = 'results';
