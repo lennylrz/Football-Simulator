@@ -56,6 +56,9 @@ export default function App() {
   const [pendingRoom, setPendingRoom] = useState<Room | null>(null);
   const [joinAs, setJoinAs] = useState<RoomManager | undefined>(undefined);
   const [lobby, setLobby] = useState<{ busy: boolean; error: string | null; code: string }>({ busy: false, error: null, code: INVITE });
+  /** where the lobby was opened from, and whether a host still has to pick an era */
+  const [lobbyFrom, setLobbyFrom] = useState<'welcome' | 'menu'>('menu');
+  const [hostNeedsEra, setHostNeedsEra] = useState(false);
 
   // An invite link opens the lobby in the room's era, code filled in.
   useEffect(() => {
@@ -181,7 +184,18 @@ export default function App() {
   if (mode === 'welcome') {
     return (
       <Stage tone="home">
-        <Welcome settings={settings} onSettings={changeSettings} onPlay={() => setMode('home')} />
+        <Welcome
+          settings={settings}
+          onSettings={changeSettings}
+          onPlay={() => {
+            setHostNeedsEra(false);
+            setMode('home');
+          }}
+          onMulti={() => {
+            setLobbyFrom('welcome');
+            setMode('lobby');
+          }}
+        />
       </Stage>
     );
   }
@@ -191,9 +205,32 @@ export default function App() {
         <Home
           onPlay={(e) => {
             setEra(e);
-            setMode('setup');
+            // A host from the welcome screen's Multiplayer goes on to make the room's club.
+            setMode(hostNeedsEra ? 'roomclub' : 'setup');
+            setHostNeedsEra(false);
           }}
-          onBack={() => setMode('welcome')}
+          onBack={() => setMode(hostNeedsEra ? 'lobby' : 'welcome')}
+        />
+      </Stage>
+    );
+  }
+  if (mode === 'lobby') {
+    return (
+      <Stage>
+        <Lobby
+          era={era !== null}
+          initialCode={lobby.code}
+          busy={lobby.busy}
+          error={lobby.error}
+          onHost={() => {
+            setPendingRoom(null);
+            if (era === null) {
+              setHostNeedsEra(true);
+              setMode('home');
+            } else setMode('roomclub');
+          }}
+          onJoin={(code) => void joinRoom(code)}
+          onBack={() => setMode(lobbyFrom === 'welcome' || era === null ? 'welcome' : 'menu')}
         />
       </Stage>
     );
@@ -210,24 +247,10 @@ export default function App() {
   if (mode === 'menu') {
     return (
       <Stage tone="light">
-        <MainMenu onNew={() => setMode('clubs')} onMulti={() => setMode('lobby')} onSettings={() => setMode('setup')} onHome={() => setMode('home')} />
-      </Stage>
-    );
-  }
-  if (mode === 'lobby') {
-    return (
-      <Stage>
-        <Lobby
-          initialCode={lobby.code}
-          busy={lobby.busy}
-          error={lobby.error}
-          onHost={() => {
-            setPendingRoom(null);
-            setMode('roomclub');
-          }}
-          onJoin={(code) => void joinRoom(code)}
-          onBack={() => setMode('menu')}
-        />
+        <MainMenu onNew={() => setMode('clubs')} onMulti={() => {
+          setLobbyFrom('menu');
+          setMode('lobby');
+        }} onSettings={() => setMode('setup')} onHome={() => setMode('home')} />
       </Stage>
     );
   }

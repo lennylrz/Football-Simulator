@@ -5,7 +5,9 @@ import '../room.css';
 import { type Command, Frame } from '../ui';
 
 /** Play a Friend: host a room, or join one with its code. */
-export function Lobby({ onHost, onJoin, onBack, error, busy, initialCode = '' }: {
+export function Lobby({ onHost, onJoin, onBack, error, busy, initialCode = '', era }: {
+  /** the era chosen already, if any: a host without one picks it next */
+  era?: boolean;
   onHost: () => void; onJoin: (code: string) => void; onBack: () => void; error?: string | null; busy?: boolean; initialCode?: string;
 }) {
   const [code, setCode] = useState(initialCode);
@@ -16,11 +18,11 @@ export function Lobby({ onHost, onJoin, onBack, error, busy, initialCode = '' }:
     { keys: ['Escape'], label: 'Back', onPress: onBack },
   ];
   return (
-    <Frame title="Play a Friend" sub={`${eraYears()} · two managers, one league`} commands={commands}>
+    <Frame title="Play a Friend" sub={era ? `${eraYears()} · two managers, one league` : 'Two managers, one league'} commands={commands}>
       <div className="lobby">
         <div className="win card">
           <h3>Host a room</h3>
-          <p>Create your club and get a five-letter code. Send it to a friend: they join with their own club, and the room uses your era and settings.</p>
+          <p>{era ? 'Create your club' : 'Pick an era, create your club'} and get a five-letter code. Send it to a friend: they join with their own club, and the room uses your era and settings.</p>
           <p>You each draft in your own time and never get offered the same player. When you're both ready, you play the season.</p>
           <button className="go" onClick={onHost} disabled={busy} tabIndex={-1}>Host a Room</button>
         </div>
