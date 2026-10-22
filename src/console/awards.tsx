@@ -167,7 +167,6 @@ export function PlayerCard({ game, data, id, onClose }: { game: GameState; data:
               ))}
             </tbody>
           </table>
-          <div className="note">Esc or click outside to close.</div>
         </div>
       </div>
     </div>

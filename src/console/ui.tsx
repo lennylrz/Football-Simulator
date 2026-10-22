@@ -4,9 +4,9 @@ import type { GameData } from '../game/data';
 
 /**
  * The era's look for every screen past the era picker: '' is the 2010s
- * console, 'ed' the 2015-2020 editorial look (see editorial.css).
+ * console, 'sl' the 2015-2020 career-hub look (see slate.css).
  */
-export const ThemeContext = createContext<'' | 'ed'>('');
+export const ThemeContext = createContext<'' | 'sl'>('');
 export const useTheme = () => useContext(ThemeContext);
 
 /** Scales the fixed 1280x720 stage to fit the window. */

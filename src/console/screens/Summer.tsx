@@ -1,9 +1,11 @@
 import { useMemo, useState } from 'react';
 import { career } from '../../game/career';
 import { emptySlots, inSpot, isBench, redraftsPerSummer, XI } from '../../game/draft';
-import { paperTable, seasonLabel, trophiesOf } from '../../game/game';
+import { paperTable, seasonLabel, starOf, trophiesOf } from '../../game/game';
 import { FORMATIONS, parsePositions, positionFit } from '../../game/positions';
 import { useGame } from '../../ui/context';
+import { PlayerCard } from '../awards';
+import { squadNotes } from '../../game/squadStories';
 import { AroundTheLeague, closeCommand, HallOfFame, LeaveCareer, leaveCommands } from '../overlays';
 import { rivalCommand, RivalOverlay, rivalStatus } from '../room';
 import { STYLE_ORDER, STYLES } from '../../game/styles';
@@ -24,6 +26,10 @@ export function Summer() {
   const [overlay, setOverlay] = useState<'confirm' | 'around' | 'hall' | 'leave' | 'rival' | null>(null);
   /** the spot picked first when swapping two players */
   const [swapFrom, setSwapFrom] = useState<number | null>(null);
+  /** a player whose card is open */
+  const [card, setCard] = useState<number | null>(null);
+  // The dressing room this summer: worked out once, so swaps and re-drafts don't reshuffle it.
+  const [notes] = useState(() => squadNotes(game, data, game.user));
   const info = clubOf(data, game.user);
   const reveal = new Map(d.reveal.map((r) => [r.player, r]));
   const empty = emptySlots(game);
@@ -39,6 +45,10 @@ export function Summer() {
   /** The position a player was drafted for, or his main one. */
   const homeOf = (id: number) => d.home?.[id] ?? parsePositions(game.players[id].pos)[0];
   const canSwap = (a: number, b: number) => a !== b && !(isBench(a) && isBench(b));
+  // Through the Star: the manager picks the player it is all built around.
+  const starStyle = style === 'star';
+  const star = starStyle ? starOf(game, game.user) : undefined;
+  const makeStar = (id: number) => starStyle && id >= 0 && club.xi.includes(id) && send({ t: 'star', player: id });
 
   const plate = (id: number, i: number): PlateInfo => {
     const p = game.players[id];
@@ -46,7 +56,7 @@ export function Summer() {
     if (!p || id < 0) return { label: label(i), state: i === nav.index ? 'now' : 'empty' };
     const r = reveal.get(id);
     return {
-      rating: p.ovr, name: data.names[id][0], label: isBench(i) ? homeOf(id) : slots[i], state: mark ?? (done(i) ? 'done' : undefined),
+      rating: p.ovr, name: data.names[id][0], label: isBench(i) ? homeOf(id) : slots[i], state: mark ?? (id === star ? 'star' : done(i) ? 'done' : undefined),
       delta: r && game.season > 0 ? r.to - r.from : undefined, delay: 300 + i * 140,
     };
   };
@@ -83,7 +93,9 @@ export function Summer() {
   /** Clicking a spot: completes a swap, otherwise selects it (or acts on it when already selected). */
   const click = (i: number) => (swapFrom !== null ? swapTo(i) : i === nav.index ? ask(i) : nav.setIndex(i));
   const commands: Command[] =
-    swapFrom !== null
+    card !== null
+      ? closeCommand(() => setCard(null))
+      : swapFrom !== null
       ? [
           { keys: ['Enter'], label: 'Swap Here', primary: true, disabled: !canSwap(swapFrom, nav.index), onPress: () => swapTo(nav.index) },
           browse('Browse', nav.up, nav.down),
@@ -101,6 +113,7 @@ export function Summer() {
           : [
               ...seasonCommands,
               { keys: ['Enter'], label: sel < 0 ? 'Draft' : 'Re-draft', disabled: !can(nav.index), onPress: () => ask(nav.index) },
+              { keys: ['F'], label: 'Make Star', hidden: !starStyle, disabled: !starStyle || sel < 0 || isBench(nav.index) || sel === star, onPress: () => makeStar(sel) },
               { keys: ['A'], label: 'Style', onPress: () => send({ t: 'style', style: STYLE_ORDER[(STYLE_ORDER.indexOf(style) + 1) % STYLE_ORDER.length] }) },
               { keys: ['S'], label: 'Swap', hidden: !club.bench.length, disabled: sel < 0 || empty.length > 0, onPress: () => setSwapFrom(nav.index) },
               { ...browse('Browse', nav.up, nav.down), hidden: true },
@@ -183,7 +196,8 @@ export function Summer() {
                         >
                           <td className="pos">{label(i)}{isBench(i) && p ? <small> {homeOf(id)}</small> : null}</td>
                           <td className="ellip">
-                            {p ? data.names[id][0] : 'Retired – draft a replacement'}
+                            {p ? <span className="plink" title="Open his card" onClick={(e) => { e.stopPropagation(); setCard(id); }}>{data.names[id][0]}</span> : 'Retired – draft a replacement'}
+                            {p && id === star && <span className="startag">★ STAR</span>}
                             {off && <span className="offpos" title={`Drafted as ${off}: plays below his rating here`}> {off} out of position</span>}
                           </td>
                           <td className="n">{p?.age ?? ''}</td>
@@ -196,6 +210,9 @@ export function Summer() {
                             {delta === null ? '' : delta >= 3 ? `+${delta} GLOW UP` : delta <= -3 ? `${delta} BUST` : delta > 0 ? `+${delta}` : delta}
                           </td>
                           <td className="c acts">
+                            {starStyle && p && !isBench(i) && id !== star && swapFrom === null && (
+                              <button className="rowbtn" title="Build the team around him" onClick={(e) => { e.stopPropagation(); makeStar(id); }} tabIndex={-1}>★</button>
+                            )}
                             {p && club.bench.length > 0 && swapFrom === null && (
                               <button className="rowbtn" disabled={empty.length > 0} onClick={(e) => { e.stopPropagation(); nav.setIndex(i); setSwapFrom(i); }} tabIndex={-1}>Swap</button>
                             )}
@@ -209,15 +226,19 @@ export function Summer() {
                   </tbody>
                 </table>
               </div>
-              <div className="note">
-                {room && !empty.length
-                  ? <b>{ready ? (rivalReady ? (room.isHost ? 'Both ready: press P to play the season.' : 'Both ready: waiting for the host to play the season.') : `You're ready. Rival: ${rivalStatus(room)}.`) : 'Press Space when your XI is set. Changing anything takes back your ready.'}</b>
-                  : empty.length
-                  ? <b>Fill every position before the season.</b>
-                  : game.season > 0
-                    ? 'Form is last season\'s average match rating, judged against team-mates: young players who play well grow fastest. Swap a substitute into your XI for free; re-drafting is a gamble.'
-                    : 'On paper is where your XI ranks against the league. Substitutes come on in most matches and start now and then in their position.'}
-              </div>
+              {!room && !empty.length && notes.length > 0 && (
+                <div className="sq-notes">
+                  <span className="cap">Dressing room</span>
+                  {notes.slice(0, 3).map((n) => <p key={n.text}>{n.text}</p>)}
+                </div>
+              )}
+              {(room || empty.length > 0) && (
+                <div className="note">
+                  {room && !empty.length
+                    ? <b>{ready ? (rivalReady ? (room.isHost ? 'Both ready: press P to play the season.' : 'Both ready: waiting for the host to play the season.') : `You're ready. Rival: ${rivalStatus(room)}.`) : 'Press Space when your XI is set. Changing anything takes back your ready.'}</b>
+                    : <b>Fill every position before the season.</b>}
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -232,6 +253,7 @@ export function Summer() {
       {overlay === 'around' && <AroundTheLeague game={game} data={data} />}
       {overlay === 'hall' && <HallOfFame game={game} data={data} />}
       {overlay === 'leave' && <LeaveCareer />}
+      {card !== null && <PlayerCard game={game} data={data} id={card} onClose={() => setCard(null)} />}
       {overlay === 'rival' && room && <RivalOverlay room={room} data={data} me={game.user} />}
     </Frame>
   );

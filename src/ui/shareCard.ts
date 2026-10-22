@@ -9,6 +9,8 @@ export interface CardInput {
   name: (id: number) => string;
   seed: number;
   site: string;
+  /** the era's look: '' the 2010s console, 'sl' the 2015-2020 career hub */
+  theme?: '' | 'sl';
 }
 
 const W = 1080;
@@ -63,6 +65,7 @@ function lum(hex: string): number {
 }
 
 export function drawShareCard(canvas: HTMLCanvasElement, input: CardInput): void {
+  if (input.theme === 'sl') return drawSlateCard(canvas, input);
   const { club, career, name } = input;
   canvas.width = W;
   canvas.height = H;
@@ -202,6 +205,142 @@ export function drawShareCard(canvas: HTMLCanvasElement, input: CardInput): void
   ctx.fillText(`Can you win the treble? ${input.site}`, pad, H - 60);
   ctx.textAlign = 'right';
   ctx.fillText(`seed ${input.seed}`, W - pad, H - 60);
+  ctx.textAlign = 'left';
+}
+
+const COND = '"Barlow Condensed", "Arial Narrow", Arial, sans-serif';
+const BODY = 'Barlow, "Helvetica Neue", Arial, sans-serif';
+
+/** The 2015-2020 card: slate screen, dark panels, condensed caps, ratings and finishes coloured by tier. */
+function drawSlateCard(canvas: HTMLCanvasElement, input: CardInput): void {
+  const { club, career, name } = input;
+  canvas.width = W;
+  canvas.height = H;
+  const ctx = canvas.getContext('2d')!;
+  const pad = 60;
+  const panel = 'rgba(30,34,42,.78)';
+  const bg = ctx.createRadialGradient(W * 0.78, H * 0.25, 40, W * 0.6, H * 0.4, H);
+  bg.addColorStop(0, '#535c6e');
+  bg.addColorStop(0.45, '#424a59');
+  bg.addColorStop(1, '#343a46');
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, W, H);
+  // The red slashes.
+  ctx.save();
+  ctx.strokeStyle = 'rgba(222,84,84,.22)';
+  for (const [x, w] of [[760, 5], [820, 2], [120, 3]]) {
+    ctx.lineWidth = w;
+    ctx.beginPath(); ctx.moveTo(x + 500, -40); ctx.lineTo(x - 300, H + 40); ctx.stroke();
+  }
+  ctx.restore();
+
+  // Masthead: club stripe, name, breadcrumb.
+  ctx.fillStyle = club.primary;
+  ctx.fillRect(pad, 70, 10, 64);
+  ctx.fillStyle = '#eef0f3';
+  ctx.font = `700 64px ${COND}`;
+  ctx.fillText(fitText(ctx, club.name.toUpperCase(), 760), pad + 30, 128);
+  ctx.fillStyle = '#9aa2af';
+  ctx.font = `600 26px ${COND}`;
+  ctx.fillText(`CAREER  ›  ${eraSeasons()}`, pad + 30, 168);
+
+  // Headline panel.
+  const t = career.trophies;
+  const total = t.league + t.fa + t.cl;
+  const treble = career.trebles > 0;
+  ctx.fillStyle = treble ? '#ece6d8' : panel;
+  ctx.fillRect(pad, 200, W - pad * 2, 170);
+  ctx.fillStyle = '#e8a04c';
+  ctx.fillRect(pad, 200, 6, 170);
+  ctx.fillStyle = treble ? '#1d2027' : '#eef0f3';
+  ctx.font = `700 ${treble ? 84 : 72}px ${COND}`;
+  const headline = treble
+    ? career.trebles > 1 ? `${career.trebles}× TREBLE WINNERS` : 'TREBLE WINNERS'
+    : total === 0 ? 'NO TROPHIES. YET.' : `${total} ${total === 1 ? 'TROPHY' : 'TROPHIES'}`;
+  ctx.fillText(fitText(ctx, headline, W - pad * 2 - 60), pad + 32, 290);
+  ctx.fillStyle = treble ? '#5b5f66' : '#c9ced6';
+  ctx.font = `500 28px ${BODY}`;
+  ctx.fillText(`League ${t.league}   ·   FA Cup ${t.fa}   ·   Champions League ${t.cl}`, pad + 32, 340);
+
+  // Season tiles.
+  const top = 400;
+  const gap = 14;
+  const bw = (W - pad * 2 - gap * 4) / 5;
+  career.seasons.forEach((s, i) => {
+    const x = pad + i * (bw + gap);
+    const y0 = SEASON_YEARS[s.season];
+    const won = s.trophies.length > 0;
+    ctx.fillStyle = s.trophies.length === 3 ? '#ece6d8' : panel;
+    ctx.fillRect(x, top, bw, 200);
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#9aa2af';
+    ctx.font = `600 26px ${COND}`;
+    ctx.fillText(`${y0}/${String(y0 + 1).slice(2)}`, x + bw / 2, top + 44);
+    ctx.fillStyle = s.trophies.length === 3 ? '#1d2027' : s.finish === 1 ? '#e8c45c' : s.finish <= 4 ? '#6fcf8a' : s.finish >= 18 ? '#e86a5c' : '#eef0f3';
+    ctx.font = `700 72px ${COND}`;
+    ctx.fillText(ordinal(s.finish), x + bw / 2, top + 128);
+    ctx.fillStyle = won ? '#e8a04c' : '#6f7785';
+    ctx.font = `700 20px ${COND}`;
+    const label = s.trophies.length === 3 ? 'TREBLE' : s.trophies.map((tr) => TROPHY_LABELS[tr]).join(' + ') || '—';
+    ctx.fillText(fitText(ctx, label, bw - 14), x + bw / 2, top + 172);
+    ctx.textAlign = 'left';
+  });
+
+  // Hall of Fame list.
+  const rows: [string, string, string][] = [];
+  const poc = career.playerOfCareer;
+  if (poc) rows.push(['Player of the Career', name(poc.id), `${poc.apps} apps · ${poc.goals} goals · ${poc.avg.toFixed(2)} avg`]);
+  const scorer = career.topScorers[0];
+  if (scorer && scorer.goals > 0) rows.push(['Top Scorer', name(scorer.id), `${scorer.goals} goals in ${scorer.apps} apps`]);
+  if (career.bestPick) {
+    const b = career.bestPick;
+    rows.push(['Best Pick', name(b.player), `${b.from} → ${b.to} (${b.to - b.from >= 0 ? '+' : ''}${b.to - b.from})`]);
+  }
+  if (career.worstPick) {
+    const w = career.worstPick;
+    rows.push(['Worst Pick', name(w.player), `${w.from} → ${w.to} (${w.to - w.from >= 0 ? '+' : ''}${w.to - w.from})`]);
+  }
+  let y = 636;
+  ctx.fillStyle = panel;
+  ctx.fillRect(pad, y, W - pad * 2, 52 + rows.slice(0, 4).length * 96);
+  ctx.fillStyle = '#9aa2af';
+  ctx.font = `600 26px ${COND}`;
+  ctx.fillText('HALL OF FAME', pad + 24, y + 36);
+  y += 52;
+  rows.slice(0, 4).forEach(([label, who, detail]) => {
+    ctx.fillStyle = 'rgba(255,255,255,.07)';
+    ctx.fillRect(pad, y, W - pad * 2, 1);
+    ctx.fillStyle = '#e8a04c';
+    ctx.font = `700 20px ${COND}`;
+    ctx.fillText(label.toUpperCase(), pad + 24, y + 34);
+    ctx.fillStyle = '#eef0f3';
+    ctx.font = `700 40px ${COND}`;
+    ctx.fillText(fitText(ctx, who, 460), pad + 24, y + 78);
+    ctx.fillStyle = '#c9ced6';
+    ctx.font = `500 26px ${BODY}`;
+    ctx.textAlign = 'right';
+    ctx.fillText(fitText(ctx, detail, 440), W - pad - 24, y + 76);
+    ctx.textAlign = 'left';
+    y += 96;
+  });
+
+  // Legacy score bar.
+  const my = 1112;
+  ctx.fillStyle = '#ece6d8';
+  ctx.fillRect(pad, my, W - pad * 2, 72);
+  ctx.fillStyle = '#1d2027';
+  ctx.font = `700 30px ${COND}`;
+  ctx.fillText('LEGACY SCORE', pad + 28, my + 47);
+  ctx.font = `700 48px ${COND}`;
+  ctx.textAlign = 'right';
+  ctx.fillText(career.score.toLocaleString('en-GB'), W - pad - 28, my + 52);
+  ctx.textAlign = 'left';
+
+  ctx.fillStyle = '#9aa2af';
+  ctx.font = `600 24px ${COND}`;
+  ctx.fillText(`CAN YOU WIN THE TREBLE?  ${input.site}`, pad, H - 62);
+  ctx.textAlign = 'right';
+  ctx.fillText(`SEED ${input.seed}`, W - pad, H - 62);
   ctx.textAlign = 'left';
 }
 

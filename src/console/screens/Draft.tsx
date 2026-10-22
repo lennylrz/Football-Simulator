@@ -52,27 +52,33 @@ export function Draft() {
   const info = clubOf(data, game.user);
   const opening = game.stage === 'draft';
   const pickNo = d.picks.filter((p) => p.season === game.season).length + 1;
+  // The opening draft starts on an empty pitch: the manager picks where to begin.
+  const [started, setStarted] = useState(false);
+  const choosing = opening && pickNo === 1 && !started && !room;
   const total = XI + club.bench.length;
 
   // In the opening draft the positions can be filled in any order.
   const open = opening ? d.queue : [];
   const plates: PlateInfo[] = club.xi.map((id, i) => {
     const p = game.players[id];
-    if (i === d.slot) return { label: slots[i], state: 'now' };
+    if (i === d.slot && !choosing) return { label: slots[i], state: 'now' };
     if (!p || id < 0) return { label: slots[i], state: open.includes(i) ? 'open' : 'empty' };
     return { rating: p.ovr, name: data.names[id][0], label: slots[i] };
   });
   const subs: PlateInfo[] = club.bench.map((id, j) => {
     const p = game.players[id];
-    if (XI + j === d.slot) return { label: 'SUB', state: 'now' };
+    if (XI + j === d.slot && !choosing) return { label: 'SUB', state: 'now' };
     if (!p || id < 0) return { label: 'SUB', state: open.includes(XI + j) ? 'open' : 'empty' };
     return { rating: p.ovr, name: data.names[id][0], label: primaryPos(p.pos) };
   });
 
-  const pick = (i: number) => d.candidates[i] !== undefined && send({ t: 'pick', player: d.candidates[i] });
+  const pick = (i: number) => !choosing && d.candidates[i] !== undefined && send({ t: 'pick', player: d.candidates[i] });
   autoPick.current = () => pick(index);
   const redrafts = redraftsPerSummer(game);
-  const switchTo = (slot: number) => send({ t: 'slot', slot });
+  const switchTo = (slot: number) => {
+    setStarted(true);
+    if (slot !== d.slot) send({ t: 'slot', slot });
+  };
   const order = open.slice().sort((a, b) => a - b);
   const cycle = (dir: 1 | -1) => {
     const at = order.indexOf(d.slot!);
@@ -82,6 +88,11 @@ export function Draft() {
     ? leaveCommands(quit, () => setLeaving(false))
     : rival
     ? closeCommand(() => setRival(false))
+    : choosing
+    ? [
+        { keys: ['Enter'], label: `Start with ${SLOT_NAMES[slotPos] ?? 'the suggested position'}`, primary: true, onPress: () => setStarted(true) },
+        { keys: ['Escape'], label: 'Leave Career', onPress: () => setLeaving(true) },
+      ]
     : [
         { keys: ['Enter'], label: 'Pick', primary: true, onPress: () => pick(index) },
         browse('Browse', () => setIndex(Math.max(0, index - 1)), () => setIndex(Math.min(d.candidates.length - 1, index + 1)), true),
@@ -101,78 +112,85 @@ export function Draft() {
         ? <><span>Time</span><b className={`timer ${left <= 5 ? 'low' : ''}`}>0:{String(left).padStart(2, '0')}</b></>
         : <><span>Choose</span><b>{bench ? 'Substitute' : SLOT_NAMES[slotPos]}</b></>}
     >
-      {theme === 'ed' ? (
-        <div className="ed-draft">
+      {theme === 'sl' ? (
+        <div className="sl-draft">
           <div className="pitchcol">
-            <Pitch formation={club.formation} plates={plates} onPick={opening ? (i) => order.includes(i) && i !== d.slot && switchTo(i) : undefined} />
-            <BenchStrip plates={subs} onPick={opening ? (j) => order.includes(XI + j) && XI + j !== d.slot && switchTo(XI + j) : undefined} />
+            <Pitch formation={club.formation} plates={plates} onPick={opening ? (i) => order.includes(i) && switchTo(i) : undefined} />
+            <BenchStrip plates={subs} onPick={opening ? (j) => order.includes(XI + j) && switchTo(XI + j) : undefined} />
           </div>
-          <EdFeature
-            key={key}
-            ids={d.candidates}
-            index={index}
-            setIndex={setIndex}
-            onPick={pick}
-            hidden={hidden}
-            kicker={`Pick ${pickNo} / ${total}`}
-            slot={bench ? 'Substitute' : SLOT_NAMES[slotPos]}
-            timer={settings.pickTimer > 0 ? left / settings.pickTimer : undefined}
-            note={bench
-              ? 'Substitutes play any outfield position and can move into your XI each summer.'
-              : hidden
-              ? 'Ratings hidden: pick on name, age and club alone.'
-              : opening
-                ? `Draft in any order: click the pitch or press Q / E. Ratings are ${seasonLabel(0)}.`
-                : 'Your old player has gone. Pick his replacement.'}
-          />
+          {choosing ? (
+            <div className="sl-panel"><ChooseFirst /></div>
+          ) : (
+            <SlHub
+              key={key}
+              ids={d.candidates}
+              index={index}
+              setIndex={setIndex}
+              onPick={pick}
+              hidden={hidden}
+              title={bench ? 'Choose a substitute' : `Choose your ${SLOT_NAMES[slotPos].toLowerCase()}`}
+              timer={settings.pickTimer > 0 ? left / settings.pickTimer : undefined}
+              note={bench
+                ? 'Substitutes cover any outfield position.'
+                : hidden
+                ? 'Ratings hidden: pick on name, age and club alone.'
+                : opening
+                  ? 'Click any position on the pitch to draft it next.'
+                  : 'Your old player has gone. Pick his replacement.'}
+            />
+          )}
         </div>
       ) : (
         <div className="draft">
           <div className="pitchcol">
-            <Pitch formation={club.formation} plates={plates} onPick={opening ? (i) => order.includes(i) && i !== d.slot && switchTo(i) : undefined} />
-            <BenchStrip plates={subs} onPick={opening ? (j) => order.includes(XI + j) && XI + j !== d.slot && switchTo(XI + j) : undefined} />
+            <Pitch formation={club.formation} plates={plates} onPick={opening ? (i) => order.includes(i) && switchTo(i) : undefined} />
+            <BenchStrip plates={subs} onPick={opening ? (j) => order.includes(XI + j) && switchTo(XI + j) : undefined} />
           </div>
           <div className="right win">
             <div className="win-title">{bench ? 'Choose a Substitute' : `Choose Your ${SLOT_NAMES[slotPos]}`}</div>
             {settings.pickTimer > 0 && <div className="pick-timer"><i style={{ width: `${(left / settings.pickTimer) * 100}%` }} /></div>}
-            <div className="cards5" key={key} style={{ gridTemplateColumns: `repeat(${d.candidates.length}, 1fr)` }}>
-              {d.candidates.map((id, i) => {
-                const p = game.players[id];
-                const row = data.seasons[game.season][id];
-                return (
-                  <button
-                    key={id}
-                    className={`ccard ${i === index ? 'on' : ''} ${hidden ? 'hid' : ''}`}
-                    style={{ '--d': `${i * 110}ms` } as React.CSSProperties}
-                    onMouseEnter={() => setIndex(i)}
-                    onClick={() => pick(i)}
-                    tabIndex={-1}
-                  >
-                    <div className="top">
-                      <span className="r">{hidden ? '?' : p.ovr}</span>
-                      <span className="pos">{bench ? primaryPos(p.pos) : slotPos}</span>
-                    </div>
-                    <div className="band"><b>{data.names[id][0]}</b></div>
-                    <div className="meta">
-                      <div className="line"><b>{p.age}</b> years old</div>
-                      <div className="line">{data.names[id][1]}</div>
-                      <div className="line club">{p.club >= 0 ? clubOf(data, p.club).name : row ? data.meta.clubNames[row[6]] : 'Free agent'}</div>
-                      {hidden ? <div className="line">Rating <b>hidden</b></div> : <div className="line">Value <b>{moneyShort(p.value)}</b></div>}
-                    </div>
-                    <span className="tagline">{p.age <= 21 ? 'One for the future?' : p.age >= 31 ? 'Veteran' : !hidden && p.ovr >= 84 ? 'World class' : 'In his prime'}</span>
-                  </button>
-                );
-              })}
-            </div>
-            <div className="note">
-              {bench
-                ? 'Substitutes play any outfield position. They come off the bench, start now and then, and can be moved into your XI each summer.'
-                : hidden
-                ? 'Ratings are hidden: pick on name, age and club alone. You see his rating once he is yours.'
-                : opening
-                  ? `Draft in any order: click a position on the pitch or press Q and E. Ratings are ${seasonLabel(0)}; who grows is down to your ball knowledge.`
-                  : 'Your old player has gone. Pick his replacement.'}
-            </div>
+            {choosing ? <ChooseFirst /> : (
+              <>
+                <div className="cards5" key={key} style={{ gridTemplateColumns: `repeat(${d.candidates.length}, 1fr)` }}>
+                  {d.candidates.map((id, i) => {
+                    const p = game.players[id];
+                    const row = data.seasons[game.season][id];
+                    return (
+                      <button
+                        key={id}
+                        className={`ccard ${i === index ? 'on' : ''} ${hidden ? 'hid' : ''}`}
+                        style={{ '--d': `${i * 110}ms` } as React.CSSProperties}
+                        onMouseEnter={() => setIndex(i)}
+                        onClick={() => pick(i)}
+                        tabIndex={-1}
+                      >
+                        <div className="top">
+                          <span className="r">{hidden ? '?' : p.ovr}</span>
+                          <span className="pos">{bench ? primaryPos(p.pos) : slotPos}</span>
+                        </div>
+                        <div className="band"><b>{data.names[id][0]}</b></div>
+                        <div className="meta">
+                          <div className="line"><b>{p.age}</b> years old</div>
+                          <div className="line">{data.names[id][1]}</div>
+                          <div className="line club">{p.club >= 0 ? clubOf(data, p.club).name : row ? data.meta.clubNames[row[6]] : 'Free agent'}</div>
+                          {hidden ? <div className="line">Rating <b>hidden</b></div> : <div className="line">Value <b>{moneyShort(p.value)}</b></div>}
+                        </div>
+                        <span className="tagline">{p.age <= 21 ? 'One for the future?' : p.age >= 31 ? 'Veteran' : !hidden && p.ovr >= 84 ? 'World class' : 'In his prime'}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+                <div className="note">
+                  {bench
+                    ? 'Substitutes cover any outfield position.'
+                    : hidden
+                    ? 'Ratings hidden: pick on name, age and club.'
+                    : opening
+                      ? 'Click any position on the pitch to draft it next.'
+                      : 'Your old player has gone. Pick his replacement.'}
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}
@@ -188,55 +206,102 @@ function splitName(name: string): [string, string] {
   return k < 0 ? ['', name] : [name.slice(0, k), name.slice(k + 1)];
 }
 
-/** The 2015-2020 draft: the highlighted candidate as a magazine feature, the five as a shortlist. */
-function EdFeature({ ids, index, setIndex, onPick, hidden, kicker, slot, timer, note }: {
+function ChooseFirst() {
+  return (
+    <div className="sl-choose empty">
+      <div>
+        <h3>Where do you start?</h3>
+        <p>Click any position on the pitch to draft it first, or press Enter to start up front. After each pick you can jump to any open position.</p>
+      </div>
+    </div>
+  );
+}
+
+const tier = (r: number) => (r >= 85 ? 'r-a' : r >= 80 ? 'r-b' : r >= 74 ? 'r-c' : 'r-d');
+
+/** A plain shirt in the club's colours, with the number he'd wear. */
+function Kit({ a, b, num }: { a: string; b: string; num: number }) {
+  return (
+    <svg className="kit" viewBox="0 0 300 330" aria-hidden>
+      <path d="M95 20 L60 34 L10 88 L44 136 L70 114 L70 320 L230 320 L230 114 L256 136 L290 88 L240 34 L205 20 Q150 52 95 20 Z" fill={a} />
+      <rect x="132" y="34" width="36" height="286" fill={b} opacity=".9" />
+      <path d="M95 20 Q150 52 205 20 L196 16 Q150 40 104 16 Z" fill={b} />
+      <text x="150" y="200" textAnchor="middle" fontFamily="Barlow Condensed, sans-serif" fontWeight="700" fontSize="96" fill="#fff" opacity=".85">{num}</text>
+    </svg>
+  );
+}
+
+const SHIRT: Record<string, number> = { GK: 1, RB: 2, RWB: 2, LB: 3, LWB: 3, CB: 5, CDM: 6, RM: 7, RW: 7, CM: 8, ST: 9, CF: 9, CAM: 10, LM: 11, LW: 11 };
+
+/** The 2015-2020 draft: the five as a transfer-hub list, the highlighted one in an overview with a scout's note. */
+function SlHub({ ids, index, setIndex, onPick, hidden, title, timer, note }: {
   ids: number[]; index: number; setIndex: (i: number) => void; onPick: (i: number) => void; hidden: boolean;
-  kicker: string; slot: string; timer?: number; note: string;
+  title: string; timer?: number; note: string;
 }) {
   const { data, game } = useGame();
   const id = ids[index];
   const p = game.players[id];
   if (!p) return null;
   const row = data.seasons[game.season][id];
-  const clubName = (pid: number) => {
+  const clubOfPlayer = (pid: number): { name: string; a: string; b: string } => {
     const q = game.players[pid];
+    if (q.club >= 0) {
+      const c = clubOf(data, q.club);
+      return { name: c.short, a: c.primary, b: c.secondary };
+    }
     const r = data.seasons[game.season][pid];
-    return q.club >= 0 ? clubOf(data, q.club).short : r ? data.meta.clubNames[r[6]] : 'Free agent';
+    return { name: r ? data.meta.clubNames[r[6]] : 'Free agent', a: '#6f7785', b: '#c9ced6' };
   };
   const [first, last] = splitName(data.names[id][0]);
   const blurb = draftBlurb(data, game, id, hidden);
-  const fs = Math.max(46, Math.min(128, 470 / (last.length * 0.56)));
+  const club = clubOfPlayer(id);
+  const pos = primaryPos(row?.[5] ?? p.pos);
   return (
-    <div className="ed-feature">
-      <div className="ed-main">
+    <div className="sl-hub">
+      <div className="sl-panel">
+        <div className="sl-cap">{title}<b>· pick one</b><small>{ids.length} on the table</small></div>
         {timer !== undefined && <div className="pick-timer"><i style={{ width: `${timer * 100}%` }} /></div>}
-        <div className="ed-kick"><span>{kicker}</span><span>{slot}</span><b>{blurb.kicker}</b></div>
-        <div className="ed-ghost" aria-hidden>{hidden ? '?' : p.ovr}</div>
-        <div className="ed-name" key={id} style={{ '--fs': `${fs}px` } as React.CSSProperties}>{last}</div>
-        <div className="ed-first">{first ? `${first} ${last}` : last} · {clubName(id)} · {data.names[id][1]}</div>
-        <p className="ed-text" key={`t${id}`}>{blurb.text}</p>
-        <div className="ed-figs">
-          <span className="hot"><b>{hidden ? '?' : p.ovr}</b><small>Overall</small></span>
-          <span><b>{p.age}</b><small>Age</small></span>
-          <span><b>{hidden ? '—' : moneyShort(p.value)}</b><small>Value</small></span>
-          <span><b>{primaryPos(row?.[5] ?? p.pos)}</b><small>Plays</small></span>
-        </div>
-      </div>
-      <div className="ed-list">
-        <div className="cap">THE SHORTLIST</div>
+        <div className="sl-th"><span>PLAYER</span><span>AGE</span><span>OVR</span></div>
         {ids.map((cid, i) => {
           const c = game.players[cid];
+          const cc = clubOfPlayer(cid);
           return (
-            <button key={cid} className={`ed-li ${i === index ? 'on' : ''}`} style={{ '--d': `${i * 70}ms` } as React.CSSProperties}
-              onMouseEnter={() => setIndex(i)} onClick={() => onPick(i)} tabIndex={-1}>
-              <span className="n">0{i + 1}</span>
-              <span className="nm">{splitName(data.names[cid][0])[1]}</span>
-              <span className="o">{hidden ? '?' : c.ovr}</span>
-              <small>{clubName(cid)} · {c.age}</small>
+            <button key={cid} className={`sl-row ${i === index ? 'on' : ''}`} style={{ '--d': `${i * 60}ms` } as React.CSSProperties}
+              onClick={() => (i === index ? onPick(i) : setIndex(i))} onMouseEnter={() => setIndex(i)} tabIndex={-1}>
+              <span className="who">
+                <i className="crest" style={{ background: cc.a, boxShadow: `inset 0 0 0 4px ${cc.b}` }} />
+                <span className="nm"><b>{data.names[cid][0]}</b><small>{cc.name} · {data.names[cid][1]}</small></span>
+              </span>
+              <span className="age">{c.age}</span>
+              <span className={`ovr ${hidden ? '' : tier(c.ovr)}`}>{hidden ? '?' : c.ovr}</span>
             </button>
           );
         })}
-        <div className="ed-note">{note}</div>
+        <div className="sl-note">{note}</div>
+      </div>
+      <div className="sl-panel">
+        <div className="sl-cap">Overview</div>
+        <div className="sl-ov" key={id}>
+          <div className="top">
+            <div>
+              <div className="first">{first || ' '}</div>
+              <div className="last">{last}</div>
+              <div className="club"><i style={{ background: club.a, boxShadow: `inset 0 0 0 3px ${club.b}` }} />{club.name} · {pos} · {p.age}</div>
+            </div>
+            <div className="ovr"><small>OVR</small><b className={hidden ? '' : tier(p.ovr)}>{hidden ? '?' : p.ovr}</b></div>
+          </div>
+          <div className="grid">
+            <span>NATION<b>{data.names[id][1]}</b></span>
+            <span>VALUE<b>{hidden ? '—' : moneyShort(p.value)}</b></span>
+            <span>PLAYS<b>{(row?.[5] ?? p.pos).split(',').slice(0, 3).join(' · ')}</b></span>
+          </div>
+          <div className="kick">{blurb.kicker}</div>
+          <p className="text">{blurb.text}</p>
+          <Kit a={club.a} b={club.b} num={SHIRT[pos] ?? 14} />
+          <div className="acts">
+            <button className="sl-btn go" onClick={() => onPick(index)} tabIndex={-1}>Sign {last}</button>
+          </div>
+        </div>
       </div>
     </div>
   );

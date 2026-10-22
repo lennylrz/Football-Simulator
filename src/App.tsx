@@ -9,7 +9,7 @@ import { Results } from './console/screens/Results';
 import { Summary } from './console/screens/Summary';
 import { Summer } from './console/screens/Summer';
 import { Stage, ThemeContext } from './console/ui';
-import './console/editorial.css';
+import './console/slate.css';
 import { type Action, applyAction, type RoomManager } from './game/actions';
 import { RoomSession } from './console/RoomSession';
 import { Lobby } from './console/screens/Lobby';
@@ -182,7 +182,7 @@ export default function App() {
     setMode('menu');
   };
 
-  const theme = era === 2015 ? 'ed' : '';
+  const theme = era === 2015 ? 'sl' : '';
   const view = (() => {
     if (error) return <Stage><div className="empty" style={{ padding: 60 }}>Couldn't load the game data. {error}</div></Stage>;
 

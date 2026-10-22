@@ -1,7 +1,7 @@
 import { type PlayerLite, type Strength, teamStrength } from './lineup';
 import { AREA, type Position, positionFit } from './positions';
 import { type Rng, clamp, normal, poisson, weightedIndex } from './rng';
-import { applyStyle, type PlayStyle, STYLES } from './styles';
+import { applyStyle, type PlayStyle, STAR_ROLES, type StarRoleInfo, starRole, STYLES } from './styles';
 
 export interface MatchTeam {
   club: number;
@@ -13,7 +13,7 @@ export interface MatchTeam {
   form?: number;
   /** a squad-rotating manager (the user's drafted club): chance each starter is rested */
   rotation?: number;
-  /** a manager's play style, and the player it is built around */
+  /** a manager's play style, and the player it is built around (his XI slot sets his role) */
   style?: PlayStyle;
   star?: number;
   /** teams outside the 20 clubs have a fixed strength and no players */
@@ -50,7 +50,7 @@ export const ENGINE = {
   /** match-to-match form, in rating points */
   formSd: 1.5,
   /** season-long form of a team (a hot or cold season), in rating points */
-  seasonFormSd: 0.6,
+  seasonFormSd: 0.5,
   /** how strongly a player's rating drives his share of goals and assists */
   starPower: 14,
   missChance: 0.05,
@@ -62,6 +62,11 @@ export const ENGINE = {
   assistShare: 0.75,
   /** match rating points per rating point a player is above his team-mates on the pitch */
   quality: 0.035,
+  /** Through the Star with a defender or keeper as the star: his extra rating for a clean sheet, and for a win */
+  leadCleanSheet: 0.8,
+  leadWin: 0.25,
+  /** Park the Bus: the back line's extra rating for a clean sheet */
+  busCleanSheet: 0.15,
 };
 
 const SCORE_W: Record<Position, number> = {
@@ -82,6 +87,18 @@ interface OnPitch {
   started: boolean;
   goals: number;
   assists: number;
+}
+
+/** The slot the star starts in, which sets his role. */
+function starSlot(team: Pick<MatchTeam, 'star' | 'xi' | 'slots'>): Position | undefined {
+  const i = team.star === undefined ? -1 : team.xi.findIndex((p) => p.id === team.star);
+  return i >= 0 ? team.slots[i] : undefined;
+}
+
+/** Through the Star: what the star does, from where he plays. */
+export function starRoleOf(team: Pick<MatchTeam, 'style' | 'star' | 'xi' | 'slots'>): StarRoleInfo | undefined {
+  if (team.style !== 'star' || team.star === undefined) return undefined;
+  return STAR_ROLES[starRole(starSlot(team))];
 }
 
 function lineUp(team: MatchTeam, rng: Rng): { on: OnPitch[]; strength: Strength } {
@@ -138,7 +155,7 @@ function lineUp(team: MatchTeam, rng: Rng): { on: OnPitch[]; strength: Strength 
   // Each position's strength is what was on the pitch there, weighted by minutes: the bench counts.
   const eff = on.map((o) => o.eff * o.share);
   subs.forEach((s, k) => (eff[subFor[k]] += s.eff * s.share));
-  const strength = applyStyle(teamStrength(team.slots, eff), team.style);
+  const strength = applyStyle(teamStrength(team.slots, eff), team.style, starRole(starSlot(team)));
   return { on: [...on, ...subs], strength };
 }
 
@@ -179,14 +196,14 @@ function attribute(on: OnPitch[], rng: Rng, goals: number, side: 0 | 1, out: Mat
   if (on.length === 0) return;
   const style = team.style ? STYLES[team.style] : undefined;
   const power = ENGINE.starPower * (style?.spread ?? 1);
-  const pull = style?.starPull ?? 0;
+  const role = starRoleOf(team);
   for (let g = 0; g < goals; g++) {
-    const sw = toStar(on.map((o) => SCORE_W[o.slot] * Math.exp((o.eff - 75) / power) * o.share), on, team.star, pull);
+    const sw = toStar(on.map((o) => SCORE_W[o.slot] * Math.exp((o.eff - 75) / power) * o.share), on, team.star, role?.goals ?? 0);
     const scorer = on[weightedIndex(rng, sw)];
     scorer.goals++;
     let assist = -1;
     if (rng() < ENGINE.assistShare) {
-      const aw = toStar(on.map((o) => (o === scorer ? 0 : ASSIST_W[o.slot] * Math.exp((o.eff - 75) / (power + 1)) * o.share)), on, team.star, pull / 2);
+      const aw = toStar(on.map((o) => (o === scorer ? 0 : ASSIST_W[o.slot] * Math.exp((o.eff - 75) / (power + 1)) * o.share)), on, team.star, role?.assists ?? 0);
       const a = on[weightedIndex(rng, aw)];
       a.assists++;
       assist = a.p.id;
@@ -204,11 +221,17 @@ function par(o: OnPitch, teamAvg: number): number {
 /** A sub is rated on what he did in his minutes, a little less sure either way. */
 const SUB_WEIGHT = 0.85;
 
-function rate(o: OnPitch, scored: number, conceded: number, teamAvg: number, rng: Rng): number {
+function rate(o: OnPitch, scored: number, conceded: number, teamAvg: number, rng: Rng, team: MatchTeam, lead = false): number {
   const area = AREA[o.slot];
   let r = 6.4 + (scored > conceded ? 0.35 : scored < conceded ? -0.35 : 0);
   r += o.goals * 0.9 + o.assists * 0.55 + (o.eff - teamAvg) * ENGINE.quality;
-  if (area === 'GK' || area === 'DEF') r += conceded === 0 ? 0.55 : -0.22 * conceded;
+  if (area === 'GK' || area === 'DEF') {
+    r += conceded === 0 ? 0.55 : -0.22 * conceded;
+    // Parking the bus is the back line's work, and it gets the credit.
+    if (team.style === 'bus' && conceded === 0) r += ENGINE.busCleanSheet;
+  }
+  // The leader at the back takes the credit for a clean sheet, and a share of a win.
+  if (lead) r += conceded === 0 ? ENGINE.leadCleanSheet : scored > conceded ? ENGINE.leadWin : 0;
   if (area === 'ATT' && scored === 0) r -= 0.2;
   r += normal(rng, 0, 0.5);
   if (!o.started) r = 6.4 + (r - 6.4) * SUB_WEIGHT;
@@ -230,11 +253,14 @@ export function simulateMatch(home: MatchTeam, away: MatchTeam, rng: Rng, neutra
   const result: MatchResult = { home: home.club, away: away.club, hg, ag, goals: [], lines: [] };
   attribute(h.on, rng, hg, 0, result.goals, home);
   attribute(a.on, rng, ag, 1, result.goals, away);
-  for (const [side, club, scored, conceded] of [[h, home.club, hg, ag], [a, away.club, ag, hg]] as const) {
+  for (const [side, team, scored, conceded] of [[h, home, hg, ag], [a, away, ag, hg]] as const) {
     if (side.on.length === 0) continue;
+    const club = team.club;
     const avg = side.on.reduce((s, o) => s + o.eff, 0) / side.on.length;
+    const leader = starRoleOf(team)?.lead ? team.star : undefined;
     for (const o of side.on) {
-      result.lines.push({ id: o.p.id, club, started: o.started, goals: o.goals, assists: o.assists, rating: rate(o, scored, conceded, avg, rng), par: Math.round(par(o, avg) * 100) / 100 });
+      const rating = rate(o, scored, conceded, avg, rng, team, o.p.id === leader);
+      result.lines.push({ id: o.p.id, club, started: o.started, goals: o.goals, assists: o.assists, rating, par: Math.round(par(o, avg) * 100) / 100 });
     }
   }
   return result;

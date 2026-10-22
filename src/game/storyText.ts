@@ -818,6 +818,27 @@ export const BANK: Record<string, string[]> = {
     'A steady season for {star}: {sg|goal}, {sa|assist}, and plenty of work nobody notices.',
     'Good, not great, from {star}: {sg|goal} and {sa|assist}. The bar he sets is very high.',
   ],
+  // A defender or keeper as the star: the leader at the back. cs, ga, sRat, sAge
+  'star.leader': [
+    'Built around {star} at the back, and the back held: {cs|clean sheet}, {ga|goal} conceded.',
+    'Everything started with {star}. He organised, he won the duels, and he was there for {cs|clean sheet}.',
+    '{star} was the leader the system was built on: a {sRat} average rating and {cs|clean sheet}.',
+    'No striker had an easy afternoon against {star}. {cs|Clean sheet} with him in charge.',
+    'The team took its lead from {star}, and it showed: {ga|goal} against all season.',
+    'At {sAge}, {star} was the voice at the back and the first name on the sheet. {cs|Clean sheet} followed.',
+    'They say defenders do not win the big awards. {star}, with a {sRat} average rating, made a case.',
+    '{star} marshalled the defence like a general: {cs|clean sheet}, and very few nervy nights.',
+  ],
+  'star.leaderPoor': [
+    'Built around {star} at the back, and the back leaked: {ga|goal} conceded.',
+    'The leader at the back had a season to forget: a {sRat} average rating for {star}, and {ga|goal} against.',
+    'Asked to hold everything together, {star} struggled. {cs|Clean sheet} all season.',
+    '{star} was meant to be the rock. Too often the rock moved: {ga|goal} conceded.',
+    'The system leaned on {star}, and he wobbled. A {sRat} average rating tells the story.',
+    'A hard year for {star} at the heart of it all: {cs|clean sheet}, {ga|goal} against.',
+    'Strikers found a way past {star} far too often. {ga|Goal} conceded, and questions asked.',
+    'Everything went through {star}, and the pressure showed: {cs|clean sheet} in the league.',
+  ],
 
   // ─────────────────────────── The players ───────────────────────────
   // yName, yAge, yApps, yGoals

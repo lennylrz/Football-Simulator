@@ -21,6 +21,13 @@ export interface Form {
   league?: number;
   /** match rating his overall alone is worth against his team-mates (see ENGINE.quality) */
   quality?: number;
+  /**
+   * How far a typical regular in his area of the pitch rates above his
+   * team-mates, across the league. Goals and assists lift forwards' match
+   * ratings, so without this a defender or keeper would be judged against
+   * the goalscorers and grow less for the same good season.
+   */
+  areaPar?: number;
 }
 
 /**
@@ -33,9 +40,41 @@ export const GOATS: ReadonlySet<number> = new Set([20801, 158023]);
 export const GOAT_CEILING = 98;
 export const isGoat = (id: number | undefined) => id !== undefined && GOATS.has(id);
 
-/** Potential as the game sees it: the two exceptions can reach 98 until their thirties. */
+/**
+ * Neymar: the almost-exception. He is not spared at the Ballon d'Or, but he
+ * grows past where the top slows everyone else down, fastest while young,
+ * to a ceiling a little below the two.
+ */
+export const NEYMAR = 190871;
+export const NEAR_CEILING = 96;
+
+/** The ceiling of an exception while he is young enough to reach it, or undefined. */
+export function exceptionCeiling(id: number | undefined, age: number): number | undefined {
+  if (age > 31) return undefined;
+  if (isGoat(id)) return GOAT_CEILING;
+  return id === NEYMAR ? NEAR_CEILING : undefined;
+}
+
+/** Potential as the game sees it: the exceptions can reach their ceiling until their thirties. */
 export function goatPotential(id: number | undefined, pot: number, age: number): number {
-  return isGoat(id) && age <= 31 ? Math.max(pot, GOAT_CEILING) : pot;
+  const ceiling = exceptionCeiling(id, age);
+  return ceiling ? Math.max(pot, ceiling) : pot;
+}
+
+/** Where growth starts to slow for everyone else: 90, or just below his real rating if higher. */
+const TOP = 90;
+/** Rating points above that a player approaches but never quite reaches. */
+const TOP_ROOM = 3;
+
+/**
+ * Above 90 (or a point below his real rating, if higher) every extra point
+ * is harder to earn: the excess is squeezed so that 92 is rare and 93 a
+ * great career's peak, while the exceptions keep climbing.
+ */
+export function topDamp(raw: number, ref: number): number {
+  const top = Math.max(TOP, ref - 1);
+  const over = raw - top;
+  return over <= 0 ? raw : top + over / (1 + over / TOP_ROOM);
 }
 
 /** Share of a player's deviation from his real rating that carries over. */
@@ -71,7 +110,9 @@ export function formBoost(p: Pick<Developing, 'age' | 'ovr' | 'id'> & { pot?: nu
     : form.avg - form.team + 0.5 * (form.team - form.league);
   // Judged on what his rating predicts: a youngster among stars is not
   // marked down for being less good than them, only for playing below himself.
-  const fair = perf - (form.quality ?? 0);
+  // And against what his area of the pitch usually earns: a centre-back is
+  // not marked down for scoring fewer goals than the strikers.
+  const fair = perf - (form.quality ?? 0) - (form.areaPar ?? 0);
   const played = Math.min(1, form.apps / 25);
   let b = clamp(fair * 4, -2, 3) * played;
   if (p.age <= 23) {
@@ -87,7 +128,7 @@ export function formBoost(p: Pick<Developing, 'age' | 'ovr' | 'id'> & { pot?: nu
   } else if (p.age >= 31) {
     b *= b > 0 ? 0.5 : 1;
   }
-  if (b > 0 && p.ovr >= 88 && !isGoat(p.id)) b *= 0.5;
+  if (b > 0 && p.ovr >= 88 && !isGoat(p.id) && p.id !== NEYMAR) b *= 0.5;
   return b;
 }
 
@@ -117,13 +158,16 @@ export function developPlayer(p: Developing, next: Row | undefined, meta: Meta, 
     p.age += 1;
   }
   const before = p.ovr;
-  const raw = expected + boost + noise(rng, age);
+  const ceiling = exceptionCeiling(p.id, age);
+  let raw = expected + boost + noise(rng, age);
+  // The exceptions drift up a little each year they are at their best;
+  // Neymar, younger, faster while he is young.
+  if (ceiling && boost >= 0) raw += isGoat(p.id) ? 0.7 : 0.7 + 0.25 * Math.max(0, 24 - age);
+  // Everyone else finds the very top hard going.
+  else if (!ceiling) raw = topDamp(raw, p.ref);
   const lo = p.ref + DRIFT_LOW;
-  const goat = isGoat(p.id) && age <= 31;
-  const hi = goat ? GOAT_CEILING : Math.min(p.ref + driftHigh(age), Math.max(96, p.ref));
-  // The two exceptions drift up a little each year they are at their best.
-  const lift = goat && boost >= 0 ? 0.7 : 0;
-  p.ovr = Math.round(clamp(clamp(raw + lift, lo, hi), 40, 99));
+  const hi = ceiling ?? Math.min(p.ref + driftHigh(age), Math.max(96, p.ref));
+  p.ovr = Math.round(clamp(clamp(raw, lo, hi), 40, 99));
   const realPot = next ? next[1] + (p.ovr - next[0]) : p.pot + (p.ovr - before) * 0.5;
   p.pot = goatPotential(p.id, Math.round(clamp(Math.max(p.ovr, realPot), p.ovr, 99)), p.age);
 }

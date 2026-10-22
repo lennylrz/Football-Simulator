@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formBoost } from './development';
+import { formBoost, topDamp } from './development';
 import { autoLineup, pickXI, type PlayerLite } from './lineup';
 import { effectiveRating, FORMATIONS } from './positions';
 import { mulberry32 } from './rng';
@@ -94,6 +94,23 @@ describe('development', () => {
     const weak = { team: 6.3, league: 6.6, apps: 38 };
     expect(Math.abs(formBoost({ age: 25, ovr: 75 }, { ...weak, avg: 6.3 }))).toBeLessThan(0.7);
     expect(formBoost({ age: 22, ovr: 80 }, { ...weak, avg: 7.2 })).toBeGreaterThan(3);
+  });
+
+  it('judges a player against his own area of the pitch, so defenders are not marked down for not scoring', () => {
+    const form = { avg: 6.7, apps: 38, team: 6.85, league: 6.85, quality: 0 };
+    // A defender 0.15 below his team-mates, where defenders usually are, had an ordinary season.
+    expect(formBoost({ age: 25, ovr: 80 }, form)).toBeLessThan(-0.5);
+    expect(Math.abs(formBoost({ age: 25, ovr: 80 }, { ...form, areaPar: -0.15 }))).toBeLessThan(0.01);
+    expect(formBoost({ age: 25, ovr: 80 }, { ...form, avg: 7.0, areaPar: -0.15 })).toBeGreaterThan(1);
+  });
+
+  it('makes every point above 90 harder to earn', () => {
+    expect(topDamp(88, 85)).toBe(88);
+    expect(topDamp(90, 85)).toBe(90);
+    expect(topDamp(92, 85)).toBeLessThan(91.5);
+    expect(topDamp(99, 85)).toBeLessThan(93);
+    // A player rated above 90 in real life keeps (about) his real rating.
+    expect(topDamp(92, 92)).toBeGreaterThan(91.5);
   });
 
   it('lets a teenager who stars jump towards his potential, and keeps a player in his prime steady', () => {
