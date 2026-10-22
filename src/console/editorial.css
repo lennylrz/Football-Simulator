@@ -305,3 +305,15 @@
 .stage.ed .lobby .bigcode { font: 700 104px var(--mono); color: var(--paper); }
 .stage.ed .lobby .err { color: var(--accent); }
 .stage.ed .lobby button.go { background: var(--paper); color: var(--ink); font: 700 17px var(--grot); }
+
+/* The review's story needs the room: a slimmer header and a one-line player of the season. */
+.stage.ed .review .office { height: 104px !important; }
+.stage.ed .review .office .big { font-size: 26px; }
+.stage.ed .review .office .col { font-size: 15px; gap: 0; }
+.stage.ed .story-lines { gap: 9px; padding-top: 14px; }
+.stage.ed .story-lines p { font-size: 15.5px; line-height: 1.45; }
+.stage.ed .story-lines p:first-child { font-size: 22px; }
+.stage.ed .award.pots { grid-template-columns: auto auto 1fr; align-items: baseline; column-gap: 14px; padding: 10px 14px; margin: 6px 16px 12px; }
+.stage.ed .award.pots b { font-size: 20px; }
+.stage.ed .award.pots > span:not(.cap) { color: var(--soft); font-size: 14px; }
+.stage.ed .award.pots small { display: none; }
