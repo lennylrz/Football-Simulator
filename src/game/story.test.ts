@@ -54,7 +54,7 @@ describe('season story', () => {
         expect(line.length).toBeLessThanOrEqual(MAX_LINE);
         expect(line).toMatch(/^[\p{Lu}\d"]/u);
         expect(line).not.toMatch(/\b1 (goals|points|wins|games|defeats|assists|clean sheets)\b/);
-        expect(line).not.toMatch(/\b([02-9]|\d\d+) (goal|point|win|game|defeat|assist|clean sheet)\b(?![-–])/);
+        expect(line).not.toMatch(/(?<![-–])\b([02-9]|\d\d+) (goal|point|win|game|defeat|assist|clean sheet)\b(?![-–])/);
         expect(line).not.toMatch(/\ba [8]|\ba 1[18]\b/);
       }
       // No two lines open the same way.

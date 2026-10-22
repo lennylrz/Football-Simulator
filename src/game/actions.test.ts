@@ -1,8 +1,9 @@
 import { beforeAll, describe, expect, it } from 'vitest';
 import { type Action, applyAction, GUEST, HOST, newRoomGame, viewFor } from './actions';
 import type { GameData } from './data';
-import { emptySlots } from './draft';
-import { asUser, type GameState } from './game';
+import { autoDraft, emptySlots } from './draft';
+import { asUser, type GameState, newGame, REAL_CLUBS } from './game';
+import { AREA, FORMATIONS } from './positions';
 import { loadTestData } from './testData';
 
 let data: GameData;
@@ -86,5 +87,42 @@ describe('two-player rooms', () => {
     const replay = newRoomGame(data, 78, { redrafts: 2, choices: 5 }, host, guest);
     for (const [club, a] of log) applyAction(replay, data, club, a);
     expect(JSON.stringify(replay)).toBe(JSON.stringify(state));
+  });
+});
+
+describe('picking the star', () => {
+  it('takes any starter of the manager\'s own XI, and the season is built around him', () => {
+    const s = newRoomGame(data, 79, { redrafts: 2, choices: 5 }, host, guest);
+    for (const club of [HOST, GUEST]) {
+      applyAction(s, data, club, { t: 'style', style: 'star' });
+      while (viewFor(s, club).draft?.slot !== null && viewFor(s, club).draft?.slot !== undefined) {
+        const v = viewFor(s, club);
+        expect(applyAction(s, data, club, { t: 'pick', player: v.draft!.candidates[0] })).toBeNull();
+      }
+    }
+    const cb = s.clubs[HOST].xi[2];
+    expect(applyAction(s, data, HOST, { t: 'star', player: s.clubs[GUEST].xi[0] })).toBe('Only a starter can be the star.');
+    expect(applyAction(s, data, HOST, { t: 'star', player: s.clubs[HOST].bench[0] })).toBe('Only a starter can be the star.');
+    expect(applyAction(s, data, HOST, { t: 'star', player: cb })).toBeNull();
+    expect(s.clubs[HOST].starPick).toBe(cb);
+    // The guest leaves it to the automatic choice: a forward.
+    expect(applyAction(s, data, GUEST, { t: 'star', player: s.clubs[GUEST].xi[3] })).toBeNull();
+    expect(applyAction(s, data, GUEST, { t: 'star', player: null })).toBeNull();
+    expect(s.clubs[GUEST].starPick).toBeUndefined();
+    for (const club of [HOST, GUEST]) expect(applyAction(s, data, club, { t: 'ready', on: true })).toBeNull();
+    expect(applyAction(s, data, HOST, { t: 'simulate' })).toBeNull();
+    expect(s.clubs[HOST].star).toBe(cb);
+    const auto = s.clubs[GUEST].star!;
+    expect(['ATT', 'MID']).toContain(AREA[FORMATIONS[s.clubs[GUEST].formation][s.clubs[GUEST].xi.indexOf(auto)]]);
+    expect(applyAction(s, data, HOST, { t: 'star', player: cb })).toBe('Not during the season.');
+  });
+
+  it('works in single player too', () => {
+    const s = newGame(data, REAL_CLUBS, 80, 'draft', '4-3-3');
+    autoDraft(s, data);
+    const gk = s.clubs[s.user].xi[0];
+    expect(applyAction(s, data, s.user, { t: 'star', player: gk })).toBeNull();
+    expect(applyAction(s, data, s.user, { t: 'play' })).toBeNull();
+    expect(s.clubs[s.user].star).toBe(gk);
   });
 });

@@ -23,7 +23,7 @@ export interface PlateInfo {
   rating?: number;
   name?: string;
   label: string;
-  state?: 'empty' | 'open' | 'now' | 'sel' | 'done';
+  state?: 'empty' | 'open' | 'now' | 'sel' | 'done' | 'star';
   delta?: number;
   delay?: number;
 }

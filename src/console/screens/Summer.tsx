@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { career } from '../../game/career';
 import { emptySlots, inSpot, isBench, redraftsPerSummer, XI } from '../../game/draft';
-import { paperTable, seasonLabel, trophiesOf } from '../../game/game';
+import { paperTable, seasonLabel, starOf, trophiesOf } from '../../game/game';
 import { FORMATIONS, parsePositions, positionFit } from '../../game/positions';
 import { useGame } from '../../ui/context';
 import { PlayerCard } from '../awards';
@@ -45,6 +45,10 @@ export function Summer() {
   /** The position a player was drafted for, or his main one. */
   const homeOf = (id: number) => d.home?.[id] ?? parsePositions(game.players[id].pos)[0];
   const canSwap = (a: number, b: number) => a !== b && !(isBench(a) && isBench(b));
+  // Through the Star: the manager picks the player it is all built around.
+  const starStyle = style === 'star';
+  const star = starStyle ? starOf(game, game.user) : undefined;
+  const makeStar = (id: number) => starStyle && id >= 0 && club.xi.includes(id) && send({ t: 'star', player: id });
 
   const plate = (id: number, i: number): PlateInfo => {
     const p = game.players[id];
@@ -52,7 +56,7 @@ export function Summer() {
     if (!p || id < 0) return { label: label(i), state: i === nav.index ? 'now' : 'empty' };
     const r = reveal.get(id);
     return {
-      rating: p.ovr, name: data.names[id][0], label: isBench(i) ? homeOf(id) : slots[i], state: mark ?? (done(i) ? 'done' : undefined),
+      rating: p.ovr, name: data.names[id][0], label: isBench(i) ? homeOf(id) : slots[i], state: mark ?? (id === star ? 'star' : done(i) ? 'done' : undefined),
       delta: r && game.season > 0 ? r.to - r.from : undefined, delay: 300 + i * 140,
     };
   };
@@ -109,6 +113,7 @@ export function Summer() {
           : [
               ...seasonCommands,
               { keys: ['Enter'], label: sel < 0 ? 'Draft' : 'Re-draft', disabled: !can(nav.index), onPress: () => ask(nav.index) },
+              { keys: ['F'], label: 'Make Star', hidden: !starStyle, disabled: !starStyle || sel < 0 || isBench(nav.index) || sel === star, onPress: () => makeStar(sel) },
               { keys: ['A'], label: 'Style', onPress: () => send({ t: 'style', style: STYLE_ORDER[(STYLE_ORDER.indexOf(style) + 1) % STYLE_ORDER.length] }) },
               { keys: ['S'], label: 'Swap', hidden: !club.bench.length, disabled: sel < 0 || empty.length > 0, onPress: () => setSwapFrom(nav.index) },
               { ...browse('Browse', nav.up, nav.down), hidden: true },
@@ -192,6 +197,7 @@ export function Summer() {
                           <td className="pos">{label(i)}{isBench(i) && p ? <small> {homeOf(id)}</small> : null}</td>
                           <td className="ellip">
                             {p ? <span className="plink" title="Open his card" onClick={(e) => { e.stopPropagation(); setCard(id); }}>{data.names[id][0]}</span> : 'Retired – draft a replacement'}
+                            {p && id === star && <span className="startag">★ STAR</span>}
                             {off && <span className="offpos" title={`Drafted as ${off}: plays below his rating here`}> {off} out of position</span>}
                           </td>
                           <td className="n">{p?.age ?? ''}</td>
@@ -204,6 +210,9 @@ export function Summer() {
                             {delta === null ? '' : delta >= 3 ? `+${delta} GLOW UP` : delta <= -3 ? `${delta} BUST` : delta > 0 ? `+${delta}` : delta}
                           </td>
                           <td className="c acts">
+                            {starStyle && p && !isBench(i) && id !== star && swapFrom === null && (
+                              <button className="rowbtn" title="Build the team around him" onClick={(e) => { e.stopPropagation(); makeStar(id); }} tabIndex={-1}>★</button>
+                            )}
                             {p && club.bench.length > 0 && swapFrom === null && (
                               <button className="rowbtn" disabled={empty.length > 0} onClick={(e) => { e.stopPropagation(); nav.setIndex(i); setSwapFrom(i); }} tabIndex={-1}>Swap</button>
                             )}

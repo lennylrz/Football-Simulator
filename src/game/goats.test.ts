@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Era } from './data';
-import { GOAT_CEILING, GOATS } from './development';
+import { GOAT_CEILING, GOATS, NEAR_CEILING, NEYMAR } from './development';
 import { autoSeason, newGame } from './game';
 import { loadTestData } from './testData';
 
@@ -40,5 +40,29 @@ describe.each([2010, 2015] as Era[])('Messi and Ronaldo in the %i era', (era) =>
     }
     expect(best).toBeGreaterThanOrEqual(era === 2010 ? 95 : 94);
     expect(best).toBeLessThanOrEqual(GOAT_CEILING);
+  });
+});
+
+describe('the very top', () => {
+  it('is Messi, Ronaldo and Neymar\'s; everyone else finds 92 hard to reach', async () => {
+    const data = await loadTestData(2015);
+    let neymar = 0;
+    let others = 0;
+    const RUNS = 4;
+    for (let r = 0; r < RUNS; r++) {
+      const s = newGame(data, -1, 40 + r);
+      expect(s.players[NEYMAR].pot).toBe(NEAR_CEILING);
+      let peak = 0;
+      for (let k = 0; k < 5; k++) {
+        autoSeason(s, data);
+        peak = Math.max(peak, s.players[NEYMAR].ovr);
+        expect(s.players[NEYMAR].ovr).toBeLessThanOrEqual(NEAR_CEILING);
+      }
+      if (peak >= 93) neymar++;
+      others += Object.values(s.players).filter((p) => !p.retired && p.ovr >= 92 && !GOATS.has(p.id) && p.id !== NEYMAR).length;
+    }
+    expect(neymar).toBeGreaterThanOrEqual(RUNS - 1);
+    // The 2015 era's best (De Bruyne, Hazard, Kane, Salah...) mostly stop short of 92.
+    expect(others / RUNS).toBeLessThan(2.5);
   });
 });

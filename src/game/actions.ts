@@ -15,6 +15,8 @@ export type Action =
   | { t: 'swap'; a: number; b: number }
   /** the club's play style, before a season */
   | { t: 'style'; style: PlayStyle }
+  /** the club's star (a starter in its XI), before a season; null goes back to the automatic choice */
+  | { t: 'star'; player: number | null }
   /** single player: play the season */
   | { t: 'play' }
   /** room: XI set (or not), waiting for the host */
@@ -47,7 +49,7 @@ export function newRoomGame(data: GameData, seed: number, rules: GameState['rule
   return state;
 }
 
-const CHANGES = new Set<Action['t']>(['pick', 'slot', 'redraft', 'swap', 'style']);
+const CHANGES = new Set<Action['t']>(['pick', 'slot', 'redraft', 'swap', 'style', 'star']);
 
 /** Applies one manager's action. Returns why it was refused, or null. */
 export function applyAction(state: GameState, data: GameData, club: number, a: Action): string | null {
@@ -68,6 +70,17 @@ export function applyAction(state: GameState, data: GameData, club: number, a: A
           if (state.stage !== 'draft' && state.stage !== 'summer') return 'Not during the season.';
           state.clubs[state.user].style = a.style;
           return null;
+        case 'star': {
+          if (state.stage !== 'draft' && state.stage !== 'summer') return 'Not during the season.';
+          const c = state.clubs[state.user];
+          if (a.player === null) {
+            delete c.starPick;
+            return null;
+          }
+          if (typeof a.player !== 'number' || a.player < 0 || !c.xi.includes(a.player)) return 'Only a starter can be the star.';
+          c.starPick = a.player;
+          return null;
+        }
       }
       return null;
     });

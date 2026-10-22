@@ -500,22 +500,27 @@ export function seasonStory(x: StoryInput): string[] {
       sShare: me.gf ? Math.round((100 * slg) / me.gf) : 0, sMates: Math.max(0, me.gf - slg), sPrev, sDelta: sPrev !== undefined ? Math.abs(slg - sPrev) : undefined,
     });
     const arcs: [string, number][] = [];
-    const poor = rating < 7 || (attacker && st.goals < 10);
-    if (dry.n >= 5 && sAfter >= 4 && after.length >= 3) arcs.push(['star.doubt', 3 + sAfter / 3]);
-    if (slg >= 10 && firstHalf <= slg * 0.38) arcs.push(['star.slowBurn', 3]);
-    if (slg >= 10 && slg - firstHalf <= slg * 0.35) arcs.push(['star.faded', 2.5]);
-    if ((v.sShare as number) >= 40) arcs.push(['star.carry', Math.min(4, 1 + ((v.sShare as number) - 40) / 5)]);
-    if (poor) arcs.push(['star.pressure', 4]);
-    if (sPrev !== undefined && sPrev >= 12 && slg <= sPrev - 8) arcs.push(['star.dip', 3.5]);
-    if (sPrev !== undefined && slg >= sPrev + 8) arcs.push(['star.rebound', 3.5]);
-    if (sPrev !== undefined && sPrev >= 20 && slg >= 20 && Math.abs(slg - sPrev) < 8) arcs.push(['star.sameAgain', 2]);
-    if ((v.sHat as number) >= 2) arcs.push(['star.hattricks', 1.5 + (v.sHat as number) / 2]);
-    if ((v.sBig as number) >= 4 && big.length) arcs.push(['star.bigGame', 2]);
-    if (st.goals >= 32) arcs.push(['star.record', st.goals >= 40 ? 2.5 : 1.2]);
-    if (age(star) <= 21) arcs.push(['star.young', 2]);
-    if (age(star) >= 32) arcs.push(['star.old', 2]);
-    if (st.goals >= 12) arcs.push(['star.feud', losses.n >= 3 || winless.n >= 5 ? 1.4 : 0.4]);
-    if (!poor) arcs.push(st.goals >= 15 ? ['star.steady', 1] : ['star.quiet', 1]);
+    if (!attacker) {
+      // A defender or keeper as the star is the leader at the back: his story is the defence's.
+      arcs.push(rating < 6.9 ? ['star.leaderPoor', 4] : ['star.leader', 4]);
+    } else {
+      const poor = rating < 7 || st.goals < 10;
+      if (dry.n >= 5 && sAfter >= 4 && after.length >= 3) arcs.push(['star.doubt', 3 + sAfter / 3]);
+      if (slg >= 10 && firstHalf <= slg * 0.38) arcs.push(['star.slowBurn', 3]);
+      if (slg >= 10 && slg - firstHalf <= slg * 0.35) arcs.push(['star.faded', 2.5]);
+      if ((v.sShare as number) >= 40) arcs.push(['star.carry', Math.min(4, 1 + ((v.sShare as number) - 40) / 5)]);
+      if (poor) arcs.push(['star.pressure', 4]);
+      if (sPrev !== undefined && sPrev >= 12 && slg <= sPrev - 8) arcs.push(['star.dip', 3.5]);
+      if (sPrev !== undefined && slg >= sPrev + 8) arcs.push(['star.rebound', 3.5]);
+      if (sPrev !== undefined && sPrev >= 20 && slg >= 20 && Math.abs(slg - sPrev) < 8) arcs.push(['star.sameAgain', 2]);
+      if ((v.sHat as number) >= 2) arcs.push(['star.hattricks', 1.5 + (v.sHat as number) / 2]);
+      if ((v.sBig as number) >= 4 && big.length) arcs.push(['star.bigGame', 2]);
+      if (st.goals >= 32) arcs.push(['star.record', st.goals >= 40 ? 2.5 : 1.2]);
+      if (age(star) <= 21) arcs.push(['star.young', 2]);
+      if (age(star) >= 32) arcs.push(['star.old', 2]);
+      if (st.goals >= 12) arcs.push(['star.feud', losses.n >= 3 || winless.n >= 5 ? 1.4 : 0.4]);
+      if (!poor) arcs.push(st.goals >= 15 ? ['star.steady', 1] : ['star.quiet', 1]);
+    }
     const arc = weighted(rng, arcs.map(([key, w]) => [key, w * novelty(key) * (0.6 + rng())]));
     add(arc, 'star', 4, 1, 1, arc === 'star.bigGame' ? 'big' : undefined);
     if (st.goals >= 25) songName = player(star);

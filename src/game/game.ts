@@ -10,7 +10,7 @@ import { autoLineup, BENCH_SIZE, pickBench, pickXI, type PlayerLite, teamStrengt
 import { generateIncomingBids, generateOffers, type IncomingBid, type Offer } from './market';
 import { type DraftState, openDraftWindow } from './draft';
 import { AREA, FORMATIONS, type Formation, parsePositions, type Position, positionFit } from './positions';
-import { type PlayStyle, styleGrowth } from './styles';
+import { type PlayStyle, starRole, styleGrowth } from './styles';
 import { stream } from './rng';
 import { fixtures, type PlayerSeasonStats, type SeasonResult, simulateSeason, type TableRow } from './season';
 import { expectedGoals, type MatchResult } from './match';
@@ -46,6 +46,8 @@ export interface ClubState {
   /** a manager's play style, and the player it was built around last season */
   style?: PlayStyle;
   star?: number;
+  /** the manager's own choice of star (any starter); without one, or once he leaves the XI, the best attacking starter */
+  starPick?: number;
   rep: number;
   /** transfer budget, €k */
   cash: number;
@@ -394,9 +396,22 @@ function lastForm(state: GameState): Map<number, Form> {
     sums.set(st.id, t);
   }
   const avg = (x: { sum: number; apps: number } | undefined) => (x && x.apps ? x.sum / x.apps : undefined);
+  // What each area of the pitch usually rates above its team-mates, beyond
+  // what quality explains (forwards score, so they rate higher), from the
+  // league's regulars: so every player is judged against his own kind.
+  const areaOf = (id: number) => AREA[parsePositions(state.players[id]?.pos ?? 'CM')[0] ?? 'CM'];
+  const byArea = new Map<string, { sum: number; apps: number }>();
+  for (const st of state.result?.stats ?? []) {
+    const team = avg(clubs.get(st.club));
+    if (st.apps < 8 || team === undefined) continue;
+    const a = byArea.get(areaOf(st.id)) ?? { sum: 0, apps: 0 };
+    a.sum += st.ratingSum - st.apps * team - (st.parSum ?? 0);
+    a.apps += st.apps;
+    byArea.set(areaOf(st.id), a);
+  }
   return new Map([...sums].map(([id, t]) => {
     const quality = t.par / t.apps;
-    return [id, { avg: t.sum / t.apps, apps: t.apps, team: avg(clubs.get(t.club)), league: avg(league), quality }];
+    return [id, { avg: t.sum / t.apps, apps: t.apps, team: avg(clubs.get(t.club)), league: avg(league), quality, areaPar: avg(byArea.get(areaOf(id))) ?? 0 }];
   }));
 }
 
@@ -422,7 +437,9 @@ function advancePlayers(state: GameState, data: GameData, form: Map<number, Form
     const f = form.get(id);
     const club = p.club === EXTERNAL ? undefined : state.clubs[p.club];
     const area = AREA[parsePositions(p.pos)[0] ?? 'CM'];
-    const growth = styleGrowth(club?.style, area, club?.star === id);
+    const isStar = club?.star === id;
+    const starSlot = isStar ? FORMATIONS[club.formation][club.xi.indexOf(id)] : undefined;
+    const growth = styleGrowth(club?.style, area, isStar, starRole(starSlot));
     const raw = formBoost(p, f);
     const boost = raw > 0 ? raw * growth : raw;
     developPlayer(p, row, data.meta, rng, f, growth);
@@ -698,6 +715,19 @@ export function paperTable(state: GameState): PaperRow[] {
     .sort((a, b) => b.edge - a.edge || a.club - b.club);
 }
 
+/**
+ * The player a club's style is built around this season: the manager's pick
+ * while he is in the XI, else the best attacking starter.
+ */
+export function starOf(state: GameState, club: number): number | undefined {
+  const c = state.clubs[club];
+  if (c.starPick !== undefined && c.starPick >= 0 && c.xi.includes(c.starPick) && state.players[c.starPick]) return c.starPick;
+  const slots = FORMATIONS[c.formation];
+  const lean = (i: number) => ({ ATT: 3, MID: ['CAM', 'LM', 'RM'].includes(slots[i]) ? 1 : -3, DEF: -10, GK: -99 })[AREA[slots[i]]];
+  const order = c.xi.map((id, i) => ({ id, key: id >= 0 && state.players[id] ? state.players[id].ovr + lean(i) : -999 })).sort((a, b) => b.key - a.key || a.id - b.id);
+  return order[0]?.id;
+}
+
 export function simulate(state: GameState, data: GameData): void {
   for (const c of state.clubs) if (lineupProblems(state, c.id).length) repairLineup(state, c.id);
   const paper = state.user >= 0 ? paperTable(state) : [];
@@ -709,12 +739,8 @@ export function simulate(state: GameState, data: GameData): void {
     const bench = c.bench.filter((id) => id >= 0).map((id) => engineLite(state, c.id, id));
     // The drafted club rotates its small squad, so the bench plays its part.
     const rotation = state.mode === 'draft' && isHuman(state, c.id) ? DRAFT_ROTATION : undefined;
-    // The star of a style built around him: the best attacking starter.
-    if (c.style) {
-      const lean = (i: number) => ({ ATT: 3, MID: ['CAM', 'LM', 'RM'].includes(slots[i]) ? 1 : -3, DEF: -10, GK: -99 })[AREA[slots[i]]];
-      const order = c.xi.map((id, i) => ({ id, key: id >= 0 ? state.players[id].ovr + lean(i) : -999 })).sort((a, b) => b.key - a.key || a.id - b.id);
-      c.star = order[0]?.id;
-    }
+    // The star of a style built around him: the manager's pick, or the best attacking starter.
+    if (c.style) c.star = starOf(state, c.id);
     return { club: c.id, formation: c.formation, xi, bench, rotation, style: c.style, star: c.star };
   });
   const league = simulateSeason(teams, stream(state.seed, 'season', state.season), seasonFixtures(state));

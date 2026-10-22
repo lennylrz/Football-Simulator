@@ -341,3 +341,4 @@
 .stage.sl .sq-notes .cap { font: 600 13px var(--cond); letter-spacing: .1em; color: var(--amber); }
 .stage.sl .sq-notes p { font: 400 15px/1.4 var(--body); color: var(--soft); }
 .stage.sl .sq-notes p::before { background: var(--amber); border-radius: 50%; }
+.stage.sl .startag { background: var(--amber); color: var(--ink); border-radius: 2px; font-family: var(--cond); }

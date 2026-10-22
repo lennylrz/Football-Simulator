@@ -156,3 +156,6 @@ input { font: inherit; }
 .sq-notes .cap { font-size: 12px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: #8f9297; }
 .sq-notes p { margin: 0; font-size: 15px; line-height: 1.35; color: #d6d8dc; padding-left: 12px; position: relative; }
 .sq-notes p::before { content: ""; position: absolute; left: 0; top: 8px; width: 5px; height: 5px; background: #f2c200; }
+.startag { margin-left: 8px; font-size: 12px; font-weight: 700; letter-spacing: .06em; padding: 1px 6px; background: #f2c200; color: #2b2300; }
+.dplate.star b { background: linear-gradient(180deg, #ffe45c, #f2c200); color: #2b2300; }
+.tbl td.acts .rowbtn + .rowbtn, .tbl td.acts .rowbtn + * { margin-left: 6px; }
