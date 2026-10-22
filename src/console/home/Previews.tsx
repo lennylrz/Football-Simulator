@@ -1,5 +1,8 @@
 // Static previews of each era's look, drawn at 1280x720.
 import '../draft.css';
+import '../editorial.css';
+import { FORMATIONS } from '../../game/positions';
+import { Pitch, type PlateInfo } from '../Pitch';
 import './previews.css';
 
 type Cand = [number, string, string, string, number];
@@ -130,8 +133,49 @@ function P2020() {
 }
 
 const P2010 = () => <Console season="2010/11" cands={CANDS_2010} />;
-// Until the 2015-2020 look is chosen, it shows the console look too.
-const P2015 = () => <Console season="2015/16" cands={CANDS} />;
+/** The editorial look of 2015-2020: big type, thin rules, one red accent (see editorial.css). */
+function P2015() {
+  const plates: PlateInfo[] = FORMATIONS['4-3-3'].map((label) => (label === 'ST' ? { label, state: 'now' } : { label, state: 'empty' }));
+  return (
+    <div className="pv stage dark ed" style={{ '--s': 1 } as React.CSSProperties}>
+      <div className="f-head" style={{ '--club-bar': '#7a1f3d' } as React.CSSProperties}>
+        Hindsight United<span className="sub">The Draft · Pick 1 of 14</span><span className="right"><small>Season 1 of 5</small>2015/16</span>
+      </div>
+      <div className="f-body">
+        <div className="ed-draft">
+          <div className="pitchcol"><Pitch formation="4-3-3" plates={plates} /></div>
+          <div className="ed-feature">
+            <div className="ed-main">
+              <div className="ed-kick"><span>Pick 1 / 14</span><span>Striker</span><b>El Matador</b></div>
+              <div className="ed-ghost">85</div>
+              <div className="ed-name" style={{ '--fs': '128px', animation: 'none' } as React.CSSProperties}>Cavani</div>
+              <div className="ed-first">E. Cavani · Paris SG · Uruguay</div>
+              <p className="ed-text" style={{ animation: 'none' }}>Runs until the final whistle, then runs some more. A centre-forward who presses like a full-back and finishes like a poacher.</p>
+              <div className="ed-figs">
+                <span className="hot"><b>85</b><small>Overall</small></span><span><b>28</b><small>Age</small></span><span><b>€42m</b><small>Value</small></span><span><b>ST</b><small>Plays</small></span>
+              </div>
+            </div>
+            <div className="ed-list">
+              <div className="cap">THE SHORTLIST</div>
+              {CANDS.map(([r, n, c, , age], i) => (
+                <div key={n} className={`ed-li ${i === 2 ? 'on' : ''}`} style={{ opacity: 1, animation: 'none' }}>
+                  <span className="n">0{i + 1}</span><span className="nm">{n.split(' ').slice(-1)[0]}</span><span className="o">{r}</span><small>{c} · {age}</small>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+      <div className="cmdbar">
+        <div className="hints">
+          <span className="hint"><span className="keys"><span className="key primary">ENTER</span></span>Pick</span>
+          <span className="hint"><span className="keys"><span className="key">‹</span><span className="key">›</span></span>Browse</span>
+        </div>
+        <div className="info"><span>Choose</span><b>Striker</b></div>
+      </div>
+    </div>
+  );
+}
 
 export const PREVIEWS = { 2000: P2000, 2005: P2005, 2010: P2010, 2015: P2015, 2020: P2020 } as const;
 

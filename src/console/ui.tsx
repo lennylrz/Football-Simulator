@@ -1,9 +1,17 @@
-import { type ReactNode, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { createContext, type ReactNode, useContext, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { CLUBS, type ClubInfo } from '../game/clubs';
 import type { GameData } from '../game/data';
 
+/**
+ * The era's look for every screen past the era picker: '' is the 2010s
+ * console, 'ed' the 2015-2020 editorial look (see editorial.css).
+ */
+export const ThemeContext = createContext<'' | 'ed'>('');
+export const useTheme = () => useContext(ThemeContext);
+
 /** Scales the fixed 1280x720 stage to fit the window. */
 export function Stage({ tone = 'dark', children }: { tone?: 'dark' | 'light' | 'home'; children: ReactNode }) {
+  const theme = useTheme();
   const [scale, setScale] = useState(1);
   useLayoutEffect(() => {
     const fit = () => setScale(Math.min(window.innerWidth / 1280, window.innerHeight / 720));
@@ -14,7 +22,7 @@ export function Stage({ tone = 'dark', children }: { tone?: 'dark' | 'light' | '
   return (
     <div className="stage-wrap">
       <div
-        className={`stage ${tone}`}
+        className={`stage ${tone} ${tone === 'home' ? '' : theme}`}
         style={{ '--s': scale } as React.CSSProperties}
         // Clicking a button never focuses it, so Enter and Space afterwards only run the screen's command.
         onMouseDown={(e) => {

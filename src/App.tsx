@@ -8,7 +8,8 @@ import { NewClub } from './console/screens/NewClub';
 import { Results } from './console/screens/Results';
 import { Summary } from './console/screens/Summary';
 import { Summer } from './console/screens/Summer';
-import { Stage } from './console/ui';
+import { Stage, ThemeContext } from './console/ui';
+import './console/editorial.css';
 import { type Action, applyAction, type RoomManager } from './game/actions';
 import { RoomSession } from './console/RoomSession';
 import { Lobby } from './console/screens/Lobby';
@@ -181,114 +182,118 @@ export default function App() {
     setMode('menu');
   };
 
-  if (error) return <Stage><div className="empty" style={{ padding: 60 }}>Couldn't load the game data. {error}</div></Stage>;
+  const theme = era === 2015 ? 'ed' : '';
+  const view = (() => {
+    if (error) return <Stage><div className="empty" style={{ padding: 60 }}>Couldn't load the game data. {error}</div></Stage>;
 
-  if (mode === 'welcome') {
-    return (
-      <Stage tone="home">
-        <Welcome
-          settings={settings}
-          onSettings={changeSettings}
-          onPlay={() => {
-            setHostNeedsEra(false);
-            setMode('home');
-          }}
-          onMulti={() => {
-            setLobbyFrom('welcome');
-            setMode('lobby');
-          }}
-        />
-      </Stage>
-    );
-  }
-  if (mode === 'home') {
-    return (
-      <Stage tone="home">
-        <Home
-          onPlay={(e) => {
-            setEra(e);
-            // A host from the welcome screen's Multiplayer goes on to make the room's club.
-            setMode(hostNeedsEra ? 'roomclub' : 'setup');
-            setHostNeedsEra(false);
-          }}
-          onBack={() => setMode(hostNeedsEra ? 'lobby' : 'welcome')}
-        />
-      </Stage>
-    );
-  }
-  if (mode === 'lobby') {
-    return (
-      <Stage>
-        <Lobby
-          era={era !== null}
-          initialCode={lobby.code}
-          busy={lobby.busy}
-          error={lobby.error}
-          onHost={() => {
-            setPendingRoom(null);
-            if (era === null) {
-              setHostNeedsEra(true);
+    if (mode === 'welcome') {
+      return (
+        <Stage tone="home">
+          <Welcome
+            settings={settings}
+            onSettings={changeSettings}
+            onPlay={() => {
+              setHostNeedsEra(false);
               setMode('home');
-            } else setMode('roomclub');
-          }}
-          onJoin={(code) => void joinRoom(code)}
-          onBack={() => setMode(lobbyFrom === 'welcome' || era === null ? 'welcome' : 'menu')}
-        />
-      </Stage>
-    );
-  }
-  // Every screen past the era picker shows that era's data.
-  if (!data || data.era !== era) return <Stage><div className="empty" style={{ padding: 60 }}>Loading players…</div></Stage>;
-  if (mode === 'setup') {
-    return (
-      <Stage>
-        <GameSetup settings={settings} onChange={changeSettings} onDone={() => setMode('menu')} onBack={() => setMode('home')} />
-      </Stage>
-    );
-  }
-  if (mode === 'menu') {
-    return (
-      <Stage tone="light">
-        <MainMenu onNew={() => setMode('clubs')} onMulti={() => {
-          setLobbyFrom('menu');
-          setMode('lobby');
-        }} onSettings={() => setMode('setup')} onHome={() => setMode('home')} />
-      </Stage>
-    );
-  }
-  if (mode === 'roomclub') {
-    return (
-      <Stage>
-        <NewClub room={pendingRoom ? 'guest' : 'host'} busy={lobby.busy} onStart={(club, formation, _seed, _shared, style) => void roomClub(club, formation, style)} onBack={() => setMode('lobby')} settings={settings} />
-      </Stage>
-    );
-  }
-  if (mode === 'room' && room) {
-    return <RoomSession room={room} data={data} settings={settings} joinAs={joinAs} onLeave={leaveRoom} />;
-  }
-  if (mode === 'clubs' || !game) {
-    return (
-      <Stage>
-        <NewClub onStart={start} onBack={() => setMode('menu')} settings={settings} />
-      </Stage>
-    );
-  }
+            }}
+            onMulti={() => {
+              setLobbyFrom('welcome');
+              setMode('lobby');
+            }}
+          />
+        </Stage>
+      );
+    }
+    if (mode === 'home') {
+      return (
+        <Stage tone="home">
+          <Home
+            onPlay={(e) => {
+              setEra(e);
+              // A host from the welcome screen's Multiplayer goes on to make the room's club.
+              setMode(hostNeedsEra ? 'roomclub' : 'setup');
+              setHostNeedsEra(false);
+            }}
+            onBack={() => setMode(hostNeedsEra ? 'lobby' : 'welcome')}
+          />
+        </Stage>
+      );
+    }
+    if (mode === 'lobby') {
+      return (
+        <Stage>
+          <Lobby
+            era={era !== null}
+            initialCode={lobby.code}
+            busy={lobby.busy}
+            error={lobby.error}
+            onHost={() => {
+              setPendingRoom(null);
+              if (era === null) {
+                setHostNeedsEra(true);
+                setMode('home');
+              } else setMode('roomclub');
+            }}
+            onJoin={(code) => void joinRoom(code)}
+            onBack={() => setMode(lobbyFrom === 'welcome' || era === null ? 'welcome' : 'menu')}
+          />
+        </Stage>
+      );
+    }
+    // Every screen past the era picker shows that era's data.
+    if (!data || data.era !== era) return <Stage><div className="empty" style={{ padding: 60 }}>Loading players…</div></Stage>;
+    if (mode === 'setup') {
+      return (
+        <Stage>
+          <GameSetup settings={settings} onChange={changeSettings} onDone={() => setMode('menu')} onBack={() => setMode('home')} />
+        </Stage>
+      );
+    }
+    if (mode === 'menu') {
+      return (
+        <Stage tone="light">
+          <MainMenu onNew={() => setMode('clubs')} onMulti={() => {
+            setLobbyFrom('menu');
+            setMode('lobby');
+          }} onSettings={() => setMode('setup')} onHome={() => setMode('home')} />
+        </Stage>
+      );
+    }
+    if (mode === 'roomclub') {
+      return (
+        <Stage>
+          <NewClub room={pendingRoom ? 'guest' : 'host'} busy={lobby.busy} onStart={(club, formation, _seed, _shared, style) => void roomClub(club, formation, style)} onBack={() => setMode('lobby')} settings={settings} />
+        </Stage>
+      );
+    }
+    if (mode === 'room' && room) {
+      return <RoomSession room={room} data={data} settings={settings} joinAs={joinAs} onLeave={leaveRoom} />;
+    }
+    if (mode === 'clubs' || !game) {
+      return (
+        <Stage>
+          <NewClub onStart={start} onBack={() => setMode('menu')} settings={settings} />
+        </Stage>
+      );
+    }
 
-  // Leaving a career ends it: there is nothing to continue.
-  const quit = () => {
-    current.current = null;
-    setGame(null);
-    setMode('menu');
-  };
-  let screen;
-  if (game.stage === 'results') screen = <Results />;
-  else if (game.stage === 'summary') screen = <Summary onNewCareer={() => setMode('clubs')} />;
-  else if (game.draft?.slot !== null && game.draft?.slot !== undefined) screen = <Draft />;
-  else screen = <Summer />;
+    // Leaving a career ends it: there is nothing to continue.
+    const quit = () => {
+      current.current = null;
+      setGame(null);
+      setMode('menu');
+    };
+    let screen;
+    if (game.stage === 'results') screen = <Results />;
+    else if (game.stage === 'summary') screen = <Summary onNewCareer={() => setMode('clubs')} />;
+    else if (game.draft?.slot !== null && game.draft?.slot !== undefined) screen = <Draft />;
+    else screen = <Summer />;
 
-  return (
-    <GameContext.Provider value={{ data, game, send, quit, settings }}>
-      <Stage>{screen}</Stage>
-    </GameContext.Provider>
-  );
+    return (
+      <GameContext.Provider value={{ data, game, send, quit, settings }}>
+        <Stage>{screen}</Stage>
+      </GameContext.Provider>
+    );
+  })();
+  return <ThemeContext.Provider value={theme}>{view}</ThemeContext.Provider>;
 }

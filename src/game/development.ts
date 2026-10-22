@@ -2,6 +2,8 @@ import type { Meta, Row } from './data';
 import { type Rng, clamp, normal } from './rng';
 
 export interface Developing {
+  /** the player's id, to pick out the two exceptions (see GOATS) */
+  id?: number;
   ovr: number;
   pot: number;
   age: number;
@@ -19,6 +21,21 @@ export interface Form {
   league?: number;
   /** match rating his overall alone is worth against his team-mates (see ENGINE.quality) */
   quality?: number;
+}
+
+/**
+ * Messi and Cristiano Ronaldo: the two exceptions. Their ceiling is 98
+ * while they are young enough to reach it, they keep growing from good
+ * seasons at the very top where everyone else slows down, and the Ballon
+ * d'Or all but keeps two seats for them (see awards.ts).
+ */
+export const GOATS: ReadonlySet<number> = new Set([20801, 158023]);
+export const GOAT_CEILING = 98;
+export const isGoat = (id: number | undefined) => id !== undefined && GOATS.has(id);
+
+/** Potential as the game sees it: the two exceptions can reach 98 until their thirties. */
+export function goatPotential(id: number | undefined, pot: number, age: number): number {
+  return isGoat(id) && age <= 31 ? Math.max(pot, GOAT_CEILING) : pot;
 }
 
 /** Share of a player's deviation from his real rating that carries over. */
@@ -47,7 +64,7 @@ function noise(rng: Rng, age: number): number {
  * Players in their prime move a point at most; veterans decline faster
  * than they improve.
  */
-export function formBoost(p: Pick<Developing, 'age' | 'ovr'> & { pot?: number }, form: Form | undefined): number {
+export function formBoost(p: Pick<Developing, 'age' | 'ovr' | 'id'> & { pot?: number }, form: Form | undefined): number {
   if (!form || form.apps < 8) return 0;
   const perf = form.team === undefined || form.league === undefined
     ? form.avg - PAR
@@ -70,7 +87,7 @@ export function formBoost(p: Pick<Developing, 'age' | 'ovr'> & { pot?: number },
   } else if (p.age >= 31) {
     b *= b > 0 ? 0.5 : 1;
   }
-  if (b > 0 && p.ovr >= 88) b *= 0.5;
+  if (b > 0 && p.ovr >= 88 && !isGoat(p.id)) b *= 0.5;
   return b;
 }
 
@@ -102,10 +119,13 @@ export function developPlayer(p: Developing, next: Row | undefined, meta: Meta, 
   const before = p.ovr;
   const raw = expected + boost + noise(rng, age);
   const lo = p.ref + DRIFT_LOW;
-  const hi = Math.min(p.ref + driftHigh(age), Math.max(96, p.ref));
-  p.ovr = Math.round(clamp(clamp(raw, lo, hi), 40, 99));
+  const goat = isGoat(p.id) && age <= 31;
+  const hi = goat ? GOAT_CEILING : Math.min(p.ref + driftHigh(age), Math.max(96, p.ref));
+  // The two exceptions drift up a little each year they are at their best.
+  const lift = goat && boost >= 0 ? 0.7 : 0;
+  p.ovr = Math.round(clamp(clamp(raw + lift, lo, hi), 40, 99));
   const realPot = next ? next[1] + (p.ovr - next[0]) : p.pot + (p.ovr - before) * 0.5;
-  p.pot = Math.round(clamp(Math.max(p.ovr, realPot), p.ovr, 99));
+  p.pot = goatPotential(p.id, Math.round(clamp(Math.max(p.ovr, realPot), p.ovr, 99)), p.age);
 }
 
 /** Chance that a player with no next-season data retires. */
