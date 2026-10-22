@@ -288,7 +288,7 @@ export const SQUAD_BANK: Record<string, string[]> = {
   ],
   // a, rank
   'ballon': [
-    '{a} finished {rank|ord} in the Ballon d\'Or. The dressing room has not let him forget it.',
+    '{a} came {rank|ord} in the Ballon d\'Or. The dressing room has not let him forget it.',
     'The world noticed {a}: {rank|ord} in the Ballon d\'Or. He wants to go higher.',
     '{a} came back from the Ballon d\'Or gala and went straight to training. {rank|Ord} is not enough.',
     'A Ballon d\'Or podium for {a}. The young players ask him about it; he changes the subject.',
