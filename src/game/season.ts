@@ -2,6 +2,7 @@ import { FORMATIONS, type Formation } from './positions';
 import type { PlayerLite } from './lineup';
 import { ENGINE, type MatchTeam, simulateMatch } from './match';
 import { type Rng, normal, shuffle } from './rng';
+import type { PlayStyle } from './styles';
 
 export interface SeasonTeam {
   club: number;
@@ -9,6 +10,8 @@ export interface SeasonTeam {
   xi: PlayerLite[];
   bench: PlayerLite[];
   rotation?: number;
+  style?: PlayStyle;
+  star?: number;
 }
 
 const BYE = -99;
@@ -81,7 +84,7 @@ export function simulateSeason(teams: SeasonTeam[], rng: Rng, schedule?: [number
   const byClub = new Map<number, MatchTeam>();
   for (const t of teams) {
     const form = normal(rng, 0, ENGINE.seasonFormSd);
-    byClub.set(t.club, { club: t.club, slots: FORMATIONS[t.formation], xi: t.xi, bench: t.bench, form, rotation: t.rotation });
+    byClub.set(t.club, { club: t.club, slots: FORMATIONS[t.formation], xi: t.xi, bench: t.bench, form, rotation: t.rotation, style: t.style, star: t.star });
   }
   const table = new Map<number, TableRow>();
   for (const t of teams) table.set(t.club, { club: t.club, p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, pts: 0 });

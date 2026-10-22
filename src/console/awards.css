@@ -1,0 +1,45 @@
+/* Season story, awards and player cards. */
+.story { display: flex; flex-direction: column; }
+.story-lines { padding: 14px 20px 6px; display: flex; flex-direction: column; gap: 10px; overflow: auto; min-height: 0; flex: 1; }
+.story-lines p { margin: 0; font-size: 19px; line-height: 1.4; color: #e8edf3; }
+.story-lines p:first-child { font-size: 22px; font-weight: 700; color: #fff; }
+
+.award { display: grid; gap: 3px; text-align: left; margin: 8px 14px 14px; padding: 12px 16px; border: 0; cursor: pointer; color: #fff;
+  background: linear-gradient(180deg, #4d8fd6 0%, #23609f 48%, #164a83 52%, #1d5a9b 100%); font: inherit; }
+.award .cap { font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: #cfe0ff; }
+.award b { font-size: 24px; }
+.award small { color: #cfe0ff; }
+.award:hover { filter: brightness(1.08); }
+
+.awards .podium { display: flex; flex-direction: column; gap: 4px; padding: 10px 12px; }
+.place { display: flex; align-items: center; gap: 14px; padding: 8px 12px; background: rgba(255,255,255,.04); }
+.place.mine { outline: 2px solid #f2c200; outline-offset: -2px; }
+.place .medal { min-width: 52px; text-align: center; font-weight: 700; padding: 6px 0; color: #111; background: #c9ced6; }
+.place.p1 .medal { background: #e6c35c; }
+.place.p3 .medal { background: #c98d5a; }
+.place .medal.boot { background: #e6c35c; font-size: 20px; }
+.place .who { display: grid; }
+.place .who b { font-size: 19px; color: #fff; }
+.place .who small { color: #a9b4c2; font-size: 14px; }
+.awards > .place { margin: 10px 12px; }
+
+.overlay .win.pcard { width: 640px; max-height: 660px; }
+.pcard .body { overflow: auto; }
+.pc-head { display: flex; align-items: center; gap: 16px; padding: 14px 18px; flex-wrap: wrap; }
+.pc-ovr { font: 700 46px Arial, sans-serif; color: #111; background: #fff; padding: 2px 12px; }
+.pc-meta { display: grid; gap: 2px; color: #cfd6df; }
+.pc-meta b { color: #fff; font-size: 18px; }
+.pc-awards { display: flex; flex-wrap: wrap; gap: 6px; width: 100%; }
+.pc-awards span { font-size: 13px; font-weight: 700; padding: 4px 8px; color: #111; background: #e6c35c; }
+
+.rchart { width: 100%; height: auto; display: block; padding: 4px 8px; }
+.rchart .grid { stroke: rgba(255,255,255,.08); stroke-width: 1; }
+.rchart .axis { fill: #8d99a8; font-size: 11px; }
+.rchart .line { fill: none; stroke: #4d8fd6; stroke-width: 2; stroke-linejoin: round; }
+.rchart .dot { fill: #4d8fd6; stroke: #141516; stroke-width: 2; }
+.rchart .hit { fill: transparent; cursor: default; }
+.rchart .val { fill: #e8edf3; font-size: 13px; font-weight: 700; }
+
+/* Rows and lines that open a player's card. */
+.kvlist > div.click { cursor: pointer; }
+.kvlist > div.click:hover b { text-decoration: underline; }

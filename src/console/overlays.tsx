@@ -1,4 +1,5 @@
-import { useContext, useMemo } from 'react';
+import { useContext, useMemo, useState } from 'react';
+import { PlayerCard } from './awards';
 import { type CareerPlayer, career, careerScore, mergeStats } from '../game/career';
 import { WINNER } from '../game/cups';
 import { EXTERNAL, type GameState, seasonLabel, topTransfers, trophiesOf } from '../game/game';
@@ -40,8 +41,13 @@ const TROPHY = { league: 'League', fa: 'FA Cup', cl: 'Europe' } as const;
 
 export function HallOfFame({ game, data }: { game: GameState; data: GameData }) {
   const c = useMemo(() => career(game), [game]);
+  const [card, setCard] = useState<number | null>(null);
   const legends = c.players.filter((p) => p.apps >= 10);
   const name = (id: number) => data.names[id][0];
+  const awards = game.history.flatMap((h) => [
+    ...(h.pots !== undefined ? [{ season: h.season, label: 'Player of the Season', id: h.pots }] : []),
+    ...(h.ballon ?? []).flatMap((b, i) => (b.club === game.user ? [{ season: h.season, label: `Ballon d'Or ${['winner', '2nd', '3rd'][i]}`, id: b.player }] : [])),
+  ]);
   return (
     <Overlay title="Hall of Fame">
       <div className="office" style={{ height: 120 }}>
@@ -80,21 +86,28 @@ export function HallOfFame({ game, data }: { game: GameState; data: GameData }) 
             {c.bestPick && <div><span>{name(c.bestPick.player)}</span><b className="up">{c.bestPick.from} → {c.bestPick.to}</b></div>}
             {c.worstPick && <div className="head">Worst pick</div>}
             {c.worstPick && <div><span>{name(c.worstPick.player)}</span><b className="down">{c.worstPick.from} → {c.worstPick.to}</b></div>}
+            {awards.length > 0 && <div className="head">Awards</div>}
+            {awards.map((a) => (
+              <div key={`${a.season}-${a.label}`} className="click" onClick={() => setCard(a.id)}>
+                <span>{seasonLabel(a.season)} · {a.label}</span><b>{name(a.id)}</b>
+              </div>
+            ))}
             <div className="head">Legacy score</div>
             <div><span>So far</span><b>{c.score.toLocaleString('en-GB')}</b></div>
           </div>
         </div>
         <div className="pane dpanel">
-          <div className="ph gbar">Club Legends<small>All competitions</small></div>
+          <div className="ph gbar">Club Legends<small>Click a player for his card</small></div>
           <div className="tblwrap scroll">
             {legends.length === 0 ? (
               <div className="empty">No legends yet.</div>
             ) : (
-              <SortTable rows={legends} columns={careerColumns(data)} initial="score" rowKey={(p) => p.id} />
+              <SortTable rows={legends} columns={careerColumns(data)} initial="score" rowKey={(p) => p.id} onRow={(p) => setCard(p.id)} />
             )}
           </div>
         </div>
       </div>
+      {card !== null && <PlayerCard game={game} data={data} id={card} onClose={() => setCard(null)} />}
     </Overlay>
   );
 }

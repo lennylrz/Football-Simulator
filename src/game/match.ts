@@ -1,6 +1,7 @@
 import { type PlayerLite, type Strength, teamStrength } from './lineup';
 import { AREA, type Position, positionFit } from './positions';
 import { type Rng, clamp, normal, poisson, weightedIndex } from './rng';
+import { applyStyle, type PlayStyle, STYLES } from './styles';
 
 export interface MatchTeam {
   club: number;
@@ -12,6 +13,9 @@ export interface MatchTeam {
   form?: number;
   /** a squad-rotating manager (the user's drafted club): chance each starter is rested */
   rotation?: number;
+  /** a manager's play style, and the player it is built around */
+  style?: PlayStyle;
+  star?: number;
   /** teams outside the 20 clubs have a fixed strength and no players */
   fixed?: Strength;
 }
@@ -134,7 +138,7 @@ function lineUp(team: MatchTeam, rng: Rng): { on: OnPitch[]; strength: Strength 
   // Each position's strength is what was on the pitch there, weighted by minutes: the bench counts.
   const eff = on.map((o) => o.eff * o.share);
   subs.forEach((s, k) => (eff[subFor[k]] += s.eff * s.share));
-  const strength = teamStrength(team.slots, eff);
+  const strength = applyStyle(teamStrength(team.slots, eff), team.style);
   return { on: [...on, ...subs], strength };
 }
 
@@ -154,15 +158,35 @@ export function expectedGoals(home: Strength, away: Strength, homeForm = 0, away
   return [lh, la];
 }
 
-function attribute(on: OnPitch[], rng: Rng, goals: number, side: 0 | 1, out: MatchResult['goals']) {
+/**
+ * Through the Star: moves the star's share of the weights part of the way
+ * towards half, so a star who already scores a lot gains less than one who
+ * doesn't, and nobody runs away with every goal.
+ */
+function toStar(w: number[], on: OnPitch[], star: number | undefined, pull: number): number[] {
+  const i = pull > 0 ? on.findIndex((o) => o.p.id === star) : -1;
+  if (i < 0 || w[i] <= 0) return w;
+  const total = w.reduce((a, b) => a + b, 0);
+  const share = w[i] / total;
+  if (share >= 0.5) return w;
+  const target = share + (0.5 - share) * pull;
+  const out = w.slice();
+  out[i] = (target * (total - w[i])) / (1 - target);
+  return out;
+}
+
+function attribute(on: OnPitch[], rng: Rng, goals: number, side: 0 | 1, out: MatchResult['goals'], team: MatchTeam) {
   if (on.length === 0) return;
+  const style = team.style ? STYLES[team.style] : undefined;
+  const power = ENGINE.starPower * (style?.spread ?? 1);
+  const pull = style?.starPull ?? 0;
   for (let g = 0; g < goals; g++) {
-    const sw = on.map((o) => SCORE_W[o.slot] * Math.exp((o.eff - 75) / ENGINE.starPower) * o.share);
+    const sw = toStar(on.map((o) => SCORE_W[o.slot] * Math.exp((o.eff - 75) / power) * o.share), on, team.star, pull);
     const scorer = on[weightedIndex(rng, sw)];
     scorer.goals++;
     let assist = -1;
     if (rng() < ENGINE.assistShare) {
-      const aw = on.map((o) => (o === scorer ? 0 : ASSIST_W[o.slot] * Math.exp((o.eff - 75) / (ENGINE.starPower + 1)) * o.share));
+      const aw = toStar(on.map((o) => (o === scorer ? 0 : ASSIST_W[o.slot] * Math.exp((o.eff - 75) / (power + 1)) * o.share)), on, team.star, pull / 2);
       const a = on[weightedIndex(rng, aw)];
       a.assists++;
       assist = a.p.id;
@@ -204,8 +228,8 @@ export function simulateMatch(home: MatchTeam, away: MatchTeam, rng: Rng, neutra
   const hg = poisson(rng, lh);
   const ag = poisson(rng, la);
   const result: MatchResult = { home: home.club, away: away.club, hg, ag, goals: [], lines: [] };
-  attribute(h.on, rng, hg, 0, result.goals);
-  attribute(a.on, rng, ag, 1, result.goals);
+  attribute(h.on, rng, hg, 0, result.goals, home);
+  attribute(a.on, rng, ag, 1, result.goals, away);
   for (const [side, club, scored, conceded] of [[h, home.club, hg, ag], [a, away.club, ag, hg]] as const) {
     if (side.on.length === 0) continue;
     const avg = side.on.reduce((s, o) => s + o.eff, 0) / side.on.length;

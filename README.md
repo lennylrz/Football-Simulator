@@ -15,6 +15,14 @@ five, seeing only their rating and age at the start. Then play five seasons.
   busts, from their real next FIFA rating plus noise). Gamble on up to three
   re-drafts: the player in that position leaves and you pick from five new
   candidates.
+- **Play styles.** Tiki-Taka, Through the Star, Park the Bus or Gegenpress,
+  chosen with your club and changeable each summer. A style shifts how many
+  goals your matches have, who scores them, and whose good seasons turn into
+  the biggest rating gains; none is better overall.
+- **The season review.** A few lines on how your season went, your player of
+  the season, the Ballon d'Or podium and the Golden Boot. Click a player (here,
+  in the Squad tab or the Hall of Fame) for his card: rating over the career,
+  season by season, awards.
 - **The goal.** The treble. Every run ends with a legacy score, your best
   and worst pick, and a share card.
 
