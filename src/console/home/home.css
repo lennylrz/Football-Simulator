@@ -39,12 +39,11 @@
 .home.t2005 .era.on { background: linear-gradient(180deg, #ffd27a 0%, #ff9a1f 50%, #e07400 51%, #ffae3b 100%); color: #3a1c00; text-shadow: 0 1px 0 rgba(255,255,255,.5); box-shadow: 0 10px 24px rgba(0,0,0,.5); }
 .home.t2005 .era.on .style, .home.t2005 .era.on .state { color: #5a2c00; }
 
-.home.t2010 .era { border-radius: 0; color: #fff; font-family: "Segoe UI", system-ui, sans-serif; background: #2b3c58; box-shadow: none; backdrop-filter: none; }
-.home.t2010 .era:nth-child(1) { background: #1f6fd1; } .home.t2010 .era:nth-child(2) { background: #0c8f7a; } .home.t2010 .era:nth-child(3) { background: #b8432f; }
-.home.t2010 .era:nth-child(4) { background: #5a3fb0; }
-.home.t2010 .era .years { font-weight: 300; font-size: 32px; }
-.home.t2010 .era .style, .home.t2010 .era .state { color: rgba(255,255,255,.85); }
-.home.t2010 .era.on { outline: 4px solid #fff; outline-offset: -4px; box-shadow: none; }
+.home.t2010 .era { border-radius: 0; color: #1d1d1d; font-family: Arial, sans-serif; backdrop-filter: none;
+  background: linear-gradient(180deg, #f4f4f4 0%, #dcdcdc 60%, #c9c9c9 100%); box-shadow: inset 0 1px 0 #fff, 0 0 0 1px #000; }
+.home.t2010 .era .style { color: #1d4f91; }
+.home.t2010 .era.on { color: #fff; text-shadow: 0 1px 2px #000; background: linear-gradient(180deg, #4d8fd6 0%, #23609f 48%, #164a83 52%, #1d5a9b 100%); animation: focus-pulse 1.8s ease-in-out infinite; }
+.home.t2010 .era.on .style { color: #cfe0ff; }
 
 .home.t2015 .era { border-radius: 0; color: #1d1d1d; font-family: Arial, sans-serif; backdrop-filter: none;
   background: linear-gradient(180deg, #f4f4f4 0%, #dcdcdc 60%, #c9c9c9 100%); box-shadow: inset 0 1px 0 #fff, 0 0 0 1px #000; }

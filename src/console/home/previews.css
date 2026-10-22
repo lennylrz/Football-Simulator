@@ -40,22 +40,6 @@
   background: linear-gradient(180deg, #4a4f58, #1b1e24); border-top: 2px solid #8a93a3; }
 .pv-2005 .bar b { color: #ff9a1f; }
 
-/* 2010-2015: live tiles over a floodlit stadium */
-.pv-2010 { font-family: "Segoe UI", "Titillium Web", system-ui, sans-serif; color: #fff;
-  background: radial-gradient(circle at 12% 8%, rgba(255,255,240,.55) 0 2%, transparent 9%), radial-gradient(circle at 88% 8%, rgba(255,255,240,.55) 0 2%, transparent 9%),
-    linear-gradient(180deg, #0c1424 0%, #17243c 34%, #24433a 52%, #2e6b38 72%, #224f2a 100%); }
-.pv-2010::before { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(4,10,24,.35), rgba(4,10,24,.75)); }
-.pv-2010 > * { position: relative; }
-.pv-2010 .crumb { padding: 40px 60px 0; font-size: 20px; letter-spacing: .14em; text-transform: uppercase; color: #b9c8e0; font-weight: 300; }
-.pv-2010 h3 { margin: 4px 0 0; padding: 0 60px; font-size: 76px; font-weight: 300; }
-.pv-2010 .grid { display: grid; grid-template-columns: 2fr 1fr 1fr; grid-template-rows: 210px 210px; gap: 14px; padding: 26px 60px 0; }
-.pv-2010 .tile { padding: 20px 22px; display: flex; flex-direction: column; justify-content: space-between; background: var(--t, #1f6fd1); }
-.pv-2010 .tile.big { grid-row: span 2; background: linear-gradient(135deg, #0b5fbf, #0a3d84); outline: 4px solid #fff; outline-offset: -4px; }
-.pv-2010 .tile small { font-size: 16px; letter-spacing: .14em; text-transform: uppercase; font-weight: 600; opacity: .85; }
-.pv-2010 .tile b { font-size: 64px; font-weight: 300; line-height: 1; }
-.pv-2010 .tile span { font-size: 19px; opacity: .9; }
-.pv-2010 .tile .row { display: flex; justify-content: space-between; font-size: 24px; background: rgba(255,255,255,.1); padding: 8px 12px; margin-top: 8px; }
-
 /* 2020-now: clean and modern */
 .pv-2020 { background: #fff; color: #111418; font-family: "Helvetica Neue", Arial, system-ui, sans-serif; }
 .pv-2020 .top { display: flex; align-items: center; gap: 14px; padding: 36px 70px; border-bottom: 1px solid #e7e9ec; font-weight: 700; font-size: 24px; }

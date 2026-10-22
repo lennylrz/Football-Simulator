@@ -2,7 +2,9 @@
 import '../draft.css';
 import './previews.css';
 
-const CANDS: [number, string, string, string, number][] = [
+type Cand = [number, string, string, string, number];
+
+const CANDS: Cand[] = [
   [77, 'A. Milik', 'Ajax', 'Poland', 21],
   [80, 'Paco Alcácer', 'Valencia CF', 'Spain', 21],
   [85, 'E. Cavani', 'Paris Saint-Germain', 'Uruguay', 28],
@@ -61,41 +63,26 @@ function P2005() {
   );
 }
 
-function P2010() {
-  return (
-    <div className="pv pv-2010">
-      <div className="crumb">Career · Transfers</div>
-      <h3>The Draft</h3>
-      <div className="grid">
-        <div className="tile big">
-          <small>Choose your striker</small>
-          <div>
-            <div className="row"><span>83 · Higuaín</span><span>Napoli</span></div>
-            <div className="row"><span>80 · Lewandowski</span><span>Dortmund</span></div>
-            <div className="row"><span>72 · Lukaku</span><span>Chelsea</span></div>
-          </div>
-          <span>Pick one of five. The future is up to you.</span>
-        </div>
-        <div className="tile" style={{ '--t': '#0c8f7a' } as React.CSSProperties}><small>Season</small><b>2010/11</b><span>Five to play</span></div>
-        <div className="tile" style={{ '--t': '#b8432f' } as React.CSSProperties}><small>Around the league</small><b>10</b><span>Biggest deals</span></div>
-        <div className="tile" style={{ '--t': '#5a3fb0' } as React.CSSProperties}><small>Your XI</small><b>0 / 11</b><span>Drafted so far</span></div>
-        <div className="tile" style={{ '--t': '#2b3c58' } as React.CSSProperties}><small>Hall of Fame</small><b>0</b><span>The treble awaits</span></div>
-      </div>
-    </div>
-  );
-}
+const CANDS_2010: Cand[] = [
+  [79, 'E. Džeko', 'VfL Wolfsburg', 'Bosnia', 24],
+  [83, 'G. Higuaín', 'Real Madrid', 'Argentina', 22],
+  [88, 'D. Drogba', 'Chelsea', 'Ivory Coast', 32],
+  [74, 'J. Hernández', 'Manchester United', 'Mexico', 22],
+  [77, 'A. Carroll', 'Newcastle United', 'England', 21],
+];
 
-function P2015() {
+/** The console look of the 2010s: glossy bars, grey tiles, white cards. */
+function Console({ season, cands }: { season: string; cands: Cand[] }) {
   return (
     <div className="pv stage dark" style={{ '--s': 1 } as React.CSSProperties}>
       <div className="f-head" style={{ '--club-bar': 'linear-gradient(180deg, #9b4a65 0%, #7a1f3d 48%, #561629 52%, #6b1b36 100%)' } as React.CSSProperties}>
-        Hindsight United<span className="sub">The Draft · Pick 1 of 11</span><span className="right"><small>Season 1 of 5</small>2015/16</span>
+        Hindsight United<span className="sub">The Draft · Pick 1 of 11</span><span className="right"><small>Season 1 of 5</small>{season}</span>
       </div>
       <div className="f-body">
         <div className="win" style={{ height: '100%' }}>
           <div className="win-title">Choose Your Striker</div>
           <div className="cards5">
-            {CANDS.map(([r, n, c, nat, age], i) => (
+            {cands.map(([r, n, c, nat, age], i) => (
               <div key={n} className={`ccard ${i === 2 ? 'on' : ''}`} style={{ opacity: 1, animation: 'none' }}>
                 <div className="top"><span className="r">{r}</span><span className="pos">ST</span></div>
                 <div className="band"><b>{n}</b></div>
@@ -141,6 +128,10 @@ function P2020() {
     </div>
   );
 }
+
+const P2010 = () => <Console season="2010/11" cands={CANDS_2010} />;
+// Until the 2015-2020 look is chosen, it shows the console look too.
+const P2015 = () => <Console season="2015/16" cands={CANDS} />;
 
 export const PREVIEWS = { 2000: P2000, 2005: P2005, 2010: P2010, 2015: P2015, 2020: P2020 } as const;
 
