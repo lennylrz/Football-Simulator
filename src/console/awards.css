@@ -1,7 +1,7 @@
 /* Season story, awards and player cards. */
 .story { display: flex; flex-direction: column; }
 .story-lines { padding: 14px 20px 6px; display: flex; flex-direction: column; gap: 10px; overflow: auto; min-height: 0; flex: 1; }
-.story-lines p { margin: 0; font-size: 19px; line-height: 1.4; color: #e8edf3; }
+.story-lines p { margin: 0; font-size: 17px; line-height: 1.38; color: #e8edf3; }
 .story-lines p:first-child { font-size: 22px; font-weight: 700; color: #fff; }
 
 .award { display: grid; gap: 3px; text-align: left; margin: 8px 14px 14px; padding: 12px 16px; border: 0; cursor: pointer; color: #fff;

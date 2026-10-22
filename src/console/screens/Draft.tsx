@@ -2,11 +2,14 @@ import { useEffect, useRef, useState } from 'react';
 import { isBench, redraftsPerSummer, XI } from '../../game/draft';
 import { seasonLabel } from '../../game/game';
 import { FORMATIONS } from '../../game/positions';
+import { playerBlurb } from '../../game/blurbs';
+import type { GameData } from '../../game/data';
+import type { GameState } from '../../game/game';
 import { useGame } from '../../ui/context';
 import { closeCommand, LeaveCareer, leaveCommands } from '../overlays';
 import { rivalCommand, RivalOverlay } from '../room';
 import { BenchStrip, Pitch, type PlateInfo } from '../Pitch';
-import { browse, clubOf, type Command, Frame, moneyShort, primaryPos } from '../ui';
+import { browse, clubOf, type Command, Frame, moneyShort, primaryPos, useTheme } from '../ui';
 
 const SLOT_NAMES: Record<string, string> = {
   GK: 'Goalkeeper', CB: 'Centre-back', LB: 'Left-back', RB: 'Right-back', LWB: 'Left wing-back', RWB: 'Right wing-back',
@@ -19,6 +22,7 @@ export function Draft() {
   const [leaving, setLeaving] = useState(false);
   const [rival, setRival] = useState(false);
   const hidden = settings.hiddenRatings;
+  const theme = useTheme();
   const club = game.clubs[game.user];
   const d = game.draft!;
   const slots = FORMATIONS[club.formation];
@@ -97,56 +101,154 @@ export function Draft() {
         ? <><span>Time</span><b className={`timer ${left <= 5 ? 'low' : ''}`}>0:{String(left).padStart(2, '0')}</b></>
         : <><span>Choose</span><b>{bench ? 'Substitute' : SLOT_NAMES[slotPos]}</b></>}
     >
-      <div className="draft">
-        <div className="pitchcol">
-          <Pitch formation={club.formation} plates={plates} onPick={opening ? (i) => order.includes(i) && i !== d.slot && switchTo(i) : undefined} />
-          <BenchStrip plates={subs} onPick={opening ? (j) => order.includes(XI + j) && XI + j !== d.slot && switchTo(XI + j) : undefined} />
-        </div>
-        <div className="right win">
-          <div className="win-title">{bench ? 'Choose a Substitute' : `Choose Your ${SLOT_NAMES[slotPos]}`}</div>
-          {settings.pickTimer > 0 && <div className="pick-timer"><i style={{ width: `${(left / settings.pickTimer) * 100}%` }} /></div>}
-          <div className="cards5" key={key} style={{ gridTemplateColumns: `repeat(${d.candidates.length}, 1fr)` }}>
-            {d.candidates.map((id, i) => {
-              const p = game.players[id];
-              const row = data.seasons[game.season][id];
-              return (
-                <button
-                  key={id}
-                  className={`ccard ${i === index ? 'on' : ''} ${hidden ? 'hid' : ''}`}
-                  style={{ '--d': `${i * 110}ms` } as React.CSSProperties}
-                  onMouseEnter={() => setIndex(i)}
-                  onClick={() => pick(i)}
-                  tabIndex={-1}
-                >
-                  <div className="top">
-                    <span className="r">{hidden ? '?' : p.ovr}</span>
-                    <span className="pos">{bench ? primaryPos(p.pos) : slotPos}</span>
-                  </div>
-                  <div className="band"><b>{data.names[id][0]}</b></div>
-                  <div className="meta">
-                    <div className="line"><b>{p.age}</b> years old</div>
-                    <div className="line">{data.names[id][1]}</div>
-                    <div className="line club">{p.club >= 0 ? clubOf(data, p.club).name : row ? data.meta.clubNames[row[6]] : 'Free agent'}</div>
-                    {hidden ? <div className="line">Rating <b>hidden</b></div> : <div className="line">Value <b>{moneyShort(p.value)}</b></div>}
-                  </div>
-                  <span className="tagline">{p.age <= 21 ? 'One for the future?' : p.age >= 31 ? 'Veteran' : !hidden && p.ovr >= 84 ? 'World class' : 'In his prime'}</span>
-                </button>
-              );
-            })}
+      {theme === 'ed' ? (
+        <div className="ed-draft">
+          <div className="pitchcol">
+            <Pitch formation={club.formation} plates={plates} onPick={opening ? (i) => order.includes(i) && i !== d.slot && switchTo(i) : undefined} />
+            <BenchStrip plates={subs} onPick={opening ? (j) => order.includes(XI + j) && XI + j !== d.slot && switchTo(XI + j) : undefined} />
           </div>
-          <div className="note">
-            {bench
-              ? 'Substitutes play any outfield position. They come off the bench, start now and then, and can be moved into your XI each summer.'
+          <EdFeature
+            key={key}
+            ids={d.candidates}
+            index={index}
+            setIndex={setIndex}
+            onPick={pick}
+            hidden={hidden}
+            kicker={`Pick ${pickNo} / ${total}`}
+            slot={bench ? 'Substitute' : SLOT_NAMES[slotPos]}
+            timer={settings.pickTimer > 0 ? left / settings.pickTimer : undefined}
+            note={bench
+              ? 'Substitutes play any outfield position and can move into your XI each summer.'
               : hidden
-              ? 'Ratings are hidden: pick on name, age and club alone. You see his rating once he is yours.'
+              ? 'Ratings hidden: pick on name, age and club alone.'
               : opening
-                ? `Draft in any order: click a position on the pitch or press Q and E. Ratings are ${seasonLabel(0)}; who grows is down to your ball knowledge.`
+                ? `Draft in any order: click the pitch or press Q / E. Ratings are ${seasonLabel(0)}.`
                 : 'Your old player has gone. Pick his replacement.'}
+          />
+        </div>
+      ) : (
+        <div className="draft">
+          <div className="pitchcol">
+            <Pitch formation={club.formation} plates={plates} onPick={opening ? (i) => order.includes(i) && i !== d.slot && switchTo(i) : undefined} />
+            <BenchStrip plates={subs} onPick={opening ? (j) => order.includes(XI + j) && XI + j !== d.slot && switchTo(XI + j) : undefined} />
+          </div>
+          <div className="right win">
+            <div className="win-title">{bench ? 'Choose a Substitute' : `Choose Your ${SLOT_NAMES[slotPos]}`}</div>
+            {settings.pickTimer > 0 && <div className="pick-timer"><i style={{ width: `${(left / settings.pickTimer) * 100}%` }} /></div>}
+            <div className="cards5" key={key} style={{ gridTemplateColumns: `repeat(${d.candidates.length}, 1fr)` }}>
+              {d.candidates.map((id, i) => {
+                const p = game.players[id];
+                const row = data.seasons[game.season][id];
+                return (
+                  <button
+                    key={id}
+                    className={`ccard ${i === index ? 'on' : ''} ${hidden ? 'hid' : ''}`}
+                    style={{ '--d': `${i * 110}ms` } as React.CSSProperties}
+                    onMouseEnter={() => setIndex(i)}
+                    onClick={() => pick(i)}
+                    tabIndex={-1}
+                  >
+                    <div className="top">
+                      <span className="r">{hidden ? '?' : p.ovr}</span>
+                      <span className="pos">{bench ? primaryPos(p.pos) : slotPos}</span>
+                    </div>
+                    <div className="band"><b>{data.names[id][0]}</b></div>
+                    <div className="meta">
+                      <div className="line"><b>{p.age}</b> years old</div>
+                      <div className="line">{data.names[id][1]}</div>
+                      <div className="line club">{p.club >= 0 ? clubOf(data, p.club).name : row ? data.meta.clubNames[row[6]] : 'Free agent'}</div>
+                      {hidden ? <div className="line">Rating <b>hidden</b></div> : <div className="line">Value <b>{moneyShort(p.value)}</b></div>}
+                    </div>
+                    <span className="tagline">{p.age <= 21 ? 'One for the future?' : p.age >= 31 ? 'Veteran' : !hidden && p.ovr >= 84 ? 'World class' : 'In his prime'}</span>
+                  </button>
+                );
+              })}
+            </div>
+            <div className="note">
+              {bench
+                ? 'Substitutes play any outfield position. They come off the bench, start now and then, and can be moved into your XI each summer.'
+                : hidden
+                ? 'Ratings are hidden: pick on name, age and club alone. You see his rating once he is yours.'
+                : opening
+                  ? `Draft in any order: click a position on the pitch or press Q and E. Ratings are ${seasonLabel(0)}; who grows is down to your ball knowledge.`
+                  : 'Your old player has gone. Pick his replacement.'}
+            </div>
           </div>
         </div>
-      </div>
+      )}
       {leaving && <LeaveCareer />}
       {rival && room && <RivalOverlay room={room} data={data} me={game.user} />}
     </Frame>
   );
+}
+
+/** "E. Cavani" -> ["E.", "Cavani"]; "Paco Alcácer" -> ["Paco", "Alcácer"]; "Neymar" -> ["", "Neymar"]. */
+function splitName(name: string): [string, string] {
+  const k = name.indexOf(' ');
+  return k < 0 ? ['', name] : [name.slice(0, k), name.slice(k + 1)];
+}
+
+/** The 2015-2020 draft: the highlighted candidate as a magazine feature, the five as a shortlist. */
+function EdFeature({ ids, index, setIndex, onPick, hidden, kicker, slot, timer, note }: {
+  ids: number[]; index: number; setIndex: (i: number) => void; onPick: (i: number) => void; hidden: boolean;
+  kicker: string; slot: string; timer?: number; note: string;
+}) {
+  const { data, game } = useGame();
+  const id = ids[index];
+  const p = game.players[id];
+  if (!p) return null;
+  const row = data.seasons[game.season][id];
+  const clubName = (pid: number) => {
+    const q = game.players[pid];
+    const r = data.seasons[game.season][pid];
+    return q.club >= 0 ? clubOf(data, q.club).short : r ? data.meta.clubNames[r[6]] : 'Free agent';
+  };
+  const [first, last] = splitName(data.names[id][0]);
+  const blurb = draftBlurb(data, game, id, hidden);
+  const fs = Math.max(46, Math.min(128, 470 / (last.length * 0.56)));
+  return (
+    <div className="ed-feature">
+      <div className="ed-main">
+        {timer !== undefined && <div className="pick-timer"><i style={{ width: `${timer * 100}%` }} /></div>}
+        <div className="ed-kick"><span>{kicker}</span><span>{slot}</span><b>{blurb.kicker}</b></div>
+        <div className="ed-ghost" aria-hidden>{hidden ? '?' : p.ovr}</div>
+        <div className="ed-name" key={id} style={{ '--fs': `${fs}px` } as React.CSSProperties}>{last}</div>
+        <div className="ed-first">{first ? `${first} ${last}` : last} · {clubName(id)} · {data.names[id][1]}</div>
+        <p className="ed-text" key={`t${id}`}>{blurb.text}</p>
+        <div className="ed-figs">
+          <span className="hot"><b>{hidden ? '?' : p.ovr}</b><small>Overall</small></span>
+          <span><b>{p.age}</b><small>Age</small></span>
+          <span><b>{hidden ? '—' : moneyShort(p.value)}</b><small>Value</small></span>
+          <span><b>{primaryPos(row?.[5] ?? p.pos)}</b><small>Plays</small></span>
+        </div>
+      </div>
+      <div className="ed-list">
+        <div className="cap">THE SHORTLIST</div>
+        {ids.map((cid, i) => {
+          const c = game.players[cid];
+          return (
+            <button key={cid} className={`ed-li ${i === index ? 'on' : ''}`} style={{ '--d': `${i * 70}ms` } as React.CSSProperties}
+              onMouseEnter={() => setIndex(i)} onClick={() => onPick(i)} tabIndex={-1}>
+              <span className="n">0{i + 1}</span>
+              <span className="nm">{splitName(data.names[cid][0])[1]}</span>
+              <span className="o">{hidden ? '?' : c.ovr}</span>
+              <small>{clubName(cid)} · {c.age}</small>
+            </button>
+          );
+        })}
+        <div className="ed-note">{note}</div>
+      </div>
+    </div>
+  );
+}
+
+/** The scouting paragraph: hand-written for the era's stars, built from archetypes for everyone else. */
+function draftBlurb(data: GameData, game: GameState, id: number, hidden: boolean): { kicker: string; text: string } {
+  const p = game.players[id];
+  const row = data.seasons[game.season][id];
+  const club = p.club >= 0 ? clubOf(data, p.club).name : row ? data.meta.clubNames[row[6]] : undefined;
+  return playerBlurb({
+    id, era: data.era, name: data.names[id][0], nation: data.names[id][1], pos: p.pos, age: p.age, ovr: p.ovr, pot: p.pot,
+    value: p.value, club, hidden, seed: game.seed,
+  });
 }

@@ -5,7 +5,7 @@ import {
   CL_ROUNDS, type CupResult, type Entrant, FA_ROUNDS, simulateChampionsLeague, simulateFaCup, WINNER,
 } from './cups';
 import { type GameData, NUM_SEASONS, SEASON_YEARS, seasonLabel } from './data';
-import { developPlayer, type Form, formBoost, retireChance } from './development';
+import { developPlayer, type Form, formBoost, goatPotential, retireChance } from './development';
 import { autoLineup, BENCH_SIZE, pickBench, pickXI, type PlayerLite, teamStrength } from './lineup';
 import { generateIncomingBids, generateOffers, type IncomingBid, type Offer } from './market';
 import { type DraftState, openDraftWindow } from './draft';
@@ -367,7 +367,7 @@ function addNewPlayers(state: GameState, data: GameData): void {
     const id = +key;
     if (state.players[id]) continue;
     const r = rows[key];
-    state.players[id] = { id, ovr: r[0], pot: r[1], age: r[2], ref: r[0], pos: r[5], club: EXTERNAL, value: 0 };
+    state.players[id] = { id, ovr: r[0], pot: goatPotential(id, r[1], r[2]), age: r[2], ref: r[0], pos: r[5], club: EXTERNAL, value: 0 };
   }
 }
 

@@ -2,6 +2,7 @@
 // for the best player in the world, from the league's clubs or abroad.
 import type { CupResult } from './cups';
 import type { GameData } from './data';
+import { isGoat } from './development';
 import { EXTERNAL, type GameState } from './game';
 import { AREA, parsePositions } from './positions';
 import { clamp, normal, stream } from './rng';
@@ -30,8 +31,15 @@ export function playerOfSeason(stats: PlayerSeasonStats[]): number | undefined {
  * how they played (rating, goals, assists) and what their club won; for
  * players abroad, how their real rating moved the next year (the best hint
  * of a great season) and the Champions League. Forwards are favoured, as
- * voters do.
+ * voters do. Messi and Ronaldo all but have reserved seats: in their decade
+ * one of them nearly always wins, and the other is rarely far behind.
  */
+/** The two exceptions' head start: huge in the 2010s, fading as they age. */
+function goatBonus(era: number, age: number): number {
+  if (age >= 36) return 1;
+  return era <= 2015 ? 6 : 3;
+}
+
 export function ballonDor(state: GameState, data: GameData, league: SeasonResult, fa: CupResult, cl: CupResult): BallonEntry[] {
   const rng = stream(state.seed, 'ballon', state.season);
   const stats = new Map(league.stats.map((s) => [s.id, s]));
@@ -44,6 +52,8 @@ export function ballonDor(state: GameState, data: GameData, league: SeasonResult
     if (p.retired || p.ovr < 84) continue;
     const pos = AREA[parsePositions(p.pos)[0] ?? 'CM'];
     let score = p.ovr + area[pos] + normal(rng, 0, 0.8);
+    // Between the two of them it is a coin toss, as it was.
+    if (isGoat(p.id)) score += goatBonus(data.era, p.age) - 0.6 * (p.ovr - 94) + normal(rng, 0, 1.8);
     let club: number | string;
     const s = stats.get(p.id);
     if (p.club !== EXTERNAL) {
