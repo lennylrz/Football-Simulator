@@ -2,9 +2,10 @@
 // straight away; a two-player room appends them to the room's log and both
 // browsers replay the log, in the same order, through applyAction.
 import type { ClubInfo } from './clubs';
+import { challengeOf } from './daily';
 import type { GameData } from './data';
 import { chooseSlot, emptySlots, pickCandidate, playDraftSeason, startRedraft, swapSpots } from './draft';
-import { asUser, endSeason, type GameState, newGame, REAL_CLUBS, type Stage } from './game';
+import { asUser, endSeason, type GameState, newGame, REAL_CLUBS, type Stage, uniqueClub } from './game';
 import type { Formation } from './positions';
 import { type PlayStyle, STYLES } from './styles';
 
@@ -39,11 +40,10 @@ export const GUEST = REAL_CLUBS + 1;
 
 /** A two-player career, started when the guest joins. */
 export function newRoomGame(data: GameData, seed: number, rules: GameState['rules'], host: RoomManager, guest: RoomManager): GameState {
-  // Two clubs can't share a name: the guest's gets a suffix.
-  const taken = new Set([...data.meta.gameClubs.slice(0, REAL_CLUBS), host.club.name]);
-  let club = guest.club;
-  for (let n = 2; taken.has(club.name); n++) club = { ...guest.club, name: `${guest.club.name} ${n}` };
-  const state = newGame(data, HOST, seed, 'draft', host.formation, host.club, rules, [], { club, formation: guest.formation });
+  // Two clubs can't share a name: a real club's, or each other's.
+  const own = uniqueClub(data, host.club);
+  const club = uniqueClub(data, guest.club, [own.name]);
+  const state = newGame(data, HOST, seed, 'draft', host.formation, own, rules, [], { club, formation: guest.formation });
   if (host.style && STYLES[host.style]) state.clubs[HOST].style = host.style;
   if (guest.style && STYLES[guest.style]) state.clubs[GUEST].style = guest.style;
   return state;
@@ -68,6 +68,7 @@ export function applyAction(state: GameState, data: GameData, club: number, a: A
         case 'style':
           if (!STYLES[a.style]) return 'No such style.';
           if (state.stage !== 'draft' && state.stage !== 'summer') return 'Not during the season.';
+          if (challengeOf(state.daily?.challenge)?.style) return "Today's challenge keeps the style.";
           state.clubs[state.user].style = a.style;
           return null;
         case 'star': {
@@ -78,6 +79,8 @@ export function applyAction(state: GameState, data: GameData, club: number, a: A
             return null;
           }
           if (typeof a.player !== 'number' || a.player < 0 || !c.xi.includes(a.player)) return 'Only a starter can be the star.';
+          const under = challengeOf(state.daily?.challenge)?.starUnder;
+          if (under !== undefined && state.players[a.player].age >= under) return `The star must be under ${under}.`;
           c.starPick = a.player;
           return null;
         }

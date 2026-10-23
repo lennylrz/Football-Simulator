@@ -1,6 +1,8 @@
 import { useState } from 'react';
-import type { ClubInfo } from '../../game/clubs';
+import { CLUBS, type ClubInfo } from '../../game/clubs';
+import { type Challenge, ruleLine } from '../../game/daily';
 import { seasonLabel } from '../../game/data';
+import { REAL_CLUBS } from '../../game/game';
 import { FORMATION_NAMES, type Formation } from '../../game/positions';
 import { type PlayStyle, STYLE_ORDER, STYLES } from '../../game/styles';
 import { Pitch } from '../Pitch';
@@ -24,23 +26,30 @@ function codeOf(name: string): string {
   return code.toUpperCase().padEnd(3, 'X');
 }
 
-export function NewClub({ onStart, onBack, settings, room, busy }: {
+export function NewClub({ onStart, onBack, settings, room, busy, daily }: {
   onStart: (club: ClubInfo, formation: Formation, seed: number, shared: boolean, style: PlayStyle) => void; onBack: () => void; settings: Settings;
   /** creating a club to host or join a two-player room */
   room?: 'host' | 'guest';
   busy?: boolean;
+  /** today's Daily Challenge: its seed is the day's, and it may set the style */
+  daily?: { day: number; challenge: Challenge };
 }) {
   const [name, setName] = useState('Five Seasons FC');
   const [colour, setColour] = useState(0);
   const [formation, setFormation] = useState<Formation>('4-3-3');
-  const [style, setStyle] = useState<PlayStyle>('tiki');
+  const [chosenStyle, setStyle] = useState<PlayStyle>('tiki');
+  const fixedStyle = daily?.challenge.style;
+  const style = fixedStyle ?? chosenStyle;
   const [seedOpen, setSeedOpen] = useState(false);
   const [seedText, setSeedText] = useState('');
   const [c0, c1, c2] = COLOURS[colour];
   const clubName = name.trim() || 'Five Seasons FC';
   const info: ClubInfo = { name: clubName, short: clubName.length > 16 ? codeOf(clubName) : clubName, code: codeOf(clubName), primary: c1, secondary: c2, rep: 72, budget: 0 };
+  // The era's real clubs keep their names.
+  const taken = CLUBS.slice(0, REAL_CLUBS).find((c) => [c.name, c.short].some((n) => n.toLowerCase() === clubName.toLowerCase()));
 
   const start = () => {
+    if (taken) return;
     const parsed = Number.parseInt(seedText, 10);
     onStart(info, formation, Number.isFinite(parsed) ? parsed >>> 0 : Math.floor(Math.random() * 2 ** 32), Number.isFinite(parsed), style);
   };
@@ -51,17 +60,17 @@ export function NewClub({ onStart, onBack, settings, room, busy }: {
         { keys: ['Escape'], label: 'Clear', onPress: () => { setSeedText(''); setSeedOpen(false); } },
       ]
     : [
-        { keys: ['Enter'], label: busy ? 'Connecting…' : room === 'host' ? 'Create the Room' : room === 'guest' ? 'Join the Room' : 'Start the Draft', primary: true, disabled: busy, onPress: start },
+        { keys: ['Enter'], label: busy ? 'Connecting…' : taken ? 'Name Taken' : room === 'host' ? 'Create the Room' : room === 'guest' ? 'Join the Room' : daily ? 'Start the Challenge' : 'Start the Draft', primary: true, disabled: busy || !!taken, onPress: start },
         { keys: ['Q', 'E'], label: 'Colours', onPress: (k) => setColour((colour + (k === 'Q' ? -1 : 1) + COLOURS.length) % COLOURS.length) },
         browse('Formation', () => setFormation(FORMATION_NAMES[(fIndex + 4) % 5]), () => setFormation(FORMATION_NAMES[(fIndex + 1) % 5]), true),
-        { keys: ['A'], label: `Style · ${STYLES[style].name}`, onPress: () => setStyle(STYLE_ORDER[(STYLE_ORDER.indexOf(style) + 1) % STYLE_ORDER.length]) },
-        { keys: ['S'], label: 'Replay Seed', hidden: !!room, disabled: !!room, onPress: () => setSeedOpen(true) },
+        { keys: ['A'], label: `Style · ${STYLES[style].name}`, disabled: !!fixedStyle, onPress: () => setStyle(STYLE_ORDER[(STYLE_ORDER.indexOf(style) + 1) % STYLE_ORDER.length]) },
+        { keys: ['S'], label: 'Replay Seed', hidden: !!room || !!daily, disabled: !!room || !!daily, onPress: () => setSeedOpen(true) },
         { keys: ['Escape'], label: 'Back', onPress: onBack },
       ];
 
   return (
-    <Frame club={info} title={clubName} sub={room === 'host' ? 'Play a Friend · host a room' : room === 'guest' ? 'Play a Friend · join a room' : 'New Career · the 21st club'} commands={commands}
-      info={room ? <><span>Two managers</span><b>One league</b></> : <><span>Seed</span><b>{seedText || 'Random'}</b></>}>
+    <Frame club={info} title={clubName} sub={room === 'host' ? 'Play a Friend · host a room' : room === 'guest' ? 'Play a Friend · join a room' : daily ? `Daily #${daily.day} · ${daily.challenge.name}` : 'New Career · the 21st club'} commands={commands}
+      info={room ? <><span>Two managers</span><b>One league</b></> : daily ? <><span>Daily</span><b>#{daily.day}</b></> : <><span>Seed</span><b>{seedText || 'Random'}</b></>}>
       <div className="draft newclub">
         <Pitch formation={formation} plates={Array.from({ length: 11 }, () => ({ label: '', state: 'empty' as const }))} />
         <div className="win">
@@ -70,13 +79,13 @@ export function NewClub({ onStart, onBack, settings, room, busy }: {
             <div className="col" style={{ gap: 8 }}>
               <span className="cap">Club name</span>
               <input
-                className="name"
+                className={`name ${taken ? 'taken' : ''}`}
                 value={name}
                 maxLength={24}
                 onChange={(e) => setName(e.target.value)}
                 onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); if (!busy) start(); } }}
               />
-              <span className="kv"><span>Colours · {c0}</span>
+              <span className="kv">{taken ? <span className="bad">{taken.short} are in this league already</span> : <span>Colours · {c0}</span>}
                 <span className="swatches">
                   {COLOURS.map(([n, a, b], i) => (
                     <button key={n} className={`sw ${i === colour ? 'on' : ''}`} style={{ background: `linear-gradient(90deg, ${a} 60%, ${b} 60%)` }} onClick={() => setColour(i)} tabIndex={-1} aria-label={n} />
@@ -102,12 +111,21 @@ export function NewClub({ onStart, onBack, settings, room, busy }: {
                 <div><span>Play style</span><b className="tabs" style={{ display: 'flex', gap: 4 }}>
                   <KeyCap k="A" />
                   {STYLE_ORDER.map((k) => (
-                    <button key={k} className={`t ${k === style ? 'on' : ''}`} onClick={() => setStyle(k)} tabIndex={-1} style={{ height: 30, padding: '0 12px', fontSize: 14 }}>{STYLES[k].name}</button>
+                    <button key={k} className={`t ${k === style ? 'on' : ''}`} onClick={() => setStyle(k)} disabled={!!fixedStyle && k !== fixedStyle} tabIndex={-1} style={{ height: 30, padding: '0 12px', fontSize: 14 }}>{STYLES[k].name}</button>
                   ))}
                 </b></div>
-                <div><span /><small style={{ textAlign: 'right', opacity: 0.8 }}>{STYLES[style].desc} You can change it every summer.</small></div>
-                <div className="head">The ultimate goal</div>
-                <div><span>The Treble</span><b>League, FA Cup and Champions League</b></div>
+                <div><span /><small style={{ textAlign: 'right', opacity: 0.8 }}>{STYLES[style].desc} {fixedStyle ? "Today's challenge keeps it all career." : 'You can change it every summer.'}</small></div>
+                {daily ? (
+                  <>
+                    <div className="head">Today's challenge</div>
+                    <div><span>{daily.challenge.name}</span><b>{ruleLine(daily.challenge)}</b></div>
+                  </>
+                ) : (
+                  <>
+                    <div className="head">The ultimate goal</div>
+                    <div><span>The Treble</span><b>League, FA Cup and Champions League</b></div>
+                  </>
+                )}
               </div>
             </div>
           </div>

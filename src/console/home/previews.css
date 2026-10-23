@@ -36,13 +36,14 @@
 .pv-2005 .orb { position: absolute; right: 120px; top: 150px; width: 380px; height: 380px; border-radius: 50%; z-index: 1;
   background: radial-gradient(circle at 35% 30%, #ffffff 0%, #bfe0ff 18%, #3c8ff0 55%, #0b3c8f 100%); box-shadow: 0 30px 60px rgba(0,0,0,.5), inset 0 -20px 40px rgba(0,0,0,.35); }
 .pv-2005 .orb::after { content: "XI"; position: absolute; inset: 0; display: grid; place-items: center; font: 900 italic 150px/1 "Trebuchet MS", sans-serif; color: rgba(255,255,255,.9); text-shadow: 0 6px 20px rgba(0,0,0,.4); }
-.pv-2005 .bar { position: absolute; left: 0; right: 0; bottom: 0; height: 64px; display: flex; align-items: center; gap: 40px; padding: 0 80px; z-index: 1; font-size: 22px;
-  background: linear-gradient(180deg, #4a4f58, #1b1e24); border-top: 2px solid #8a93a3; }
+.pv-2005 .bar { position: absolute; left: calc(-1 * var(--bx, 0px)); right: calc(-1 * var(--bx, 0px)); bottom: calc(-1 * var(--by, 0px)); height: calc(64px + var(--by, 0px)); display: flex; align-items: center; gap: 40px;
+  padding: 0 calc(80px + var(--bx, 0px)) var(--by, 0px); z-index: 1; font-size: 22px;
+  background: linear-gradient(180deg, #4a4f58, #1b1e24) top / 100% 64px no-repeat, #1b1e24; border-top: 2px solid #8a93a3; }
 .pv-2005 .bar b { color: #ff9a1f; }
 
 /* 2020-now: clean and modern */
 .pv-2020 { background: #fff; color: #111418; font-family: "Helvetica Neue", Arial, system-ui, sans-serif; }
-.pv-2020 .top { display: flex; align-items: center; gap: 14px; padding: 36px 70px; border-bottom: 1px solid #e7e9ec; font-weight: 700; font-size: 24px; }
+.pv-2020 .top { display: flex; align-items: center; gap: 14px; margin: 0 calc(-1 * var(--bx, 0px)); padding: 36px calc(70px + var(--bx, 0px)); border-bottom: 1px solid #e7e9ec; font-weight: 700; font-size: 24px; }
 .pv-2020 .top i { width: 16px; height: 16px; border-radius: 50%; background: #034694; box-shadow: 0 0 0 4px #e8eef7; }
 .pv-2020 .top span { margin-left: auto; font: 500 20px ui-monospace, Menlo, monospace; color: #6b717b; }
 .pv-2020 .body { padding: 50px 70px; }

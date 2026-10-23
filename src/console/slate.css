@@ -41,7 +41,7 @@
 .stage.sl .f-body.full { top: 18px; }
 
 /* Button hints along the bottom, controller style. */
-.stage.sl .cmdbar { left: 44px; right: 44px; height: 50px; background: transparent; box-shadow: none; color: var(--soft); }
+.stage.sl .cmdbar { left: 44px; right: 44px; bottom: 0; height: 50px; padding: 0; background: transparent; box-shadow: none; color: var(--soft); }
 .stage.sl .cmdbar .hints { padding-left: 0; gap: 6px; }
 .stage.sl .hint { font: 500 16px var(--body); padding: 0 12px 0 0; gap: 8px; border-radius: 3px; }
 .stage.sl .hint + .hint::before { display: none; }
@@ -49,7 +49,7 @@
 .stage.sl .hint:hover:not(:disabled) .key { box-shadow: inset 0 0 0 1px var(--cream); }
 .stage.sl .key { height: 24px; min-width: 24px; padding: 0 7px; border-radius: 12px; background: rgba(255,255,255,.12); box-shadow: none; color: var(--text); font: 700 12px var(--cond); letter-spacing: .04em; text-shadow: none; }
 .stage.sl .key.primary { background: var(--green); color: var(--ink); }
-.stage.sl .cmdbar .info { padding: 0; background: none; clip-path: none; color: var(--text); font: 700 20px var(--cond); letter-spacing: .04em; text-shadow: none; }
+.stage.sl .cmdbar .info { margin: 0 0 0 auto; padding: 0; background: none; clip-path: none; color: var(--text); font: 700 20px var(--cond); letter-spacing: .04em; text-shadow: none; }
 .stage.sl .cmdbar .info span { font: 600 14px var(--cond); color: var(--mute); letter-spacing: .08em; }
 .stage.sl .cmdbar .info b.timer.low { color: var(--red); }
 
@@ -135,6 +135,12 @@
 .stage.sl .dplate.star b { background: var(--amber); color: var(--ink); }
 .stage.sl .dplate.star span::before { content: "★ "; color: var(--amber); }
 .stage.sl .dplate.done em::after { color: var(--amber); }
+.stage.sl .dplate.glow b { animation-name: sl-plate-glow; }
+@keyframes sl-plate-glow {
+  0% { box-shadow: 0 0 0 0 rgba(232,160,76,0); }
+  20% { transform: scale(1.18); background: var(--amber); color: var(--ink); box-shadow: 0 0 0 2px var(--cream), 0 0 22px 6px rgba(232,160,76,.6); }
+  100% { transform: none; box-shadow: 0 0 0 0 rgba(232,160,76,0); }
+}
 .stage.sl .dplate .delta { border-radius: 2px; font: 700 12px var(--cond); box-shadow: 0 2px 4px rgba(0,0,0,.35); }
 .stage.sl .dplate .delta.up { background: var(--green); color: var(--ink); }
 .stage.sl .dplate .delta.down { background: var(--red); color: var(--ink); }
@@ -167,6 +173,7 @@
 .sl-row.on { background: var(--cream); color: var(--ink); }
 .sl-row.on .nm small, .sl-row.on .age { color: #5b5f66; }
 .sl-note { margin-top: auto; padding: 12px 14px; font: 500 14px/1.45 var(--body); color: var(--mute); border-top: 1px solid var(--line); }
+.sl-note .rule { font-weight: 600; color: var(--amber); }
 .r-a { color: var(--green); } .r-b { color: var(--lime); } .r-c { color: var(--yellow); } .r-d { color: #e8a04c; }
 .sl-row.on .r-a { color: #1f7a3c; } .sl-row.on .r-b { color: #4f7a12; } .sl-row.on .r-c { color: #8a6a00; } .sl-row.on .r-d { color: #9a5a10; }
 
@@ -196,12 +203,16 @@
 /* Summer and new club. */
 .stage.sl .summer { gap: 14px; grid-template-columns: 380px 1fr; }
 .stage.sl .summer .tbl tr.gap td { color: var(--amber); }
+.stage.sl .summer .tbl td { padding: 3px 9px; }
+.stage.sl .summer .tbl thead th { padding: 5px 9px; }
+.stage.sl .summer .office { height: 104px; }
 .stage.sl .summer .tbl tr.from td { box-shadow: inset 0 0 0 9999px rgba(232,160,76,.16); }
 .stage.sl .summer .tbl .offpos { color: var(--amber); font: 600 13px var(--cond); }
 .stage.sl .draft { gap: 14px; grid-template-columns: 380px 1fr; }
 .stage.sl .newclub .sw { border: 0; border-radius: 2px; box-shadow: 0 0 0 1px rgba(0,0,0,.2); }
 .stage.sl .newclub .sw.on { outline: 2px solid var(--cream); outline-offset: 3px; }
 .stage.sl input.name { background: rgba(0,0,0,.18); color: var(--text); border: 0; border-bottom: 2px solid var(--amber); font: 700 30px var(--cond); letter-spacing: .02em; padding: 0 10px; }
+.stage.sl input.name.taken { border-bottom-color: var(--red); }
 
 /* Settings. */
 .stage.sl .setup { gap: 14px; }
@@ -266,6 +277,7 @@
 /* Season review. */
 .stage.sl .review .office { height: 112px !important; }
 .stage.sl .review .office.treble { background: linear-gradient(90deg, rgba(232,196,92,.3), var(--panel)); }
+.stage.sl .win-title.won { color: var(--ink); background: var(--yellow); border-bottom-color: transparent; }
 .stage.sl .review .office .gold, .stage.sl .review .office.treble .gold { color: var(--yellow); }
 .stage.sl .review .tabsbar { background: transparent; box-shadow: none; padding: 0; margin-top: 10px; }
 .stage.sl .review .content { gap: 10px; padding-top: 10px; }
@@ -337,5 +349,7 @@
 .stage.sl .sq-notes { border-top: 1px solid var(--line); background: rgba(30,34,42,.5); }
 .stage.sl .sq-notes .cap { font: 600 13px var(--cond); letter-spacing: .1em; color: var(--amber); }
 .stage.sl .sq-notes p { font: 400 15px/1.4 var(--body); color: var(--soft); }
-.stage.sl .sq-notes p::before { background: var(--amber); border-radius: 50%; }
+.stage.sl .sq-notes .cap::before { background: var(--amber); border-radius: 50%; }
+.stage.sl .sq-notes .dots i { background: rgba(255,255,255,.18); }
+.stage.sl .sq-notes .dots i.on { background: var(--amber); }
 .stage.sl .startag { background: var(--amber); color: var(--ink); border-radius: 2px; font-family: var(--cond); }

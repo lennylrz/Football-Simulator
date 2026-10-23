@@ -1,154 +1,212 @@
 # Handoff: Five Seasons
 
-Read this first in a new session. Repo: `lennylrz/Football-Simulator`. Work up
-to the welcome screen is on `claude/continue-0sh3ao`; the fairness and controls
-pass below is on `claude/wonderful-keller-ysc4qy` (no PR yet).
+Read this first in a new session. Repo: `lennylrz/Football-Simulator`.
+PR #9 is merged to `main` and live at
+https://five-seasons-football.vercel.app (Vercel project `five-seasons`,
+team "PingPong Ltd"; every merge to `main` deploys to production). The
+owner tests on the live site, so changes reach them only once merged.
+Always ask before merging. The five tasks the owner set after PR #9 are done
+on branch `claude/wizardly-meitner-j6p00i` (see "Done since PR #9").
 
 ## What the game is
 
-A browser football draft game, laptop-first. The user creates their own
-club (the 21st club of the 2015/16 English top flight), drafts an XI one
-position at a time (pick 1 of 5 real players, 2015 rating and age shown,
-potential hidden), then plays five seasons 2015/16 to 2019/20. Each
-summer reveals rating changes (glow-ups and busts, from real next-season
-FIFA ratings plus noise) and allows up to 3 re-draft gambles. Seasons play
-out matchday by matchday (pause, fast, skip). League, FA Cup and Champions
-League; the treble is the headline goal and deliberately rare. Ends with a
-legacy score, best/worst pick, Hall of Fame and a share card.
+A browser football draft game, laptop-first, played on a train in ~10
+minutes. Pick an era, create a club (the 21st club of that era's English
+top flight), draft an XI plus bench one position at a time (pick 1 of 5
+real players, era rating and age shown, potential hidden), then play five
+seasons. Each summer reveals rating changes (real next-season FIFA ratings
+plus form and noise) and allows re-draft gambles. League, FA Cup and
+Champions League; the treble is the headline goal and deliberately rare.
+Ends with a legacy score, Hall of Fame and a share card. Two-player rooms
+("Play a Friend") share one league.
 
-## Screen flow today
+## Screen flow
 
-`Welcome` (site menu) → `Home` (era picker) → `GameSetup` (game settings, opens on era click; also a main menu tab) → `MainMenu` (2015 era, shattered-ball menu) →
-`NewClub` → `Draft` → `Summer` → season viewer + `Results` → `Summer` …
-→ `Summary`. Routing is in `src/App.tsx` (`mode` state + `game.stage`).
+`Welcome` (Singleplayer, Multiplayer, How to Play, Settings, ...) → `Home`
+(era picker; hovering an era cross-fades the screen into its look) →
+`GameSetup` (settings; Enter = New Career) → `NewClub` (name, colours,
+formation, play style) → `Draft` (opens on an empty pitch: click where to
+start) → `Summer` (squad, re-drafts, swaps, star pick, dressing-room notes)
+→ season viewer + `Results` (season review: story, table, matches, cups,
+awards) → `Summer` ... → `Summary` (career summary + share card). The old
+second main menu (`MainMenu`) was removed. Routing: `src/App.tsx` (`mode`
+state + `game.stage`). Multiplayer: `Lobby` → `NewClub` (room) →
+`RoomSession`.
 
-The welcome screen (`src/console/home/Welcome.tsx`, `welcome.css`): the
-era home's paper/ink/blue look, a menu on the right (Singleplayer,
-Multiplayer "coming soon", How to Play, Settings, About & Credits, Legal)
-and the selected item's content on the left. Up/Down + Enter or mouse;
-Settings takes focus for its rows (Esc back). Settings live in
-`src/settings.ts` (own localStorage key, `OPTIONS` drives the settings
-screen): ratings shown/hidden in the draft, pick timer (off by default;
-auto-picks the highlighted card), choices per pick (3-5), re-drafts per
-summer (default 2), match speed (normal/fast/instant), reduce motion
-(`.calm` on `<html>`). Re-drafts and choices are career rules copied into
-`GameState.rules` (new careers, and synced into the running one on change);
-the rest is read live from `GameContext.settings`. The welcome screen's
-Settings has reduce motion. Esc on the era home
-with nothing hovered, or its "Main menu" link, goes back to the welcome.
+## Eras and looks
 
-The era home (`src/console/home/`): clean paper/ink/blue look by default;
-hovering an era panel (2000-2005, 2005-2010, 2010-2015, 2015-2020,
-2020-now) cross-fades the whole screen into that era's style and restyles
-the panels. Only 2015-2020 is playable.
+- Data for 2010, 2015 and 2020 (`public/data/<era>/`, see `docs/DATA.md`).
+  2000 and 2005 show "Coming later".
+- Theme per era via `ThemeContext` in `src/console/ui.tsx`, set in
+  `App.tsx` (`era === 2015 ? 'sl' : ''`) and applied as a class on `.stage`.
+  - 2010-2015: the 2012-15 console look (`src/index.css` + screen sheets:
+    glossy bars, grey tiles, navy windows, white cards).
+  - 2015-2020: "Slate", the FIFA 17-19 career hub (`src/console/slate.css`,
+    every rule scoped under `.stage.sl`): slate-blue screen, dark glass
+    panels, Barlow / Barlow Condensed, cream selection bar, amber accent,
+    ratings coloured by tier, grass pitch. The 2015 draft has its own
+    layout (`SlHub` in `screens/Draft.tsx`: shortlist + overview with the
+    scouting blurb). No kits, crests or club colours on players (only
+    English clubs have colour data; the owner rejected grey placeholders).
+  - 2020-2025: plays with the console look today; its own modern design is
+    not done (see tasks).
+- Era previews on the era picker: `src/console/home/Previews.tsx`.
+- The design canvas with all explored looks (A-D, E, round 3 F-I):
+  https://claude.ai/artifact/T2d4jABgw8U8463EFhPED8 (the owner picked G,
+  "Slate", after rejecting the dark "Night" and "Editorial" looks as too
+  dark and not football-like).
 
 ## Code map
 
-- `src/game/`: all game logic, framework-free and unit-tested.
-  `draft.ts` (draft mode), `game.ts` (state, season flow, 21st club via
-  `registerUserClub`), `match.ts`/`season.ts` (engine), `cups.ts`, `ai.ts`
-  (AI transfers), `development.ts`, `career.ts` (stats, legacy score).
-  The older management mode (offers/bids/squad of 26) still lives in
-  `market.ts`/`game.ts` and its tests but is not in the UI.
-- `src/console/`: the UI. Everything renders on a fixed 1280x720 stage
-  scaled to the window (`Stage` in `ui.tsx`). `Frame` = club-colour header
-  + body + command bar. `CommandBar`/`useCommands` = keyboard keycaps that
-  are also clickable; every screen declares its commands there.
-- `src/index.css`: the 2015 console look (glossy split bars `.gbar`, grey
-  tiles `.ltile`, navy windows `.win`, tables `.tbl`, keycaps `.key`).
-- `public/data/*.json`: processed player data (FIFA 16-20 from the Kaggle
-  "FIFA 23 complete player dataset"); see `docs/DATA.md`.
+- `src/game/` (framework-free, unit-tested):
+  - `game.ts` state, season flow, `simulate`, `advancePlayers`, `starOf`.
+  - `draft.ts` draft mode (offers, re-drafts, swaps). `actions.ts` the
+    action log both single player and rooms go through (`applyAction`).
+  - `match.ts` / `season.ts` engine (`ENGINE` constants). `cups.ts`.
+  - `development.ts` growth: `formBoost` (judged against team-mates and
+    the player's own area via `areaPar`), `topDamp` above 90, exceptions:
+    Messi 158023 and Ronaldo 20801 (`GOATS`, ceiling 98, Ballon d'Or bonus
+    in `awards.ts`), Neymar 190871 (ceiling 96). `BUILT_ON_ROOM`: a bus
+    back line or a defender star gets more room at the top.
+  - `styles.ts` play styles (Tiki-Taka, Through the Star, Park the Bus,
+    Gegenpress); `STAR_ROLES`: the star (picked by the manager, action
+    `{ t: 'star', player }`) scores if a forward, creates if a midfielder,
+    leads the defence if a defender/keeper.
+  - `awards.ts` (Player of the Season, Ballon d'Or), `story.ts` +
+    `storyText.ts` (end-of-season story, ~850 templates, no repeats within
+    a career), `squadStories.ts` (summer dressing-room notes), `blurbs.ts`
+    + `blurbData.ts` (scouting blurbs: hand-written for ~37 stars per era,
+    archetypes for the rest), `career.ts` (legacy score, Hall of Fame).
+- `src/net/` Supabase rooms (project `ehmghfdaagfgzhglrifm`, anon key in
+  `room.ts`; tables are append-only action logs, RLS allows select and
+  insert). The sandbox blocks supabase.co, so tests stub the REST calls.
+- `src/console/` UI on a fixed 1280x720 `Stage` scaled to the window.
+  `Frame` = header + body + `CommandBar` (keycaps that are also
+  clickable). Overlays: `overlays.tsx` (Hall of Fame, transfers, season
+  report), `awards.tsx` (story, awards, `PlayerCard` with rating graph),
+  `room.tsx` (rival lineup, live head-to-head).
+- `src/ui/shareCard.ts` share image (console and Slate variants).
 
 ## Commands
 
 ```sh
 npm install
-npm run dev          # local dev server
-npx vitest run       # 19 tests incl. balancing (~1 min)
-npx tsc -b && npx eslint .
+npm run dev                 # vite dev server
+npx tsc -b && npx eslint src
+npx vitest run              # 14 files, ~110 tests incl. balance and every daily (~3 min)
 npm run build
-node scripts/build_single.mjs <out.html>   # one-file build with data inlined
 ```
 
-The owner tests via a private claude.ai artifact built with
-`build_single.mjs`: https://claude.ai/artifact/JW7U7s7sS78tim68rTKBJj
-(republish the single file to that same URL so the link stays the same).
-Browser checks: Playwright with Chromium at
-`/opt/pw-browsers/chromium-1194/chrome-linux/chrome`, viewport 1440x900.
+Browser checks: Playwright (global install, `require('/opt/node22/lib/node_modules/playwright')`),
+Chromium preinstalled; drive the game with the keyboard (Enter through the
+welcome, era picker and settings) and screenshot each screen.
 
-## Owner's preferences (keep these)
+## Balance (measured, keep it)
 
-- Laptop-first; keyboard-driven with the command bar.
-- No crests, kits, league or publisher branding, no fake badges, no player
-  silhouettes, no emoji in the UI. Real player and club names are fine.
-- Calm screens: not overwhelming, few decisions at a time, rewarding
-  reveals. Virality and "ball knowledge" matter.
-- Era styles must look intentionally vintage, never cheap. 2015 = FIFA 13
-  era console menus (see `docs/design-2015-console.html`).
-- Long-term plan in `docs/ROADMAP.md`: more eras/start years, daily draft,
-  leaderboard, Ball Knowledge mode (ratings hidden), friend challenges.
-- Vercel is not connected yet; the owner will import the repo at
-  vercel.com/new (team "PingPong Ltd") or say "you do it".
+The owner says the difficulty is perfect: keep the drafted club's title
+rate ~11%, Champions League win rate ~1%, treble ~0.1% per season. Any
+engine change must be re-measured over many careers (a scripted manager
+drafting the best-rated candidate). Last measured: 100+ point seasons
+19%, 40+ goal top scorer 6%, ~1 player rated 92+ at career end outside
+the exceptions; best Park the Bus defender ~91-92, up to 94-96.
 
-## Fairness and controls pass (owner feedback: "far too random")
+## Owner's preferences
 
-- No saved careers. No Continue: Esc in a career asks "Leave Career?" and
-  leaving ends it (`quit` in `App.tsx`). `src/storage.ts` now only remembers
-  the players offered in the last 3 careers; `drawCandidates` avoids them
-  when others of the same kind exist (`GameState.recent`). A typed-in seed
-  ignores that list so shared seeds replay exactly.
-- Match engine (`ENGINE` in `match.ts`): season form sd 1.5 -> 0.6, match
-  form sd 2 -> 1.5, attack/midfield weights up a little. Strength now
-  predicts the table: the strongest XI on paper wins about half the time,
-  2nd about a third, 3rd and below rarely.
-- Drafted players keep the position they were drafted for (their listed
-  positions change between FIFA editions, which used to put them out of
-  position silently). Candidates are offered only in their main position
-  (`fits` in `draft.ts`, with ST/CF, LB/LWB, LW/LM-style equivalents).
-- Development (`development.ts`): real next-season rating, plus a form boost
-  from last season (`formBoost`: average match rating against team-mates and
-  half against the league, scaled by appearances, bigger for 23 and under,
-  smaller for 31+ and 88+), deviation persists at 75%, noise sd 1 (5%
-  chance of sd 2.5), and the game rating stays within -6/+7 of the real one
-  (cap 96 unless the real rating is higher).
-- Opening draft in any order: `chooseSlot`; offers per slot are kept in
-  `DraftState.offers`, so switching never re-rolls. Each position can be
-  re-drafted once a summer (`DraftState.redrafted`).
-- UI: clicking a button never focuses it (fixes Enter/Space double actions);
-  draft cards no longer move under the pointer; Enter/Esc work while typing
-  the club name. Summer screen shows "On paper" rank (`paperTable` in
-  `game.ts`), last season's Form per player and a Re-draft button per row.
-  Season review shows the predicted finish. `SortTable` (click headers to
-  sort) is used for squad stats, Club Legends and the Hall of Fame; Career
-  Summary seasons open a Season Report.
+- Laptop-first; keyboard and mouse both must work everywhere.
+- Minimal text: no explanatory notes on screens; calm, few decisions at a
+  time, rewarding reveals. Nothing dismissive about players ("no growth
+  left", "finished", "past it" are banned in generated text).
+- Era looks must feel like football games of that time and never cheap or
+  "AI-made"; not too dark, not childish or neon.
+- No kits or club colours on players unless every club has real colours.
+- Surgical balance changes only; never cap anything, keep everything possible.
 
-## Second pass (bench, viewer, cups, development by age)
+## Done since PR #9
 
-- Bench: after the XI the user drafts 3 substitutes (setting: 3 or 5,
-  `rules.bench`). Spots 0-10 are the XI, 11+ the bench (`XI`, `isBench`,
-  `inSpot`, `swapSpots` in `draft.ts`). Substitutes come from any outfield
-  position, mostly prospects. Each player keeps the position he was drafted
-  for (`DraftState.home`, used by `engineLite` in `game.ts`); moved
-  elsewhere he plays out of position. Summer: Swap (S, or the row button)
-  moves players between bench and XI for free; bench spots can be re-drafted.
-- Engine: `ENGINE.rotation` (12%) rests a starter when the bench has someone
-  for his position within `rotationGap` (12) points; a slot's strength is now
-  the minutes-weighted rating of everyone who played there, so the bench
-  counts.
-- Development by age (`formBoost`): 20 and under x2 (cap +9), 21-23 x1.5
-  (cap +6), plus 30% of the gap to potential when playing well; 27-30 move
-  at most about 1 (half the real change, small noise); 31+ decline more
-  than they improve. Under-24s may drift up to +12 above their real rating.
-- Season viewer: no row animation, the user's match on top with WIN / DRAW /
-  LOSS colours, cup days are their own steps (user's ties, semis, finals),
-  Left/Right steps through days.
-- Season review: separate Champions League and FA Cup tabs. CL: the user's
-  group table and knockout ties, plus a bracket (`Bracket.tsx`, ties from
-  `tiesOf` in `cups.ts`). FA Cup: the user's run and a bracket from the
-  quarter-finals. Knockout pairings no longer reshuffle between rounds, so
-  the bracket connects.
+1. **No black bars.** `Stage` (`ui.tsx`) makes `.stage` the window's size
+   and centres the 1280x720 content in `.stage-in`; `--bx`/`--by` are the
+   extra room each side and `inset: var(--bleed)` takes a full-screen layer
+   to the window's edges (overlays, the season reveal, the console command
+   bar, the welcome grid, the era previews, the season moments).
+   `OnStage` portals overlays straight onto the stage so they cover the
+   header too. `StageSize` gives the stage's size in stage pixels.
+2. **2020-2025 is "Coming later"** (`ERAS` in `Home.tsx`, `live: false`).
+   Room hosts pick their era on the same screen.
+3. **Visual sweep**, both themes, with a Playwright script that plays whole
+   careers and flags clipped or truncated text. Fixed: the review's trophy
+   row (the window title now says it: "League Champions", "The Double",
+   gold band), the summer table (all eleven fit; dressing-room notes show
+   one at a time), delta badges at the touchlines, cup-run columns, the
+   round of 16 bracket in Slate, Hall of Fame width, season report labels,
+   the room's summer command bar. A user club can no longer take a real
+   club's name (`uniqueClub` in `game.ts`; it confused name-based lookups).
+4. **Winning feels like winning** (`console/moments.tsx`, `moments.css`,
+   `console/FinalDay.tsx`): a flash, confetti and a stamp in the viewer when
+   the title is clinched or a final won; the season's moments after the
+   last matchday (each trophy, the double/treble, a Ballon d'Or place, the
+   player of the season), which move on by themselves; the last matchday
+   played live when the title is within three points; summer ratings tick
+   up from last season's (`Tick` in `Pitch.tsx`) and big glow-ups light
+   their plate. Console: gold gloss, rays, ticker tape in club colours.
+   Slate: amber sweep, settling caps, gold flakes. Reduce Motion keeps the
+   moments and drops the movement.
+5. **Daily Challenge** (`game/daily.ts`, `net/daily.ts`, welcome menu,
+   summary). The 20 challenges below are all in, in that order by day
+   number (day 1 = 23 Oct 2026, local midnight). Candidate filters go
+   through `allowedFor`/`poolFor` in `draft.ts` (widen: older and
+   lower-rated, then the same line of the team, then bend the rule for that
+   pick). Real Madrid, the underdog and the rival are done as squad
+   filters (draft only from that squad), not as managing a real club. One
+   attempt per browser (`storage.ts`), leaderboard in Supabase
+   `daily_scores` (insert + select RLS, unique per day and browser id).
+   `daily.test.ts` drafts every challenge, by best rating and by first
+   candidate, and plays it through.
 
-## Next task
+## Next tasks
 
-None set. The welcome screen is done. Candidates from `docs/ROADMAP.md`:
-daily draft, Ball Knowledge mode, Vercel deploy, real multiplayer.
+None set by the owner yet. Open points worth raising:
+
+- The leaderboard trusts the browser, like the rooms: anyone with the
+  public key could post a made-up score. Fine for friends; a server-side
+  replay of the seed and picks would make it honest.
+- Club names on the board are free text (40 characters max), unfiltered.
+- "Galácticos" and "The rival" draft from the real squad rather than
+  managing the real club with its squad (the engine's real-club mode would
+  need a UI for it).
+
+### The 20 daily challenges (built)
+
+As they read in the game (`CHALLENGES` in `src/game/daily.ts`), with their era:
+
+1. **Only Portugal** (2015-2020): Every player is Portuguese.
+2. **Kids only** (2015-2020): Every player is 21 or under at the start.
+3. **Old guard** (2010-2015): Every player is 30 or over at the start.
+4. **Galácticos in England** (2015-2020): Real Madrid's squad only, in the Premier League.
+5. **The underdog** (2010-2015): Draft from the five weakest squads. No re-drafts. Target: top half every season.
+6. **Only Brazil** (2010-2015): Every player is Brazilian.
+7. **Bargain bin** (2015-2020): Every player is valued under €5m.
+8. **Two choices** (2010-2015): Two candidates per pick, not five.
+9. **Blind draft** (2015-2020): Ratings hidden in every draft.
+10. **Bundesliga XI** (2015-2020): Every player plays in Germany.
+11. **Park the Bus or bust** (2010-2015): Park the Bus all career. Target: win the league.
+12. **One club men** (2015-2020): Defence from Juventus, midfield from Bayern, attack from PSG.
+13. **Only Spain** (2010-2015): Every player is Spanish.
+14. **No re-drafts** (2015-2020): The XI you draft is the XI you keep.
+15. **Star system** (2010-2015): Through the Star, with a star under 23.
+16. **Home-grown** (2015-2020): Every player is English.
+17. **Serie A XI** (2010-2015): Every player plays in Italy.
+18. **Rated 75-80** (2015-2020): Every player is rated 75 to 80 when offered.
+19. **The rival** (2010-2015): Arsenal's squad only. Target: above Chelsea every season.
+20. **Mixed bag** (2015-2020): Every player from a different country.
+
+### Later ideas (agreed, not started)
+
+- "The one that got away": after each summer and at the end, the best player
+  you were offered but passed on (`DraftState.offers` / `shown` already store
+  every candidate).
+- Badges and a sticker album of every player drafted (localStorage).
+- One decision per season (January bid for your star; a crisis choice).
+- Ghost runs: share a seed link, a friend plays the same draft later, then
+  compare season by season.
+- Dynasty mode: carry the squad from 2015-20 into 2020-25.
+- A modern design for 2020-2025.

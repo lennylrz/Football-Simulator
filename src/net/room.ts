@@ -11,7 +11,7 @@ const KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZi
 
 let client: Promise<SupabaseClient> | null = null;
 /** Loaded on first use, so single player never downloads it. */
-function db(): Promise<SupabaseClient> {
+export function db(): Promise<SupabaseClient> {
   client ??= import('@supabase/supabase-js').then(({ createClient }) =>
     createClient(URL, KEY, { auth: { persistSession: false, autoRefreshToken: false } }));
   return client;

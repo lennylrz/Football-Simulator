@@ -10,9 +10,16 @@ import { SortTable } from '../SortTable';
 import '../results.css';
 import { SeasonViewer } from '../Viewer';
 import { PlayerCard, SeasonStory } from '../awards';
+import { HONOURS, SeasonMoments } from '../moments';
 import { clubOf, type Command, Frame, KeyCap, ordinal } from '../ui';
 
 const TABS = ['Story', 'Table', 'Your Matches', 'Champions League', 'FA Cup', 'Leaders', 'Squad'] as const;
+
+/** Rounds as cup runs list them, short so the opponent has room. */
+const ROUND_SHORT: Record<string, string> = {
+  'Third round': 'Round 3', 'Fourth round': 'Round 4', 'Fifth round': 'Round 5', 'Round of 16': 'Last 16', 'Quarter-final': 'Quarter', 'Semi-final': 'Semi', Final: 'Final',
+};
+
 
 export function Results() {
   const { data, game, send, settings, quit, room } = useGame();
@@ -21,6 +28,8 @@ export function Results() {
   const waiting = !!room?.full.mp?.views[game.user]?.done;
   const [leaving, setLeaving] = useState(false);
   const [revealing, setRevealing] = useState(settings.matchSpeed !== 'instant');
+  // Then the season's moments: trophies, the Ballon d'Or, the player of the season.
+  const [celebrating, setCelebrating] = useState(true);
   const [tab, setTab] = useState(0);
   const [hall, setHall] = useState(false);
   const h = game.history[game.history.length - 1];
@@ -32,6 +41,7 @@ export function Results() {
   const ent = (e: Entrant) => (typeof e === 'number' ? clubOf(data, e).short : e);
 
   if (revealing) return <SeasonViewer game={game} data={data} onDone={() => setRevealing(false)} fastStart={settings.matchSpeed === 'fast'} rival={room?.rival} />;
+  if (celebrating) return <SeasonMoments game={game} data={data} onDone={() => setCelebrating(false)} />;
 
   const commands: Command[] = leaving
     ? leaveCommands(quit, () => setLeaving(false))
@@ -89,9 +99,9 @@ export function Results() {
       const [f, a] = home ? [t.ga, t.gb] : [t.gb, t.ga];
       return (
         <tr key={t.round}>
-          <td className="comp">{t.round}</td>
+          <td className="comp" title={t.round}>{ROUND_SHORT[t.round] ?? t.round}</td>
           <td className="ellip">{t.legs.length > 1 ? 'vs' : home ? 'vs' : 'at'} {ent(opp)}</td>
-          <td className="score">{f}–{a}{t.pens ? ' p' : ''}{t.legs.length > 1 ? ' agg' : ''}</td>
+          <td className="score">{f}–{a}{t.pens ? <small> p</small> : ''}{t.legs.length > 1 ? <small> agg</small> : ''}</td>
           <td className="c"><span className={`tag ${won ? 'g' : 'r'}`}>{won ? (t.round === 'Final' ? 'WON' : 'THROUGH') : 'OUT'}</span></td>
         </tr>
       );
@@ -106,7 +116,7 @@ export function Results() {
       commands={commands}
     >
       <div className="win review">
-        <div className="win-title">{won.length === 3 ? 'THE TREBLE' : `Season Review ${seasonLabel(game.season)}`}</div>
+        <div className={`win-title ${won.length ? 'won' : ''}`}>{won.length ? `${HONOURS[won.join(' ')]} · ${seasonLabel(game.season)}` : `Season Review ${seasonLabel(game.season)}`}</div>
         <div className={`office ${won.length === 3 ? 'treble' : ''}`} style={{ height: 132 }}>
           <div className="col">
             <span className="cap">League · Your Finish</span>
@@ -115,7 +125,6 @@ export function Results() {
             {h.predicted !== undefined && (
               <span className="kv"><span>On paper</span><b className={finish < h.predicted ? 'good' : finish > h.predicted ? 'bad' : ''}>Predicted {ordinal(h.predicted)}{finish < h.predicted ? ', beat it' : finish > h.predicted ? ', fell short' : ', spot on'}</b></span>
             )}
-            {won.length > 0 && <span className="kv"><span>Trophies</span><b className="gold">{won.map((t) => ({ league: 'League', fa: 'FA Cup', cl: 'Champions League' })[t]).join(' · ')}</b></span>}
           </div>
           <div className="sep" />
           <div className="col">

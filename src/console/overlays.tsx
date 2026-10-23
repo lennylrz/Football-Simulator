@@ -49,7 +49,7 @@ export function HallOfFame({ game, data }: { game: GameState; data: GameData }) 
     ...(h.ballon ?? []).flatMap((b, i) => (b.club === game.user ? [{ season: h.season, label: `Ballon d'Or ${['winner', '2nd', '3rd'][i]}`, id: b.player }] : [])),
   ]);
   return (
-    <Overlay title="Hall of Fame">
+    <Overlay title="Hall of Fame" wide>
       <div className="office" style={{ height: 120 }}>
         <div className="col">
           <span className="cap">Trophy Cabinet</span>
@@ -71,10 +71,10 @@ export function HallOfFame({ game, data }: { game: GameState; data: GameData }) 
           )}
         </div>
       </div>
-      <div className="panes" style={{ height: 340 }}>
+      <div className="panes" style={{ height: 340, gridTemplateColumns: '1fr 1.4fr' }}>
         <div className="pane dpanel">
           <div className="ph gbar">Season by Season</div>
-          <div className="kvlist">
+          <div className="kvlist scroll">
             {c.seasons.length === 0 && <div><span>Play a season to start your legacy.</span></div>}
             {c.seasons.map((s) => (
               <div key={s.season}>
@@ -118,12 +118,16 @@ export function closeCommand(close: () => void): Command[] {
 
 /** Asks before leaving a career, which ends it. */
 export function LeaveCareer() {
-  const room = useContext(GameContext)?.room;
+  const ctx = useContext(GameContext);
+  const room = ctx?.room;
+  const daily = ctx?.game.daily;
   return (
-    <Overlay title={room ? 'Leave This Room?' : 'Leave This Career?'}>
+    <Overlay title={room ? 'Leave This Room?' : daily ? "Leave Today's Challenge?" : 'Leave This Career?'}>
       <div className="empty" style={{ color: '#fff' }}>
         {room
           ? `The room carries on without you. Come back any time: Play a Friend, then join with code ${room.code} on this device.`
+          : daily
+          ? `This is your one attempt at Daily #${daily.day}. If you leave now, it is over until tomorrow's challenge.`
           : 'Careers are not saved. If you leave now, this one is over and you start again from a new club.'}
       </div>
     </Overlay>
@@ -204,7 +208,7 @@ export function SeasonReport({ game, data, season }: { game: GameState; data: Ga
         <div className="col">
           <span className="cap">Cups</span>
           <span className="kv"><span>FA Cup</span><b>{reachedText(h.faReached[game.user])}</b></span>
-          <span className="kv"><span>Champions League</span><b>{reachedText(h.clReached[game.user])}</b></span>
+          <span className="kv"><span>Europe</span><b>{reachedText(h.clReached[game.user])}</b></span>
         </div>
         <div className="sep" />
         <div className="col">

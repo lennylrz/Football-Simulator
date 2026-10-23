@@ -1,12 +1,18 @@
-import { type ReactNode, useState } from 'react';
+import { type ReactNode, useEffect, useState } from 'react';
+import { dailyChallenge, dailyNumber, untilNextDaily } from '../../game/daily';
+import { dailyBoard, type DailyScore } from '../../net/daily';
 import type { Settings } from '../../settings';
-import { useCommands } from '../ui';
+import { dailyRecord } from '../../storage';
+import { copyText, ordinal, ResultLines, useCommands } from '../ui';
 import './welcome.css';
 
-type ItemId = 'single' | 'multi' | 'how' | 'settings' | 'about' | 'legal';
+type ItemId = 'single' | 'daily' | 'multi' | 'how' | 'settings' | 'about' | 'legal';
+
+const ERA_YEARS: Record<number, string> = { 2010: '2010–2015', 2015: '2015–2020', 2020: '2020–2025' };
 
 const ITEMS: { id: ItemId; label: string; note: string }[] = [
   { id: 'single', label: 'Singleplayer', note: 'Pick an era and start a career' },
+  { id: 'daily', label: 'Daily Challenge', note: '' },
   { id: 'multi', label: 'Multiplayer', note: 'Host a room or join with a code' },
   { id: 'how', label: 'How to Play', note: 'The rules in one minute' },
   { id: 'settings', label: 'Settings', note: 'Motion' },
@@ -14,16 +20,39 @@ const ITEMS: { id: ItemId; label: string; note: string }[] = [
   { id: 'legal', label: 'Legal', note: 'Unofficial fan game, data licence' },
 ];
 
-export function Welcome({ settings, onSettings, onPlay, onMulti }: { settings: Settings; onSettings: (s: Settings) => void; onPlay: () => void; onMulti: () => void }) {
+type Board = Awaited<ReturnType<typeof dailyBoard>>;
+
+const hm = (ms: number) => `${Math.floor(ms / 3_600_000)}h ${Math.floor((ms % 3_600_000) / 60_000)}m`;
+
+export function Welcome({ settings, onSettings, onPlay, onMulti, onDaily }: {
+  settings: Settings; onSettings: (s: Settings) => void; onPlay: () => void; onMulti: () => void; onDaily: () => void;
+}) {
   const [index, setIndex] = useState(0);
+  // Today's challenge, how it went here, and the day's board.
+  const day = dailyNumber();
+  const challenge = dailyChallenge(day);
+  const record = dailyRecord(day);
+  const [board, setBoard] = useState<Board | 'error' | null>(null);
+  const [copied, setCopied] = useState(false);
   // 'panel' while the arrow keys move through the settings instead of the menu.
   const [focus, setFocus] = useState<'menu' | 'panel'>('menu');
   const [row, setRow] = useState(0);
   const item = ITEMS[index];
 
   const select = (i: number) => setIndex(i);
+  const onDailyItem = ITEMS[index].id === 'daily';
+  useEffect(() => {
+    if (!onDailyItem || board) return;
+    dailyBoard(day, 5).then(setBoard, () => setBoard('error'));
+  }, [onDailyItem, board, day]);
+  const copy = async () => {
+    if (record?.text && (await copyText(record.text))) setCopied(true);
+  };
   const choose = (id: ItemId) => {
     if (id === 'single') onPlay();
+    else if (id === 'daily') {
+      if (!record) onDaily();
+    }
     else if (id === 'multi') onMulti();
     else if (id === 'settings') {
       setFocus('panel');
@@ -37,6 +66,7 @@ export function Welcome({ settings, onSettings, onPlay, onMulti }: { settings: S
       ? [
           { keys: ['Up', 'Down'], label: 'Choose', onPress: (k) => select((index + (k === 'Up' ? ITEMS.length - 1 : 1)) % ITEMS.length) },
           { keys: ['Enter', 'Space'], label: 'Select', onPress: () => choose(item.id) },
+          { keys: ['C'], label: 'Copy', hidden: true, disabled: item.id !== 'daily' || !record?.text, onPress: () => void copy() },
         ]
       : [
           { keys: ['Up', 'Down'], label: 'Setting', onPress: (k) => setRow((r) => Math.max(0, Math.min(settingRows.length - 1, r + (k === 'Up' ? -1 : 1)))) },
@@ -51,8 +81,54 @@ export function Welcome({ settings, onSettings, onPlay, onMulti }: { settings: S
       <>
         <h2>Singleplayer</h2>
         <p className="lead">Create your own club, draft an XI of real players one position at a time, then live with five seasons of how they turned out.</p>
-        <div className="w-save fresh"><span className="dot" />Three eras are playable now: 2010–2015, 2015–2020 and 2020–2025. Careers are not saved: leave one and it ends.</div>
+        <div className="w-save fresh"><span className="dot" />Two eras are playable now: 2010–2015 and 2015–2020. Careers are not saved: leave one and it ends.</div>
         <button className="w-cta" onClick={onPlay} tabIndex={-1}>Choose an era <span className="kbd">Enter</span></button>
+      </>
+    );
+  } else if (item.id === 'daily') {
+    const row = (s: DailyScore, rank: number) => (
+      <div key={`${rank}-${s.club}`} className={`w-row ${s.mine ? 'me' : ''}`}>
+        <span className="rk">{rank}</span><span className="cl">{s.club}</span><b>{s.score.toLocaleString('en-GB')}</b>
+      </div>
+    );
+    panel = (
+      <>
+        <h2>Daily Challenge <span className="w-soon">#{day}</span></h2>
+        <p className="lead"><b>{challenge.name}</b> · {ERA_YEARS[challenge.era]}</p>
+        <div className="w-rule">{challenge.rule}{challenge.target ? <> <b>Target:</b> {challenge.target.label[0].toLowerCase()}{challenge.target.label.slice(1)}.</> : null}</div>
+        {!record ? (
+          <>
+            <p className="muted">The same challenge and seed for everyone today, and one attempt: leaving the career ends it.</p>
+            <button className="w-cta" onClick={onDaily} tabIndex={-1}>Play today's challenge <span className="kbd">Enter</span></button>
+          </>
+        ) : (
+          <div className="w-daily">
+            <div className="w-result">
+              {record.text ? (
+                <>
+                  <ResultLines text={record.text} />
+                  <button className="w-copy" onClick={() => void copy()} tabIndex={-1}>{copied ? 'Copied' : 'Copy result'} <span className="kbd">C</span></button>
+                </>
+              ) : (
+                <p>You started today's challenge and left it. One attempt a day.</p>
+              )}
+              <p className="muted">Next challenge in {hm(untilNextDaily())}.</p>
+            </div>
+            <div className="w-board">
+              <div className="cap">Today's best</div>
+              {board === null && <p className="muted">Loading…</p>}
+              {board === 'error' && <p className="muted">The leaderboard can't be reached right now.</p>}
+              {board && board !== 'error' && (
+                <>
+                  {board.top.map((s, k) => row(s, k + 1))}
+                  {board.mine && board.rank !== undefined && board.rank > board.top.length && row(board.mine, board.rank)}
+                  {board.total === 0 && <p className="muted">No scores yet today.</p>}
+                  {board.rank !== undefined && <p className="muted">You are {ordinal(board.rank)} of {board.total}.</p>}
+                </>
+              )}
+            </div>
+          </div>
+        )}
       </>
     );
   } else if (item.id === 'multi') {
@@ -69,7 +145,7 @@ export function Welcome({ settings, onSettings, onPlay, onMulti }: { settings: S
       <>
         <h2>How to Play</h2>
         <ol className="w-steps">
-          <li><span><b>Pick an era.</b> 2010–2015, 2015–2020 or 2020–2025; the 2000s are on the way.</span></li>
+          <li><span><b>Pick an era.</b> 2010–2015 or 2015–2020; more are on the way.</span></li>
           <li><span><b>Create your club.</b> It joins the 20 clubs of the English top flight as the 21st.</span></li>
           <li><span><b>Draft your XI.</b> One position at a time, in any order you like, pick 1 of 5 real players. Rating and age are shown, potential stays hidden.</span></li>
           <li><span><b>Play five seasons.</b> League, FA Cup and Champions League, matchday by matchday. Pause, speed up or skip.</span></li>
@@ -141,7 +217,7 @@ export function Welcome({ settings, onSettings, onPlay, onMulti }: { settings: S
             tabIndex={-1}
           >
             <span className="w-label">{it.label}</span>
-            <span className="w-note">{it.note}</span>
+            <span className="w-note">{it.id === 'daily' ? `#${day} · ${challenge.name}${record ? (record.done ? ' · played' : ' · started') : ''}` : it.note}</span>
           </button>
         ))}
       </nav>

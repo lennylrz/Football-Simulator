@@ -2,12 +2,13 @@
 // real players for each spot, and each summer may gamble on re-drafting a few
 // (two by default) and move players between the bench and the XI.
 import { aiWindow, ensureMinimumSquad } from './ai';
+import { challengeOf } from './daily';
 import type { GameData } from './data';
 import {
   applyAutoLineup, asUser, type DevChange, EXTERNAL, type GameState, goToDeadline, humansOf, isHuman, type PlayerState, simulate,
   transfer,
 } from './game';
-import { FORMATIONS, type Position, parsePositions } from './positions';
+import { AREA, FORMATIONS, type Position, parsePositions } from './positions';
 import { type Rng, shuffle, stream } from './rng';
 
 export const CANDIDATES = 5;
@@ -117,15 +118,52 @@ function blocked(state: GameState): Set<number> {
  * sometimes, a couple of established players, a couple of youngsters with a
  * future, and the rest ordinary.
  */
-export function drawCandidates(state: GameState, data: GameData, slot: Position, rng: Rng): number[] {
+/** Who a Daily Challenge lets the draft offer for a spot; everyone outside one. */
+export function allowedFor(state: GameState, data: GameData, slot: Position | 'SUB'): ((p: PlayerState) => boolean) | undefined {
+  const allow = challengeOf(state.daily?.challenge)?.allow;
+  if (!allow) return undefined;
+  const rows = data.seasons[state.season];
+  return (p) => {
+    const club = p.club >= 0 ? data.meta.gameClubs[p.club] : data.meta.clubNames[rows[p.id]?.[6] ?? 0];
+    return allow({ p, nation: data.names[p.id]?.[1] ?? '', club: club ?? '', slot }, state, data);
+  };
+}
+
+/**
+ * The players a draw can choose from. A challenge's rule can leave too few:
+ * then older and lower-rated players count too, then players from the same
+ * line of the team, and if even that leaves fewer than two, the rule bends
+ * for this pick (`bent`).
+ */
+function poolFor(
+  state: GameState, data: GameData, slot: Position | 'SUB', base: { floor: number; oldest: number; fit: (p: PlayerState) => boolean }, line: (p: PlayerState) => boolean,
+): { pool: PlayerState[]; bent?: PlayerState[] } {
   const taken = blocked(state);
   const rows = data.seasons[state.season];
-  const pool: PlayerState[] = [];
-  for (const key in rows) {
-    const p = state.players[+key];
-    if (!p || p.retired || taken.has(p.id) || p.age > 35 || p.ovr < 64 || !fits(p, slot)) continue;
-    pool.push(p);
-  }
+  const allow = allowedFor(state, data, slot);
+  const gather = (floor: number, oldest: number, fit: (p: PlayerState) => boolean, rule: boolean) => {
+    const out: PlayerState[] = [];
+    for (const key in rows) {
+      const p = state.players[+key];
+      if (!p || p.retired || taken.has(p.id) || p.age > oldest || p.ovr < floor || !fit(p) || (rule && allow && !allow(p))) continue;
+      out.push(p);
+    }
+    return out;
+  };
+  let pool = gather(base.floor, base.oldest, base.fit, true);
+  if (!allow) return { pool };
+  const need = choicesOf(state);
+  if (pool.length < need) pool = gather(50, 38, base.fit, true);
+  if (pool.length < need) pool = gather(50, 38, line, true);
+  if (pool.length >= 2) return { pool };
+  return { pool: gather(base.floor, base.oldest, base.fit, false).filter((p) => !pool.includes(p)), bent: pool };
+}
+
+const lineOf = (p: PlayerState) => AREA[parsePositions(p.pos)[0] ?? 'CM'];
+
+export function drawCandidates(state: GameState, data: GameData, slot: Position, rng: Rng): number[] {
+  const { pool, bent } = poolFor(state, data, slot, { floor: 64, oldest: 35, fit: (p) => fits(p, slot) }, (p) => lineOf(p) === AREA[slot]);
+  if (bent) return [...bent, ...shuffle(rng, pool).slice(0, choicesOf(state) - bent.length)].map((p) => p.id);
   const chosen: PlayerState[] = [];
   // Players seen in recent careers come up only when there is nobody else of their kind.
   const recent = new Set(state.recent ?? []);
@@ -148,15 +186,10 @@ export function drawCandidates(state: GameState, data: GameData, slot: Position,
  * starters, with an experienced squad player or two.
  */
 export function drawBenchCandidates(state: GameState, data: GameData, rng: Rng): number[] {
-  const taken = blocked(state);
-  const rows = data.seasons[state.season];
   const recent = new Set(state.recent ?? []);
-  const pool: PlayerState[] = [];
-  for (const key in rows) {
-    const p = state.players[+key];
-    if (!p || p.retired || taken.has(p.id) || p.age > 33 || p.ovr < 62 || parsePositions(p.pos)[0] === 'GK') continue;
-    pool.push(p);
-  }
+  const outfield = (p: PlayerState) => parsePositions(p.pos)[0] !== 'GK';
+  const { pool, bent } = poolFor(state, data, 'SUB', { floor: 62, oldest: 33, fit: outfield }, outfield);
+  if (bent) return [...bent, ...shuffle(rng, pool).slice(0, choicesOf(state) - bent.length)].map((p) => p.id);
   const chosen: PlayerState[] = [];
   const take = (filter: (p: PlayerState) => boolean, n: number) => {
     const all = pool.filter((p) => filter(p) && !chosen.includes(p));
@@ -167,6 +200,8 @@ export function drawBenchCandidates(state: GameState, data: GameData, rng: Rng):
   take((p) => p.age <= 22 && p.pot >= 80 && p.ovr <= 76, 2);
   take((p) => p.age >= 24 && p.ovr >= 74 && p.ovr <= 80, 1);
   take((p) => p.ovr >= 70 && p.ovr <= 78, CANDIDATES - chosen.length);
+  // A small pool (a Daily Challenge's) may leave the bands short: anyone else fills in. Normal draws never get here, so seeds replay as before.
+  if (chosen.length < CANDIDATES) take(() => true, CANDIDATES - chosen.length);
   return shuffle(rng, chosen).slice(0, choicesOf(state)).map((p) => p.id);
 }
 
@@ -174,7 +209,8 @@ function draw(state: GameState, data: GameData, slot: number): void {
   const d = state.draft!;
   d.slot = slot;
   const taken = blocked(state);
-  const kept = state.stage === 'draft' ? d.offers?.[slot]?.filter((id) => !taken.has(id)) : undefined;
+  const allow = allowedFor(state, data, isBench(slot) ? 'SUB' : slotsOf(state)[slot]);
+  const kept = state.stage === 'draft' ? d.offers?.[slot]?.filter((id) => !taken.has(id) && (!allow || allow(state.players[id]))) : undefined;
   if (kept && kept.length) {
     d.candidates = kept;
     return;
@@ -255,7 +291,8 @@ export function pickCandidate(state: GameState, data: GameData, player: number):
   transfer(state, data, player, state.user, 0);
   club.cash = Math.max(club.cash, 0);
   setSpot(state, d.slot, player);
-  (d.home ??= {})[player] = isBench(d.slot) ? parsePositions(p.pos)[0] : slotsOf(state)[d.slot];
+  const slot = isBench(d.slot) ? undefined : slotsOf(state)[d.slot];
+  (d.home ??= {})[player] = slot && fits(p, slot) ? slot : parsePositions(p.pos)[0];
   d.picks.push({ season: state.season, slot: d.slot, player, ovr: p.ovr });
   if (state.stage === 'draft') {
     const done = d.slot;

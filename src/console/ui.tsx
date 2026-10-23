@@ -1,4 +1,5 @@
-import { createContext, type ReactNode, useContext, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { createContext, type ReactNode, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { CLUBS, type ClubInfo } from '../game/clubs';
 import type { GameData } from '../game/data';
 
@@ -9,33 +10,59 @@ import type { GameData } from '../game/data';
 export const ThemeContext = createContext<'' | 'sl'>('');
 export const useTheme = () => useContext(ThemeContext);
 
-/** Scales the fixed 1280x720 stage to fit the window. */
+/** Whether the player turned on Reduce Motion (settings put .calm on <html>). */
+export const reducedMotion = () => document.documentElement.classList.contains('calm');
+
+/** The stage's size in stage pixels: at least 1280x720, as much more as the window's shape adds. */
+export const StageSize = createContext({ w: 1280, h: 720 });
+/** The stage's content box, where overlays go so they cover the whole screen. */
+const StageLayer = createContext<HTMLElement | null>(null);
+
+/** Puts its children straight on the stage, above the screen's header and body. */
+export function OnStage({ children }: { children: ReactNode }) {
+  const layer = useContext(StageLayer);
+  return layer ? createPortal(children, layer) : children;
+}
+
+/**
+ * Scales the fixed 1280x720 stage to fit the window. The screen's background
+ * fills the whole window; the 1280x720 content stays centred in it.
+ */
 export function Stage({ tone = 'dark', children }: { tone?: 'dark' | 'light' | 'home'; children: ReactNode }) {
   const theme = useTheme();
-  const [scale, setScale] = useState(1);
+  const [fit, setFit] = useState({ s: 1, w: 1280, h: 720 });
   useLayoutEffect(() => {
-    const fit = () => setScale(Math.min(window.innerWidth / 1280, window.innerHeight / 720));
-    fit();
-    window.addEventListener('resize', fit);
-    return () => window.removeEventListener('resize', fit);
+    const resize = () => {
+      const s = Math.min(window.innerWidth / 1280, window.innerHeight / 720);
+      setFit({ s, w: Math.max(1280, Math.ceil(window.innerWidth / s)), h: Math.max(720, Math.ceil(window.innerHeight / s)) });
+    };
+    resize();
+    window.addEventListener('resize', resize);
+    return () => window.removeEventListener('resize', resize);
   }, []);
+  const size = useMemo(() => ({ w: fit.w, h: fit.h }), [fit.w, fit.h]);
+  const [layer, setLayer] = useState<HTMLDivElement | null>(null);
   return (
     <div className="stage-wrap">
       <div
         className={`stage ${tone} ${tone === 'home' ? '' : theme}`}
-        style={{ '--s': scale } as React.CSSProperties}
+        style={{ '--s': fit.s, width: fit.w, height: fit.h, '--bx': `${(fit.w - 1280) / 2}px`, '--by': `${(fit.h - 720) / 2}px` } as React.CSSProperties}
         // Clicking a button never focuses it, so Enter and Space afterwards only run the screen's command.
         onMouseDown={(e) => {
           if ((e.target as Element).closest('button')) e.preventDefault();
         }}
       >
-        {children}
+        <div className="stage-in" ref={setLayer}>
+          <StageSize.Provider value={size}>
+            <StageLayer.Provider value={layer}>{children}</StageLayer.Provider>
+          </StageSize.Provider>
+        </div>
       </div>
     </div>
   );
 }
 
-export type KeyName = 'Enter' | 'Escape' | 'Space' | 'Up' | 'Down' | 'Left' | 'Right' | 'Q' | 'E' | 'T' | 'A' | 'H' | 'R' | 'S' | 'F' | 'V' | 'P';
+export type KeyName = 'Enter' | 'Escape' | 'Space' | 'Up' | 'Down' | 'Left' | 'Right' | 'Q' | 'E' | 'T' | 'A' | 'H' | 'R' | 'S' | 'F' | 'V' | 'P' | 'C';
 
 export interface Command {
   keys: KeyName[];
@@ -50,7 +77,7 @@ export interface Command {
 
 const KEY_OF: Record<string, KeyName> = {
   Enter: 'Enter', Escape: 'Escape', ' ': 'Space', ArrowUp: 'Up', ArrowDown: 'Down', ArrowLeft: 'Left', ArrowRight: 'Right',
-  q: 'Q', e: 'E', t: 'T', a: 'A', h: 'H', r: 'R', s: 'S', f: 'F', v: 'V', p: 'P',
+  q: 'Q', e: 'E', t: 'T', a: 'A', h: 'H', r: 'R', s: 'S', f: 'F', v: 'V', p: 'P', c: 'C',
 };
 
 const ARROWS: Partial<Record<KeyName, string>> = { Up: 'M3 10l5-5 5 5', Down: 'M3 6l5 5 5-5', Left: 'M10 3l-5 5 5 5', Right: 'M6 3l5 5-5 5' };
@@ -170,15 +197,41 @@ export function useScrollIntoView(index: number) {
   return ref;
 }
 
-export function Overlay({ title, children }: { title: ReactNode; children: ReactNode }) {
+export function Overlay({ title, children, wide }: { title: ReactNode; children: ReactNode; wide?: boolean }) {
   return (
-    <div className="overlay">
-      <div className="win">
-        <div className="win-title">{title}</div>
-        <div className="body">{children}</div>
+    <OnStage>
+      <div className="overlay">
+        <div className={`win ${wide ? 'wide' : ''}`}>
+          <div className="win-title">{title}</div>
+          <div className="body">{children}</div>
+        </div>
       </div>
-    </div>
+    </OnStage>
   );
+}
+
+/** A Daily Challenge result as it reads on screen: its first lines, a small gold cup for each trophy (no emoji). */
+export function ResultLines({ text, lines = 3 }: { text: string; lines?: number }) {
+  return (
+    <pre className="result-lines">
+      {text.split('\n').slice(0, lines).map((line, k) => (
+        <span key={k}>
+          {line.split('\u{1F3C6}').map((part, j) => (j ? <span key={j}><i className="cup" aria-label="trophy" />{part}</span> : part))}
+          {'\n'}
+        </span>
+      ))}
+    </pre>
+  );
+}
+
+/** Copies text to the clipboard; false if the browser refuses. */
+export async function copyText(text: string): Promise<boolean> {
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 export function money(k: number): string {

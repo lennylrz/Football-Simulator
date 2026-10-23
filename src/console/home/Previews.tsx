@@ -1,4 +1,4 @@
-// Static previews of each era's look, drawn at 1280x720.
+// Static previews of each era's look, drawn at 1280x720 (the era picker shows them full size).
 import '../draft.css';
 import '../slate.css';
 import { FORMATIONS } from '../../game/positions';
@@ -184,14 +184,3 @@ function P2015() {
 
 export const PREVIEWS = { 2000: P2000, 2005: P2005, 2010: P2010, 2015: P2015, 2020: P2020 } as const;
 
-export function Preview({ era, width }: { era: keyof typeof PREVIEWS; width: number }) {
-  const Comp = PREVIEWS[era];
-  const s = width / 1280;
-  return (
-    <div style={{ position: 'relative', width, height: width * 0.5625, overflow: 'hidden' }}>
-      <div style={{ position: 'absolute', inset: 0, transform: `scale(${s})`, transformOrigin: '0 0', width: 1280, height: 720 }}>
-        <Comp />
-      </div>
-    </div>
-  );
-}

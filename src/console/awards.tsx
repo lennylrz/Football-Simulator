@@ -7,7 +7,7 @@ import { type GameState, type SeasonHistory, seasonLabel } from '../game/game';
 import { parsePositions } from '../game/positions';
 import type { PlayerSeasonStats } from '../game/season';
 import './awards.css';
-import { clubOf } from './ui';
+import { clubOf, OnStage } from './ui';
 
 const PLACE = ['1st', '2nd', '3rd'];
 
@@ -141,34 +141,36 @@ export function PlayerCard({ game, data, id, onClose }: { game: GameState; data:
     ...(h.ballon ?? []).flatMap((b, i) => (b.player === id ? [`Ballon d'Or ${PLACE[i]} ${seasonLabel(h.season)}`] : [])),
   ]);
   return (
-    <div className="overlay" onClick={onClose}>
-      <div className="win pcard" onClick={(e) => e.stopPropagation()}>
-        <div className="win-title">{name}</div>
-        <div className="body">
-          <div className="pc-head">
-            <span className="pc-ovr">{p.ovr}</span>
-            <span className="pc-meta">
-              <b>{parsePositions(p.pos).join(' · ')}</b>
-              <span>{nation ? `${nation} · ` : ''}{p.retired ? 'Retired' : `${p.age} years old`}{p.club >= 0 ? ` · ${clubOf(data, p.club).name}` : ''}</span>
-            </span>
-            {awards.length > 0 && <span className="pc-awards">{awards.map((a) => <span key={a}>{a}</span>)}</span>}
+    <OnStage>
+      <div className="overlay" onClick={onClose}>
+        <div className="win pcard" onClick={(e) => e.stopPropagation()}>
+          <div className="win-title">{name}</div>
+          <div className="body">
+            <div className="pc-head">
+              <span className="pc-ovr">{p.ovr}</span>
+              <span className="pc-meta">
+                <b>{parsePositions(p.pos).join(' · ')}</b>
+                <span>{nation ? `${nation} · ` : ''}{p.retired ? 'Retired' : `${p.age} years old`}{p.club >= 0 ? ` · ${clubOf(data, p.club).name}` : ''}</span>
+              </span>
+              {awards.length > 0 && <span className="pc-awards">{awards.map((a) => <span key={a}>{a}</span>)}</span>}
+            </div>
+            <div className="ph gbar">Rating<small>{shown.length > 1 ? `${shown[0].ovr} → ${shown[shown.length - 1].ovr}` : ''}</small></div>
+            <RatingChart points={shown} />
+            <div className="ph gbar">Season by Season<small>All competitions</small></div>
+            <table className="tbl">
+              <thead><tr><th>Season</th><th className="n">Rating</th><th className="n">Apps</th><th className="n">Goals</th><th className="n">Assists</th><th className="n">Avg</th></tr></thead>
+              <tbody>
+                {seasons.map(({ h, ovr, st }) => (
+                  <tr key={h.season}>
+                    <td>{seasonLabel(h.season)}</td><td className="n">{ovr ?? '–'}</td><td className="n">{st?.apps ?? 0}</td>
+                    <td className="n">{st?.goals ?? 0}</td><td className="n">{st?.assists ?? 0}</td><td className="n">{st ? (st.ratingSum / st.apps).toFixed(2) : '–'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
-          <div className="ph gbar">Rating<small>{shown.length > 1 ? `${shown[0].ovr} → ${shown[shown.length - 1].ovr}` : ''}</small></div>
-          <RatingChart points={shown} />
-          <div className="ph gbar">Season by Season<small>All competitions</small></div>
-          <table className="tbl">
-            <thead><tr><th>Season</th><th className="n">Rating</th><th className="n">Apps</th><th className="n">Goals</th><th className="n">Assists</th><th className="n">Avg</th></tr></thead>
-            <tbody>
-              {seasons.map(({ h, ovr, st }) => (
-                <tr key={h.season}>
-                  <td>{seasonLabel(h.season)}</td><td className="n">{ovr ?? '–'}</td><td className="n">{st?.apps ?? 0}</td>
-                  <td className="n">{st?.goals ?? 0}</td><td className="n">{st?.assists ?? 0}</td><td className="n">{st ? (st.ratingSum / st.apps).toFixed(2) : '–'}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
         </div>
       </div>
-    </div>
+    </OnStage>
   );
 }

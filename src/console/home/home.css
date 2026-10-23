@@ -1,6 +1,6 @@
 /* The home screen: clean paper by default; hovering an era turns the whole screen into it. */
 .stage.home { background: #eef0f3; color: #121418; font-family: "Helvetica Neue", Arial, system-ui, sans-serif; }
-.home .clean { position: absolute; inset: 0; display: grid; place-content: center; justify-items: center; text-align: center; gap: 10px; padding-bottom: 150px;
+.home .clean { position: absolute; inset: var(--bleed); display: grid; place-content: center; justify-items: center; text-align: center; gap: 10px; padding-bottom: 150px;
   background-image: linear-gradient(rgba(18,20,24,.045) 1px, transparent 1px), linear-gradient(90deg, rgba(18,20,24,.045) 1px, transparent 1px); background-size: 32px 32px;
   transition: opacity .35s ease; }
 .home.themed .clean { opacity: 0; }
@@ -9,8 +9,17 @@
 .home .tag { margin: 6px 0 0; font-size: 22px; color: #3d424a; }
 .home .hint { margin: 14px 0 0; font-size: 15px; color: #8a9099; letter-spacing: .04em; }
 
-.home .layer { position: absolute; inset: 0; opacity: 0; transition: opacity .35s ease, transform .5s ease; transform: scale(1.02); pointer-events: none; }
+/* Each era's preview sits in the middle; its screen's background fills the rest of the window. */
+.home .layer { position: absolute; inset: var(--bleed); display: grid; place-content: center; overflow: hidden; opacity: 0; transition: opacity .35s ease, transform .5s ease; transform: scale(1.02); pointer-events: none; }
 .home .layer.shown { opacity: 1; transform: none; }
+.home .pv-box { position: relative; width: 1280px; height: 720px; }
+.home .layer .pv { overflow: visible; background: none; }
+.home .layer .pv::before { inset: var(--bleed); }
+.home .l2000 { background: #3a6ea5; }
+.home .l2005 { background: radial-gradient(ellipse at 30% 20%, #2c6fd1 0%, #0b2f6b 45%, #06142e 100%); }
+.home .l2010 { background: #0d0d0e radial-gradient(ellipse at 50% 0%, #2c2d30 0%, #111213 60%); }
+.home .l2015 { background: radial-gradient(120% 95% at 78% 28%, #535c6e 0%, #424a59 42%, #343a46 100%); }
+.home .l2020 { background: #fff; }
 
 .home .eras { position: absolute; left: 40px; right: 40px; bottom: 28px; height: 118px; display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; z-index: 5; }
 .home .era { display: grid; align-content: center; gap: 4px; padding: 0 20px; text-align: left; border-radius: 12px; background: rgba(255,255,255,.86); color: #121418;

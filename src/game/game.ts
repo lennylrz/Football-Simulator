@@ -12,6 +12,7 @@ import { type DraftState, openDraftWindow } from './draft';
 import { AREA, FORMATIONS, type Formation, parsePositions, type Position, positionFit } from './positions';
 import { type PlayStyle, starRole, styleGrowth } from './styles';
 import { stream } from './rng';
+import { challengeOf } from './daily';
 import { fixtures, type PlayerSeasonStats, type SeasonResult, simulateSeason, type TableRow } from './season';
 import { expectedGoals, type MatchResult } from './match';
 import { marketValue } from './valuation';
@@ -169,6 +170,8 @@ export interface GameState {
   ownClub?: ClubInfo;
   /** draft mode: re-drafts per summer and candidates per pick, from the settings */
   rules?: { redrafts: number; choices: number; bench?: number };
+  /** a Daily Challenge career: its day and challenge (see daily.ts) */
+  daily?: { day: number; challenge: string };
   /** draft mode: players offered in recent careers, offered less often now */
   recent?: number[];
   season: number;
@@ -298,14 +301,23 @@ export function transfer(state: GameState, data: GameData, player: number, to: n
  * and colours are registered alongside the 20 real clubs.
  */
 export function registerUserClub(data: GameData, info: ClubInfo, slot = REAL_CLUBS): number {
-  const at = data.meta.gameClubs.indexOf(info.name);
-  const index = at >= 0 && at <= slot ? at : slot;
-  data.meta.gameClubs[index] = info.name;
+  data.meta.gameClubs[slot] = info.name;
   data.meta.gameClubs.length = slot + 1;
   const existing = CLUBS.findIndex((c) => c.name === info.name);
   if (existing >= 0) CLUBS[existing] = info;
   else CLUBS.push(info);
-  return index;
+  return slot;
+}
+
+/**
+ * Clubs are told apart by name, so a user's club can't share one with a real
+ * club of the era (or with another manager's): it gets a number.
+ */
+export function uniqueClub(data: GameData, info: ClubInfo, others: string[] = []): ClubInfo {
+  const taken = new Set([...data.meta.gameClubs.slice(0, REAL_CLUBS), ...others]);
+  let club = info;
+  for (let n = 2; taken.has(club.name); n++) club = { ...info, name: `${info.name} ${n}` };
+  return club;
 }
 
 /** The era's 20 real clubs come first; a draft club is number 20. */
@@ -313,7 +325,7 @@ export const REAL_CLUBS = 20;
 
 export function newGame(
   data: GameData, user: number, seed: number, mode?: 'draft', formation: Formation = '4-3-3', own?: ClubInfo, rules?: GameState['rules'],
-  recent?: number[], rival?: { club: ClubInfo; formation: Formation },
+  recent?: number[], rival?: { club: ClubInfo; formation: Formation }, daily?: GameState['daily'],
 ): GameState {
   const state: GameState = {
     v: 1,
@@ -337,6 +349,7 @@ export function newGame(
   if (mode) state.mode = mode;
   if (rules) state.rules = rules;
   if (recent?.length) state.recent = recent;
+  if (daily) state.daily = daily;
   activateEra(data);
   addNewPlayers(state, data);
   data.meta.gameClubs.slice(0, REAL_CLUBS).forEach((name, i) => {
@@ -347,7 +360,7 @@ export function newGame(
   });
   for (const c of state.clubs) applyAutoLineup(state, c.id);
   if (mode === 'draft') {
-    const id = registerUserClub(data, own ?? { name: 'Five Seasons FC', short: 'Five Seasons', code: 'FSF', primary: '#1d4f91', secondary: '#ffffff', rep: 72, budget: 0 });
+    const id = registerUserClub(data, uniqueClub(data, own ?? { name: 'Five Seasons FC', short: 'Five Seasons', code: 'FSF', primary: '#1d4f91', secondary: '#ffffff', rep: 72, budget: 0 }));
     state.user = id;
     state.clubs.push({ id, rep: own?.rep ?? 72, cash: 0, squad: [], formation, xi: [], bench: [], style: 'tiki' });
     if (rival) {
@@ -723,11 +736,14 @@ export function paperTable(state: GameState): PaperRow[] {
  */
 export function starOf(state: GameState, club: number): number | undefined {
   const c = state.clubs[club];
-  if (c.starPick !== undefined && c.starPick >= 0 && c.xi.includes(c.starPick) && state.players[c.starPick]) return c.starPick;
+  // A Daily Challenge can ask for a young star: the oldest are passed over while a young one starts.
+  const under = isHuman(state, club) ? challengeOf(state.daily?.challenge)?.starUnder : undefined;
+  const young = (id: number) => under === undefined || state.players[id].age < under;
+  if (c.starPick !== undefined && c.starPick >= 0 && c.xi.includes(c.starPick) && state.players[c.starPick] && young(c.starPick)) return c.starPick;
   const slots = FORMATIONS[c.formation];
   const lean = (i: number) => ({ ATT: 3, MID: ['CAM', 'LM', 'RM'].includes(slots[i]) ? 1 : -3, DEF: -10, GK: -99 })[AREA[slots[i]]];
   const order = c.xi.map((id, i) => ({ id, key: id >= 0 && state.players[id] ? state.players[id].ovr + lean(i) : -999 })).sort((a, b) => b.key - a.key || a.id - b.id);
-  return order[0]?.id;
+  return (order.find((o) => o.key > -999 && young(o.id)) ?? order[0])?.id;
 }
 
 export function simulate(state: GameState, data: GameData): void {

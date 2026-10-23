@@ -15,7 +15,7 @@ export function Bracket({ matches, rounds, user, name }: { matches: CupMatch[]; 
   return (
     <div className="bracket" style={{ gridTemplateColumns: `repeat(${rounds.length}, 1fr)` }}>
       {cols.map((ties, c) => (
-        <div key={rounds[c]} className="bcol">
+        <div key={rounds[c]} className={`bcol ${ties.length > 4 ? 'dense' : ''}`}>
           <div className="bhead">{rounds[c]}</div>
           <div className="bties">
             {ties.map((t, k) => (
