@@ -5,7 +5,7 @@ import {
   CL_ROUNDS, type CupResult, type Entrant, FA_ROUNDS, simulateChampionsLeague, simulateFaCup, WINNER,
 } from './cups';
 import { type GameData, NUM_SEASONS, SEASON_YEARS, seasonLabel } from './data';
-import { developPlayer, type Form, formBoost, goatPotential, retireChance } from './development';
+import { BUILT_ON_ROOM, developPlayer, type Form, formBoost, goatPotential, retireChance } from './development';
 import { autoLineup, BENCH_SIZE, pickBench, pickXI, type PlayerLite, teamStrength } from './lineup';
 import { generateIncomingBids, generateOffers, type IncomingBid, type Offer } from './market';
 import { type DraftState, openDraftWindow } from './draft';
@@ -442,7 +442,9 @@ function advancePlayers(state: GameState, data: GameData, form: Map<number, Form
     const growth = styleGrowth(club?.style, area, isStar, starRole(starSlot));
     const raw = formBoost(p, f);
     const boost = raw > 0 ? raw * growth : raw;
-    developPlayer(p, row, data.meta, rng, f, growth);
+    // The back line of a side that parks the bus, or a defender it is built around, can reach the very top.
+    const builtOn = (area === 'DEF' || area === 'GK') && (club?.style === 'bus' || (isStar && starRole(starSlot) === 'DEF'));
+    developPlayer(p, row, data.meta, rng, f, growth, builtOn ? BUILT_ON_ROOM : 0);
     const report = reports.get(p.club);
     if (report) {
       const change: DevChange = { player: id, from: before, to: p.ovr };

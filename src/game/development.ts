@@ -71,11 +71,18 @@ const TOP_ROOM = 3;
  * is harder to earn: the excess is squeezed so that 92 is rare and 93 a
  * great career's peak, while the exceptions keep climbing.
  */
-export function topDamp(raw: number, ref: number): number {
-  const top = Math.max(TOP, ref - 1);
+export function topDamp(raw: number, ref: number, room = 0): number {
+  const top = Math.max(TOP + room, ref - 1);
   const over = raw - top;
-  return over <= 0 ? raw : top + over / (1 + over / TOP_ROOM);
+  return over <= 0 ? raw : top + over / (1 + over / (TOP_ROOM + room));
 }
+
+/**
+ * Extra room at the top for the players a style is built on: a back line
+ * that parks the bus, or the defender a team is built around. Without it no
+ * defender could ever join the strikers above 92.
+ */
+export const BUILT_ON_ROOM = 4;
 
 /** Share of a player's deviation from his real rating that carries over. */
 const PERSIST = 0.75;
@@ -137,10 +144,12 @@ export function formBoost(p: Pick<Developing, 'age' | 'ovr' | 'id'> & { pot?: nu
  * value, adjusted by how he played; without one, he follows the average
  * change for his age. In his prime, only part of the real change applies.
  */
-export function developPlayer(p: Developing, next: Row | undefined, meta: Meta, rng: Rng, form?: Form, growth = 1): void {
+export function developPlayer(p: Developing, next: Row | undefined, meta: Meta, rng: Rng, form?: Form, growth = 1, room = 0): void {
   const raw0 = formBoost(p, form);
   // A play style turns good seasons into bigger (or smaller) gains for some players.
-  const boost = raw0 > 0 ? raw0 * growth : raw0;
+  // The players a style is built on also improve a little from the role
+  // itself, after any season he played well enough in (see BUILT_ON_ROOM).
+  const boost = (raw0 > 0 ? raw0 * growth : raw0) + (room > 0 && raw0 >= 0 && (form?.apps ?? 0) >= 15 ? 0.6 : 0);
   const age = p.age;
   let expected: number;
   if (next) {
@@ -164,9 +173,9 @@ export function developPlayer(p: Developing, next: Row | undefined, meta: Meta, 
   // Neymar, younger, faster while he is young.
   if (ceiling && boost >= 0) raw += isGoat(p.id) ? 0.7 : 0.7 + 0.25 * Math.max(0, 24 - age);
   // Everyone else finds the very top hard going.
-  else if (!ceiling) raw = topDamp(raw, p.ref);
+  else if (!ceiling) raw = topDamp(raw, p.ref, room);
   const lo = p.ref + DRIFT_LOW;
-  const hi = ceiling ?? Math.min(p.ref + driftHigh(age), Math.max(96, p.ref));
+  const hi = ceiling ?? Math.min(p.ref + driftHigh(age) + room, Math.max(96, p.ref));
   p.ovr = Math.round(clamp(clamp(raw, lo, hi), 40, 99));
   const realPot = next ? next[1] + (p.ovr - next[0]) : p.pot + (p.ovr - before) * 0.5;
   p.pot = goatPotential(p.id, Math.round(clamp(Math.max(p.ovr, realPot), p.ovr, 99)), p.age);

@@ -3,7 +3,6 @@ import { Home } from './console/home/Home';
 import { Welcome } from './console/home/Welcome';
 import { Draft } from './console/screens/Draft';
 import { GameSetup } from './console/screens/GameSetup';
-import { MainMenu } from './console/screens/MainMenu';
 import { NewClub } from './console/screens/NewClub';
 import { Results } from './console/screens/Results';
 import { Summary } from './console/screens/Summary';
@@ -38,7 +37,7 @@ async function fetchJson(file: string) {
   return res.json();
 }
 
-type Mode = 'welcome' | 'home' | 'setup' | 'menu' | 'clubs' | 'play' | 'lobby' | 'roomclub' | 'room';
+type Mode = 'welcome' | 'home' | 'setup' | 'clubs' | 'play' | 'lobby' | 'roomclub' | 'room';
 
 /** An invite link: ?room=CODE */
 const INVITE = normalizeCode(new URLSearchParams(location.search).get('room') ?? '');
@@ -58,8 +57,7 @@ export default function App() {
   const [pendingRoom, setPendingRoom] = useState<Room | null>(null);
   const [joinAs, setJoinAs] = useState<RoomManager | undefined>(undefined);
   const [lobby, setLobby] = useState<{ busy: boolean; error: string | null; code: string }>({ busy: false, error: null, code: INVITE });
-  /** where the lobby was opened from, and whether a host still has to pick an era */
-  const [lobbyFrom, setLobbyFrom] = useState<'welcome' | 'menu'>('menu');
+  /** whether a host still has to pick an era */
   const [hostNeedsEra, setHostNeedsEra] = useState(false);
 
   // An invite link opens the lobby in the room's era, code filled in.
@@ -179,7 +177,7 @@ export default function App() {
     setPendingRoom(null);
     setJoinAs(undefined);
     if (location.search) history.replaceState(null, '', location.pathname);
-    setMode('menu');
+    setMode('welcome');
   };
 
   const theme = era === 2015 ? 'sl' : '';
@@ -196,10 +194,7 @@ export default function App() {
               setHostNeedsEra(false);
               setMode('home');
             }}
-            onMulti={() => {
-              setLobbyFrom('welcome');
-              setMode('lobby');
-            }}
+            onMulti={() => setMode('lobby')}
           />
         </Stage>
       );
@@ -235,7 +230,7 @@ export default function App() {
               } else setMode('roomclub');
             }}
             onJoin={(code) => void joinRoom(code)}
-            onBack={() => setMode(lobbyFrom === 'welcome' || era === null ? 'welcome' : 'menu')}
+            onBack={() => setMode('welcome')}
           />
         </Stage>
       );
@@ -245,17 +240,7 @@ export default function App() {
     if (mode === 'setup') {
       return (
         <Stage>
-          <GameSetup settings={settings} onChange={changeSettings} onDone={() => setMode('menu')} onBack={() => setMode('home')} />
-        </Stage>
-      );
-    }
-    if (mode === 'menu') {
-      return (
-        <Stage tone="light">
-          <MainMenu onNew={() => setMode('clubs')} onMulti={() => {
-            setLobbyFrom('menu');
-            setMode('lobby');
-          }} onSettings={() => setMode('setup')} onHome={() => setMode('home')} />
+          <GameSetup settings={settings} onChange={changeSettings} onDone={() => setMode('clubs')} onBack={() => setMode('home')} />
         </Stage>
       );
     }
@@ -272,7 +257,7 @@ export default function App() {
     if (mode === 'clubs' || !game) {
       return (
         <Stage>
-          <NewClub onStart={start} onBack={() => setMode('menu')} settings={settings} />
+          <NewClub onStart={start} onBack={() => setMode('setup')} settings={settings} />
         </Stage>
       );
     }
@@ -281,7 +266,7 @@ export default function App() {
     const quit = () => {
       current.current = null;
       setGame(null);
-      setMode('menu');
+      setMode('home');
     };
     let screen;
     if (game.stage === 'results') screen = <Results />;

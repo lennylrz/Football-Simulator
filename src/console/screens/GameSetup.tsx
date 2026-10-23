@@ -13,7 +13,7 @@ export function GameSetup({
   const isDefault = OPTIONS.every((o) => settings[o.key] === DEFAULT_SETTINGS[o.key]);
 
   const commands: Command[] = [
-    { keys: ['Enter'], label: 'Continue', primary: true, onPress: onDone },
+    { keys: ['Enter'], label: 'New Career', primary: true, onPress: onDone },
     browse('Setting', nav.up, nav.down),
     browse('Change', () => change(nav.index, -1), () => change(nav.index, 1), true),
     { keys: ['R'], label: 'Defaults', disabled: isDefault, onPress: () => onChange({ ...DEFAULT_SETTINGS }) },

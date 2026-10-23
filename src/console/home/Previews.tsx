@@ -151,7 +151,7 @@ function P2015() {
               <div className="sl-th"><span>PLAYER</span><span>AGE</span><span>OVR</span></div>
               {CANDS.map(([r, n, c, nat, age], i) => (
                 <div key={n} className={`sl-row ${i === 2 ? 'on' : ''}`} style={{ opacity: 1, animation: 'none' }}>
-                  <span className="who"><i className="crest" style={{ background: '#1d3f73', boxShadow: 'inset 0 0 0 4px #c8333b' }} /><span className="nm"><b>{n}</b><small>{c} · {nat}</small></span></span>
+                  <span className="who"><i className="crest">{c.split(' ').map((w) => w[0]).join('').slice(0, 3).toUpperCase()}</i><span className="nm"><b>{n}</b><small>{c} · {nat}</small></span></span>
                   <span className="age">{age}</span><span className={`ovr ${tierOf(r)}`}>{r}</span>
                 </div>
               ))}
@@ -160,7 +160,7 @@ function P2015() {
               <div className="sl-cap">Overview</div>
               <div className="sl-ov">
                 <div className="top">
-                  <div><div className="first">Edinson</div><div className="last" style={{ animation: 'none' }}>Cavani</div><div className="club"><i style={{ background: '#1d3f73', boxShadow: 'inset 0 0 0 3px #c8333b' }} />Paris SG · ST · 28</div></div>
+                  <div><div className="first">Edinson</div><div className="last" style={{ animation: 'none' }}>Cavani</div><div className="club"><i className="crest">PSG</i>Paris SG · ST · 28</div></div>
                   <div className="ovr"><small>OVR</small><b className="r-a">85</b></div>
                 </div>
                 <div className="grid"><span>NATION<b>Uruguay</b></span><span>VALUE<b>€42m</b></span><span>PLAYS<b>ST · CF</b></span></div>

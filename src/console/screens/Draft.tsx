@@ -219,19 +219,19 @@ function ChooseFirst() {
 
 const tier = (r: number) => (r >= 85 ? 'r-a' : r >= 80 ? 'r-b' : r >= 74 ? 'r-c' : 'r-d');
 
-/** A plain shirt in the club's colours, with the number he'd wear. */
-function Kit({ a, b, num }: { a: string; b: string; num: number }) {
-  return (
-    <svg className="kit" viewBox="0 0 300 330" aria-hidden>
-      <path d="M95 20 L60 34 L10 88 L44 136 L70 114 L70 320 L230 320 L230 114 L256 136 L290 88 L240 34 L205 20 Q150 52 95 20 Z" fill={a} />
-      <rect x="132" y="34" width="36" height="286" fill={b} opacity=".9" />
-      <path d="M95 20 Q150 52 205 20 L196 16 Q150 40 104 16 Z" fill={b} />
-      <text x="150" y="200" textAnchor="middle" fontFamily="Barlow Condensed, sans-serif" fontWeight="700" fontSize="96" fill="#fff" opacity=".85">{num}</text>
-    </svg>
-  );
-}
+// Club-type words that say nothing about which club it is.
+const NOISE = new Set(['VfL', 'VfB', 'TSG', 'de', 'del', 'da', 'do', 'di', 'the', 'and', 'Club', 'Calcio', 'Unión', 'Union', 'Deportiva', 'Deportivo', 'Futebol', 'Fútbol', 'Football', 'Sport', 'Sporting']);
 
-const SHIRT: Record<string, number> = { GK: 1, RB: 2, RWB: 2, LB: 3, LWB: 3, CB: 5, CDM: 6, RM: 7, RW: 7, CM: 8, ST: 9, CF: 9, CAM: 10, LM: 11, LW: 11 };
+/** A short badge code for any club: "Paris Saint-Germain" -> "PSG", "U.C. Sampdoria" -> "SAM". */
+function badge(name: string, code?: string): string {
+  if (code) return code;
+  const plain = name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[.']/g, '').replace(/-/g, ' ');
+  // Short all-caps tokens (FC, AC, SL, UC) and numbers are club types, not names.
+  const words = plain.split(/\s+/).filter((w) => w && !NOISE.has(w) && !/^[A-Z0-9]{1,3}$/.test(w) && !/^\d+$/.test(w));
+  if (!words.length) return plain.replace(/\s/g, '').slice(0, 3).toUpperCase();
+  if (words.length === 1) return words[0].slice(0, 3).toUpperCase();
+  return words.slice(0, 3).map((w) => w[0]).join('').toUpperCase();
+}
 
 /** The 2015-2020 draft: the five as a transfer-hub list, the highlighted one in an overview with a scout's note. */
 function SlHub({ ids, index, setIndex, onPick, hidden, title, timer, note }: {
@@ -243,14 +243,16 @@ function SlHub({ ids, index, setIndex, onPick, hidden, title, timer, note }: {
   const p = game.players[id];
   if (!p) return null;
   const row = data.seasons[game.season][id];
-  const clubOfPlayer = (pid: number): { name: string; a: string; b: string } => {
+  // Every club gets the same neutral badge, so no candidate looks special.
+  const clubOfPlayer = (pid: number): { name: string; code: string } => {
     const q = game.players[pid];
     if (q.club >= 0) {
       const c = clubOf(data, q.club);
-      return { name: c.short, a: c.primary, b: c.secondary };
+      return { name: c.short, code: badge(c.name, c.code) };
     }
     const r = data.seasons[game.season][pid];
-    return { name: r ? data.meta.clubNames[r[6]] : 'Free agent', a: '#6f7785', b: '#c9ced6' };
+    const name = r ? data.meta.clubNames[r[6]] : 'Free agent';
+    return { name, code: r ? badge(name) : 'FA' };
   };
   const [first, last] = splitName(data.names[id][0]);
   const blurb = draftBlurb(data, game, id, hidden);
@@ -269,7 +271,7 @@ function SlHub({ ids, index, setIndex, onPick, hidden, title, timer, note }: {
             <button key={cid} className={`sl-row ${i === index ? 'on' : ''}`} style={{ '--d': `${i * 60}ms` } as React.CSSProperties}
               onClick={() => (i === index ? onPick(i) : setIndex(i))} onMouseEnter={() => setIndex(i)} tabIndex={-1}>
               <span className="who">
-                <i className="crest" style={{ background: cc.a, boxShadow: `inset 0 0 0 4px ${cc.b}` }} />
+                <i className="crest">{cc.code}</i>
                 <span className="nm"><b>{data.names[cid][0]}</b><small>{cc.name} · {data.names[cid][1]}</small></span>
               </span>
               <span className="age">{c.age}</span>
@@ -286,7 +288,7 @@ function SlHub({ ids, index, setIndex, onPick, hidden, title, timer, note }: {
             <div>
               <div className="first">{first || ' '}</div>
               <div className="last">{last}</div>
-              <div className="club"><i style={{ background: club.a, boxShadow: `inset 0 0 0 3px ${club.b}` }} />{club.name} · {pos} · {p.age}</div>
+              <div className="club"><i className="crest">{club.code}</i>{club.name} · {pos} · {p.age}</div>
             </div>
             <div className="ovr"><small>OVR</small><b className={hidden ? '' : tier(p.ovr)}>{hidden ? '?' : p.ovr}</b></div>
           </div>
@@ -297,7 +299,6 @@ function SlHub({ ids, index, setIndex, onPick, hidden, title, timer, note }: {
           </div>
           <div className="kick">{blurb.kicker}</div>
           <p className="text">{blurb.text}</p>
-          <Kit a={club.a} b={club.b} num={SHIRT[pos] ?? 14} />
           <div className="acts">
             <button className="sl-btn go" onClick={() => onPick(index)} tabIndex={-1}>Sign {last}</button>
           </div>
