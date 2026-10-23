@@ -1,7 +1,7 @@
 # Five Seasons
 
-A football draft game for the browser. Pick an era (2010-2015, 2015-2020 or
-2020-2025), create your own club, the 21st club of that era's English top
+A football draft game for the browser. Pick an era (2010-2015 or 2015-2020;
+2020-2025 has its data but is not open yet), create your own club, the 21st club of that era's English top
 flight, and draft an XI of real players: for each position you pick one of
 five, seeing only their rating and age at the start. Then play five seasons.
 

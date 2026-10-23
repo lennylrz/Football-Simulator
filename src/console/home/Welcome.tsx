@@ -51,7 +51,7 @@ export function Welcome({ settings, onSettings, onPlay, onMulti }: { settings: S
       <>
         <h2>Singleplayer</h2>
         <p className="lead">Create your own club, draft an XI of real players one position at a time, then live with five seasons of how they turned out.</p>
-        <div className="w-save fresh"><span className="dot" />Three eras are playable now: 2010–2015, 2015–2020 and 2020–2025. Careers are not saved: leave one and it ends.</div>
+        <div className="w-save fresh"><span className="dot" />Two eras are playable now: 2010–2015 and 2015–2020. Careers are not saved: leave one and it ends.</div>
         <button className="w-cta" onClick={onPlay} tabIndex={-1}>Choose an era <span className="kbd">Enter</span></button>
       </>
     );
@@ -69,7 +69,7 @@ export function Welcome({ settings, onSettings, onPlay, onMulti }: { settings: S
       <>
         <h2>How to Play</h2>
         <ol className="w-steps">
-          <li><span><b>Pick an era.</b> 2010–2015, 2015–2020 or 2020–2025; the 2000s are on the way.</span></li>
+          <li><span><b>Pick an era.</b> 2010–2015 or 2015–2020; more are on the way.</span></li>
           <li><span><b>Create your club.</b> It joins the 20 clubs of the English top flight as the 21st.</span></li>
           <li><span><b>Draft your XI.</b> One position at a time, in any order you like, pick 1 of 5 real players. Rating and age are shown, potential stays hidden.</span></li>
           <li><span><b>Play five seasons.</b> League, FA Cup and Champions League, matchday by matchday. Pause, speed up or skip.</span></li>
