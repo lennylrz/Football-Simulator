@@ -173,6 +173,7 @@
 .sl-row.on { background: var(--cream); color: var(--ink); }
 .sl-row.on .nm small, .sl-row.on .age { color: #5b5f66; }
 .sl-note { margin-top: auto; padding: 12px 14px; font: 500 14px/1.45 var(--body); color: var(--mute); border-top: 1px solid var(--line); }
+.sl-note .rule { font-weight: 600; color: var(--amber); }
 .r-a { color: var(--green); } .r-b { color: var(--lime); } .r-c { color: var(--yellow); } .r-d { color: #e8a04c; }
 .sl-row.on .r-a { color: #1f7a3c; } .sl-row.on .r-b { color: #4f7a12; } .sl-row.on .r-c { color: #8a6a00; } .sl-row.on .r-d { color: #9a5a10; }
 

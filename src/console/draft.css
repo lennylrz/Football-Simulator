@@ -52,6 +52,7 @@
 .ccard .meta .line { border-bottom: 1px solid #c4c4c4; padding-bottom: 5px; color: #3b3d41; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .ccard .meta .line b { color: #111; }
 .ccard .meta .club { font-weight: 700; color: #111; white-space: normal; }
+.draft .note.rule { color: #ffd900; font-weight: 700; }
 .ccard .tagline { margin-top: auto; padding: 8px 12px 12px; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: #5b5e63; }
 .ccard.on .tagline { color: #9a6b00; }
 

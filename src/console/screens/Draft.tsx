@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState } from 'react';
+import { type ReactNode, useEffect, useRef, useState } from 'react';
 import { isBench, redraftsPerSummer, XI } from '../../game/draft';
 import { seasonLabel } from '../../game/game';
+import { challengeOf, ruleLine } from '../../game/daily';
 import { FORMATIONS } from '../../game/positions';
 import { playerBlurb } from '../../game/blurbs';
 import type { GameData } from '../../game/data';
@@ -22,6 +23,9 @@ export function Draft() {
   const [leaving, setLeaving] = useState(false);
   const [rival, setRival] = useState(false);
   const hidden = settings.hiddenRatings;
+  // A Daily Challenge's rule stays in view while drafting.
+  const challenge = challengeOf(game.daily?.challenge);
+  const rule = challenge ? `Daily #${game.daily!.day} · ${ruleLine(challenge)}` : null;
   const theme = useTheme();
   const club = game.clubs[game.user];
   const d = game.draft!;
@@ -130,13 +134,13 @@ export function Draft() {
               hidden={hidden}
               title={bench ? 'Choose a substitute' : `Choose your ${SLOT_NAMES[slotPos].toLowerCase()}`}
               timer={settings.pickTimer > 0 ? left / settings.pickTimer : undefined}
-              note={bench
+              note={rule ? <b className="rule">{rule}</b> : (bench
                 ? 'Substitutes cover any outfield position.'
                 : hidden
                 ? 'Ratings hidden: pick on name, age and club alone.'
                 : opening
                   ? 'Click any position on the pitch to draft it next.'
-                  : 'Your old player has gone. Pick his replacement.'}
+                  : 'Your old player has gone. Pick his replacement.')}
             />
           )}
         </div>
@@ -180,14 +184,14 @@ export function Draft() {
                     );
                   })}
                 </div>
-                <div className="note">
-                  {bench
+                <div className={`note ${rule ? 'rule' : ''}`}>
+                  {rule ?? (bench
                     ? 'Substitutes cover any outfield position.'
                     : hidden
                     ? 'Ratings hidden: pick on name, age and club.'
                     : opening
                       ? 'Click any position on the pitch to draft it next.'
-                      : 'Your old player has gone. Pick his replacement.'}
+                      : 'Your old player has gone. Pick his replacement.')}
                 </div>
               </>
             )}
@@ -222,7 +226,7 @@ const tier = (r: number) => (r >= 85 ? 'r-a' : r >= 80 ? 'r-b' : r >= 74 ? 'r-c'
 /** The 2015-2020 draft: the five as a transfer-hub list, the highlighted one in an overview with a scout's note. */
 function SlHub({ ids, index, setIndex, onPick, hidden, title, timer, note }: {
   ids: number[]; index: number; setIndex: (i: number) => void; onPick: (i: number) => void; hidden: boolean;
-  title: string; timer?: number; note: string;
+  title: string; timer?: number; note: ReactNode;
 }) {
   const { data, game } = useGame();
   const id = ids[index];

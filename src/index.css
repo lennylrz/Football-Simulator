@@ -157,6 +157,9 @@ input { font: inherit; }
 /* Settings: reduce motion. */
 .calm *, .calm *::before, .calm *::after { animation-duration: .01ms !important; animation-delay: 0s !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
 
+/* A trophy in a Daily Challenge result. */
+.result-lines .cup { display: inline-block; width: 9px; height: 11px; margin: 0 1px 0 3px; vertical-align: -1px; background: #f5c623; border-radius: 1px 1px 5px 5px; box-shadow: 0 2px 0 -1px #f5c623; }
+
 /* A player's name that opens his card. */
 .plink { cursor: pointer; }
 .plink:hover { text-decoration: underline; text-underline-offset: 3px; }

@@ -118,12 +118,16 @@ export function closeCommand(close: () => void): Command[] {
 
 /** Asks before leaving a career, which ends it. */
 export function LeaveCareer() {
-  const room = useContext(GameContext)?.room;
+  const ctx = useContext(GameContext);
+  const room = ctx?.room;
+  const daily = ctx?.game.daily;
   return (
-    <Overlay title={room ? 'Leave This Room?' : 'Leave This Career?'}>
+    <Overlay title={room ? 'Leave This Room?' : daily ? "Leave Today's Challenge?" : 'Leave This Career?'}>
       <div className="empty" style={{ color: '#fff' }}>
         {room
           ? `The room carries on without you. Come back any time: Play a Friend, then join with code ${room.code} on this device.`
+          : daily
+          ? `This is your one attempt at Daily #${daily.day}. If you leave now, it is over until tomorrow's challenge.`
           : 'Careers are not saved. If you leave now, this one is over and you start again from a new club.'}
       </div>
     </Overlay>

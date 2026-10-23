@@ -16,10 +16,11 @@ import { createRoom, getRoom, hasJoined, normalizeCode, playerId, type Room } fr
 import { type Era, type GameData, loadGameData } from './game/data';
 import type { ClubInfo } from './game/clubs';
 import { activateEra, type GameState, newGame, REAL_CLUBS } from './game/game';
+import { type Challenge, challengeOf, dailyChallenge, dailyNumber, dailySeed } from './game/daily';
 import type { Formation } from './game/positions';
 import type { PlayStyle } from './game/styles';
 import { applySettings, loadSettings, rulesOf, saveSettings, type Settings } from './settings';
-import { recentPlayers, rememberShown } from './storage';
+import { recentPlayers, rememberShown, saveDailyRecord } from './storage';
 import { GameContext } from './ui/context';
 
 declare global {
@@ -45,6 +46,11 @@ const INVITE = normalizeCode(new URLSearchParams(location.search).get('room') ??
 /** Each era's data, fetched the first time it is picked. */
 const eraData = new Map<Era, Promise<GameData>>();
 
+/** A Daily Challenge sets some of the rules itself, the same for everyone. */
+function dailySettings(s: Settings, c: Challenge): Settings {
+  return { ...s, hiddenRatings: !!c.hiddenRatings, choices: c.choices ?? 5, redrafts: c.redrafts ?? 2, bench: 3 };
+}
+
 export default function App() {
   const [era, setEra] = useState<Era | null>(null);
   const [data, setData] = useState<GameData | null>(null);
@@ -59,6 +65,8 @@ export default function App() {
   const [lobby, setLobby] = useState<{ busy: boolean; error: string | null; code: string }>({ busy: false, error: null, code: INVITE });
   /** whether a host still has to pick an era */
   const [hostNeedsEra, setHostNeedsEra] = useState(false);
+  /** today's Daily Challenge, while its club is being created */
+  const [daily, setDaily] = useState<{ day: number; challenge: Challenge } | null>(null);
 
   // An invite link opens the lobby in the room's era, code filled in.
   useEffect(() => {
@@ -76,9 +84,9 @@ export default function App() {
   const changeSettings = (s: Settings) => {
     saveSettings(s);
     setSettings(s);
-    // A career in progress follows the rules too.
+    // A career in progress follows the rules too, unless a Daily Challenge sets them.
     const g = current.current;
-    if (g) {
+    if (g && !g.daily) {
       const next = { ...g, rules: rulesOf(s) };
       current.current = next;
       setGame(next);
@@ -117,11 +125,15 @@ export default function App() {
     [data],
   );
 
-  // A typed-in seed replays exactly the same draft, so it ignores recent careers.
+  // A typed-in seed replays exactly the same draft, so it ignores recent careers; so does a Daily Challenge.
   const start = (club: ClubInfo, formation: Formation, seed: number, shared: boolean, style: PlayStyle) => {
     if (!data) return;
-    const g = newGame(data, REAL_CLUBS, seed, 'draft', formation, club, rulesOf(settings), shared ? [] : recentPlayers(seed));
-    g.clubs[g.user].style = style;
+    const g = daily
+      ? newGame(data, REAL_CLUBS, dailySeed(daily.day), 'draft', formation, club, rulesOf(dailySettings(settings, daily.challenge)), [], undefined, { day: daily.day, challenge: daily.challenge.id })
+      : newGame(data, REAL_CLUBS, seed, 'draft', formation, club, rulesOf(settings), shared ? [] : recentPlayers(seed));
+    // One attempt a day: it counts from the first pick.
+    if (daily) saveDailyRecord({ day: daily.day, done: false });
+    g.clubs[g.user].style = daily?.challenge.style ?? style;
     g.ownClub = club;
     if (g.draft?.shown) rememberShown(g.seed, g.draft.shown);
     current.current = g;
@@ -192,9 +204,17 @@ export default function App() {
             onSettings={changeSettings}
             onPlay={() => {
               setHostNeedsEra(false);
+              setDaily(null);
               setMode('home');
             }}
             onMulti={() => setMode('lobby')}
+            onDaily={() => {
+              const day = dailyNumber();
+              const challenge = dailyChallenge(day);
+              setDaily({ day, challenge });
+              setEra(challenge.era);
+              setMode('clubs');
+            }}
           />
         </Stage>
       );
@@ -257,25 +277,29 @@ export default function App() {
     if (mode === 'clubs' || !game) {
       return (
         <Stage>
-          <NewClub onStart={start} onBack={() => setMode('setup')} settings={settings} />
+          {daily
+            ? <NewClub onStart={start} onBack={() => { setDaily(null); setMode('welcome'); }} settings={dailySettings(settings, daily.challenge)} daily={daily} />
+            : <NewClub onStart={start} onBack={() => setMode('setup')} settings={settings} />}
         </Stage>
       );
     }
 
-    // Leaving a career ends it: there is nothing to continue.
+    // Leaving a career ends it: there is nothing to continue. A Daily Challenge goes back to the welcome screen.
     const quit = () => {
       current.current = null;
       setGame(null);
-      setMode('home');
+      setMode(game.daily ? 'welcome' : 'home');
+      setDaily(null);
     };
+    const challenge = challengeOf(game.daily?.challenge);
     let screen;
     if (game.stage === 'results') screen = <Results />;
-    else if (game.stage === 'summary') screen = <Summary onNewCareer={() => setMode('clubs')} />;
+    else if (game.stage === 'summary') screen = <Summary onNewCareer={game.daily ? quit : () => setMode('clubs')} />;
     else if (game.draft?.slot !== null && game.draft?.slot !== undefined) screen = <Draft />;
     else screen = <Summer />;
 
     return (
-      <GameContext.Provider value={{ data, game, send, quit, settings }}>
+      <GameContext.Provider value={{ data, game, send, quit, settings: challenge ? dailySettings(settings, challenge) : settings }}>
         <Stage>{screen}</Stage>
       </GameContext.Provider>
     );

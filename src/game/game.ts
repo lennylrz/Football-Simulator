@@ -12,6 +12,7 @@ import { type DraftState, openDraftWindow } from './draft';
 import { AREA, FORMATIONS, type Formation, parsePositions, type Position, positionFit } from './positions';
 import { type PlayStyle, starRole, styleGrowth } from './styles';
 import { stream } from './rng';
+import { challengeOf } from './daily';
 import { fixtures, type PlayerSeasonStats, type SeasonResult, simulateSeason, type TableRow } from './season';
 import { expectedGoals, type MatchResult } from './match';
 import { marketValue } from './valuation';
@@ -169,6 +170,8 @@ export interface GameState {
   ownClub?: ClubInfo;
   /** draft mode: re-drafts per summer and candidates per pick, from the settings */
   rules?: { redrafts: number; choices: number; bench?: number };
+  /** a Daily Challenge career: its day and challenge (see daily.ts) */
+  daily?: { day: number; challenge: string };
   /** draft mode: players offered in recent careers, offered less often now */
   recent?: number[];
   season: number;
@@ -322,7 +325,7 @@ export const REAL_CLUBS = 20;
 
 export function newGame(
   data: GameData, user: number, seed: number, mode?: 'draft', formation: Formation = '4-3-3', own?: ClubInfo, rules?: GameState['rules'],
-  recent?: number[], rival?: { club: ClubInfo; formation: Formation },
+  recent?: number[], rival?: { club: ClubInfo; formation: Formation }, daily?: GameState['daily'],
 ): GameState {
   const state: GameState = {
     v: 1,
@@ -346,6 +349,7 @@ export function newGame(
   if (mode) state.mode = mode;
   if (rules) state.rules = rules;
   if (recent?.length) state.recent = recent;
+  if (daily) state.daily = daily;
   activateEra(data);
   addNewPlayers(state, data);
   data.meta.gameClubs.slice(0, REAL_CLUBS).forEach((name, i) => {
@@ -732,11 +736,14 @@ export function paperTable(state: GameState): PaperRow[] {
  */
 export function starOf(state: GameState, club: number): number | undefined {
   const c = state.clubs[club];
-  if (c.starPick !== undefined && c.starPick >= 0 && c.xi.includes(c.starPick) && state.players[c.starPick]) return c.starPick;
+  // A Daily Challenge can ask for a young star: the oldest are passed over while a young one starts.
+  const under = isHuman(state, club) ? challengeOf(state.daily?.challenge)?.starUnder : undefined;
+  const young = (id: number) => under === undefined || state.players[id].age < under;
+  if (c.starPick !== undefined && c.starPick >= 0 && c.xi.includes(c.starPick) && state.players[c.starPick] && young(c.starPick)) return c.starPick;
   const slots = FORMATIONS[c.formation];
   const lean = (i: number) => ({ ATT: 3, MID: ['CAM', 'LM', 'RM'].includes(slots[i]) ? 1 : -3, DEF: -10, GK: -99 })[AREA[slots[i]]];
   const order = c.xi.map((id, i) => ({ id, key: id >= 0 && state.players[id] ? state.players[id].ovr + lean(i) : -999 })).sort((a, b) => b.key - a.key || a.id - b.id);
-  return order[0]?.id;
+  return (order.find((o) => o.key > -999 && young(o.id)) ?? order[0])?.id;
 }
 
 export function simulate(state: GameState, data: GameData): void {

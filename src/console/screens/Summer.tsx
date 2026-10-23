@@ -9,6 +9,7 @@ import { squadNotes } from '../../game/squadStories';
 import { AroundTheLeague, closeCommand, HallOfFame, LeaveCareer, leaveCommands } from '../overlays';
 import { rivalCommand, RivalOverlay, rivalStatus } from '../room';
 import { STYLE_ORDER, STYLES } from '../../game/styles';
+import { challengeOf } from '../../game/daily';
 import { BenchStrip, landsAt, Pitch, type PlateInfo, Tick } from '../Pitch';
 import { browse, clubOf, type Command, Frame, ordinal, Overlay, useListNav } from '../ui';
 
@@ -66,7 +67,10 @@ export function Summer() {
   // Through the Star: the manager picks the player it is all built around.
   const starStyle = style === 'star';
   const star = starStyle ? starOf(game, game.user) : undefined;
-  const makeStar = (id: number) => starStyle && id >= 0 && club.xi.includes(id) && send({ t: 'star', player: id });
+  // A Daily Challenge may keep the style, or ask for a young star.
+  const challenge = challengeOf(game.daily?.challenge);
+  const canStar = (id: number) => id >= 0 && club.xi.includes(id) && (challenge?.starUnder === undefined || game.players[id].age < challenge.starUnder);
+  const makeStar = (id: number) => starStyle && canStar(id) && send({ t: 'star', player: id });
 
   const plate = (id: number, i: number): PlateInfo => {
     const p = game.players[id];
@@ -132,8 +136,8 @@ export function Summer() {
               ...seasonCommands,
               // Before the first season there is nothing to re-draft, only gaps to fill.
               { keys: ['Enter'], label: sel < 0 ? 'Draft' : 'Re-draft', hidden: game.season === 0 && !can(nav.index), disabled: !can(nav.index), onPress: () => ask(nav.index) },
-              { keys: ['F'], label: 'Make Star', hidden: !starStyle, disabled: !starStyle || sel < 0 || isBench(nav.index) || sel === star, onPress: () => makeStar(sel) },
-              { keys: ['A'], label: 'Style', onPress: () => send({ t: 'style', style: STYLE_ORDER[(STYLE_ORDER.indexOf(style) + 1) % STYLE_ORDER.length] }) },
+              { keys: ['F'], label: 'Make Star', hidden: !starStyle, disabled: !starStyle || !canStar(sel) || isBench(nav.index) || sel === star, onPress: () => makeStar(sel) },
+              { keys: ['A'], label: 'Style', hidden: !!challenge?.style, disabled: !!challenge?.style, onPress: () => send({ t: 'style', style: STYLE_ORDER[(STYLE_ORDER.indexOf(style) + 1) % STYLE_ORDER.length] }) },
               { keys: ['S'], label: 'Swap', hidden: !club.bench.length, disabled: sel < 0 || empty.length > 0, onPress: () => setSwapFrom(nav.index) },
               { ...browse('Browse', nav.up, nav.down), hidden: true },
               { keys: ['T'], label: 'Transfers', onPress: () => setOverlay('around') },
@@ -233,7 +237,7 @@ export function Summer() {
                             )}
                           </td>
                           <td className="c acts">
-                            {starStyle && p && !isBench(i) && id !== star && swapFrom === null && (
+                            {starStyle && p && !isBench(i) && id !== star && canStar(id) && swapFrom === null && (
                               <button className="rowbtn" title="Build the team around him" onClick={(e) => { e.stopPropagation(); makeStar(id); }} tabIndex={-1}>★</button>
                             )}
                             {p && club.bench.length > 0 && swapFrom === null && (

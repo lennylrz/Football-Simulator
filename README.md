@@ -29,6 +29,29 @@ five, seeing only their rating and age at the start. Then play five seasons.
 Players develop as they really did, give or take: next season's real FIFA
 rating is the expected value, with random noise around it.
 
+## Daily Challenge
+
+One challenge a day, the same for everyone (welcome screen, Daily Challenge):
+the day's seed, era and rule come from a list of 20 by day number
+(`src/game/daily.ts`; day 1 is 23 October 2026, days turn at local
+midnight). Rules filter who the draft offers (only Portugal, kids only,
+Real Madrid's squad, Bundesliga XI...), change the career's rules (two
+choices, ratings hidden, no re-drafts, a locked play style) or set a target
+(top half every season, win the league, finish above a rival). One attempt:
+starting the draft uses it up. The career summary shows a result to copy,
+
+```
+Five Seasons Daily #12 · One club men
+3rd 1st🏆 2nd 1st🏆🏆 4th
+Legacy 11,250
+```
+
+and sends the score to the day's leaderboard (`daily_scores` in the
+Supabase project, append-only like the room tables: one row per browser per
+day). When a rule leaves too few players for a pick, older and lower-rated
+players count, then the same line of the team, and only then does the rule
+bend for that pick.
+
 ## Play a Friend
 
 Two-player rooms (main menu, Play a Friend). The host creates a club and gets

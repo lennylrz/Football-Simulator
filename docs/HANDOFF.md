@@ -1,11 +1,12 @@
 # Handoff: Five Seasons
 
 Read this first in a new session. Repo: `lennylrz/Football-Simulator`.
-Everything below is merged to `main` (last: PR #9) and live at
+PR #9 is merged to `main` and live at
 https://five-seasons-football.vercel.app (Vercel project `five-seasons`,
 team "PingPong Ltd"; every merge to `main` deploys to production). The
 owner tests on the live site, so changes reach them only once merged.
-Always ask before merging.
+Always ask before merging. The five tasks the owner set after PR #9 are done
+on branch `claude/wizardly-meitner-j6p00i` (see "Done since PR #9").
 
 ## What the game is
 
@@ -92,7 +93,7 @@ state + `game.stage`). Multiplayer: `Lobby` → `NewClub` (room) →
 npm install
 npm run dev                 # vite dev server
 npx tsc -b && npx eslint src
-npx vitest run              # 13 files, 59 tests incl. balance (~2-3 min)
+npx vitest run              # 14 files, ~110 tests incl. balance and every daily (~3 min)
 npm run build
 ```
 
@@ -120,96 +121,83 @@ the exceptions; best Park the Bus defender ~91-92, up to 94-96.
 - No kits or club colours on players unless every club has real colours.
 - Surgical balance changes only; never cap anything, keep everything possible.
 
-## Next tasks (from the owner, in this order)
+## Done since PR #9
 
-### 1. Black bars around the game
+1. **No black bars.** `Stage` (`ui.tsx`) makes `.stage` the window's size
+   and centres the 1280x720 content in `.stage-in`; `--bx`/`--by` are the
+   extra room each side and `inset: var(--bleed)` takes a full-screen layer
+   to the window's edges (overlays, the season reveal, the console command
+   bar, the welcome grid, the era previews, the season moments).
+   `OnStage` portals overlays straight onto the stage so they cover the
+   header too. `StageSize` gives the stage's size in stage pixels.
+2. **2020-2025 is "Coming later"** (`ERAS` in `Home.tsx`, `live: false`).
+   Room hosts pick their era on the same screen.
+3. **Visual sweep**, both themes, with a Playwright script that plays whole
+   careers and flags clipped or truncated text. Fixed: the review's trophy
+   row (the window title now says it: "League Champions", "The Double",
+   gold band), the summer table (all eleven fit; dressing-room notes show
+   one at a time), delta badges at the touchlines, cup-run columns, the
+   round of 16 bracket in Slate, Hall of Fame width, season report labels,
+   the room's summer command bar. A user club can no longer take a real
+   club's name (`uniqueClub` in `game.ts`; it confused name-based lookups).
+4. **Winning feels like winning** (`console/moments.tsx`, `moments.css`,
+   `console/FinalDay.tsx`): a flash, confetti and a stamp in the viewer when
+   the title is clinched or a final won; the season's moments after the
+   last matchday (each trophy, the double/treble, a Ballon d'Or place, the
+   player of the season), which move on by themselves; the last matchday
+   played live when the title is within three points; summer ratings tick
+   up from last season's (`Tick` in `Pitch.tsx`) and big glow-ups light
+   their plate. Console: gold gloss, rays, ticker tape in club colours.
+   Slate: amber sweep, settling caps, gold flakes. Reduce Motion keeps the
+   moments and drops the movement.
+5. **Daily Challenge** (`game/daily.ts`, `net/daily.ts`, welcome menu,
+   summary). The 20 challenges below are all in, in that order by day
+   number (day 1 = 23 Oct 2026, local midnight). Candidate filters go
+   through `allowedFor`/`poolFor` in `draft.ts` (widen: older and
+   lower-rated, then the same line of the team, then bend the rule for that
+   pick). Real Madrid, the underdog and the rival are done as squad
+   filters (draft only from that squad), not as managing a real club. One
+   attempt per browser (`storage.ts`), leaderboard in Supabase
+   `daily_scores` (insert + select RLS, unique per day and browser id).
+   `daily.test.ts` drafts every challenge, by best rating and by first
+   candidate, and plays it through.
 
-The stage is a fixed 16:9 1280x720 box scaled to fit (`Stage` in
-`ui.tsx`), and `.stage-wrap` / `body` are `#000`, so any window that isn't
-16:9 shows black bars (on a laptop browser: left and right). Fix so it
-looks intentional on any window: at least paint `.stage-wrap` with the
-current screen's background (per theme: welcome/home paper, console
-charcoal, Slate blue gradient), ideally let the background extend to the
-full window while the 1280x720 content stays centred. Check every screen
-and both themes, and the era picker.
+## Next tasks
 
-### 2. 2020-2025 not playable yet
+None set by the owner yet. Open points worth raising:
 
-Make the 2020-2025 tile "Coming later" and not clickable (`ERAS` in
-`src/console/home/Home.tsx`, `live: false`), also in the room host's era
-choice. Only 2010-15 and 2015-20 are in focus.
+- The leaderboard trusts the browser, like the rooms: anyone with the
+  public key could post a made-up score. Fine for friends; a server-side
+  replay of the seed and picks would make it honest.
+- Club names on the board are free text (40 characters max), unfiltered.
+- "Galácticos" and "The rival" draft from the real squad rather than
+  managing the real club with its squad (the engine's real-club mode would
+  need a UI for it).
 
-### 3. Full visual sweep, both themes (2010-15 and 2015-20)
+### The 20 daily challenges (built)
 
-Go through every screen and overlay in both eras and fix every overflow,
-clipping and spill: welcome, era picker, settings, new club, draft
-(choose-first state, every position, bench, hidden-ratings and pick-timer
-settings), summer (first summer and later ones, retired players, re-draft
-confirm, swap mode, star pick, dressing-room notes), season viewer
-(league days, cup days, paused), season reveal, season review (all tabs:
-story, table, your matches, Champions League group/knockout/bracket, FA Cup,
-leaders, squad; treble and trophy states), Hall of Fame, player card,
-transfers, career summary and season report, share card, lobby, waiting
-room, rival lineup, live head-to-head. Known spots: text spills when you
-win something (trophy lines in the review header and summer header),
-delta badges clipped at the pitch edges, long club/player names,
-the squad table getting short under the dressing-room notes.
-Screenshot each one with Playwright before and after.
+As they read in the game (`CHALLENGES` in `src/game/daily.ts`), with their era:
 
-### 4. Make winning feel like winning (both themes)
-
-The screens should react: when you win the league, a cup or the treble,
-the screen lights up (flash, confetti or the era's equivalent, a trophy
-moment, then the review). Also: the last matchday live when the title race
-is within ~3 points, glow-ups ticking up on the summer reveal, a moment
-for a player of the season / Ballon d'Or from your club. Respect
-"reduce motion" (`.calm`). Each era in its own style.
-
-### 5. Daily Challenge
-
-One challenge a day, the same for everyone: fixed seed, era and rule;
-one attempt; a copyable result text (e.g. `Five Seasons Daily #12 · Only
-Portugal / 3rd 1st🏆 2nd 1st🏆🏆 4th / Legacy 11,250`) and a daily
-leaderboard in Supabase (new append-only table, insert + select RLS like
-the room tables). The day's challenge is picked from a list by day number.
-Engine hooks: candidate filters go in `drawCandidates` / `drawBenchCandidates`
-(`src/game/draft.ts`; widen the pool or relax the rating floor when a filter
-leaves too few players); "manage an existing club" uses the engine's real-club
-mode (`newGame` with a club index < `REAL_CLUBS`; the transfer/management
-mode still exists in `market.ts` but has no UI) or, simpler, pre-fills the
-draft with that club's real squad; clubs from abroad would need their
-squads added to `squads.json` by `scripts/process_data.py`.
-
-The first 20 challenges (owner asked for exactly this kind of list):
-
-1. **Only Portugal**: every candidate is Portuguese.
-2. **Kids only**: every player 21 or under at the start.
-3. **Old guard**: every player 30 or over.
-4. **Galácticos in England**: start with Real Madrid's 2015 squad (needs
-   their squad in the data) in the Premier League.
-5. **The underdog**: manage the real club predicted to finish 20th (e.g.
-   Watford/Bournemouth 2015) with no re-drafts; target a top-half finish.
-6. **Only Brazil**: every candidate is Brazilian.
-7. **Bargain bin**: every player valued under €5m.
-8. **Two choices**: only 2 candidates per pick (the setting allows 3-5 today; allow 2 for this challenge).
-9. **Blind draft**: ratings hidden all career.
-10. **Bundesliga XI**: every candidate plays in Germany at the start.
-11. **Park the Bus or bust**: style locked to Park the Bus, win the league.
-12. **One club men**: every candidate from a single foreign club per
-    position line (e.g. defence all from Juventus, attack all from PSG).
-13. **Only Spain**: every candidate is Spanish.
-14. **No re-drafts**: the XI you draft is the XI you keep for 5 seasons.
-15. **Star system**: Through the Star, and your star must be under 23.
-16. **Home-grown**: every candidate is English.
-17. **Serie A XI**: every candidate plays in Italy at the start.
-18. **Rated 75-80**: no candidate above 80 or below 75 at the start.
-19. **The rival**: start as last season's champions' biggest rival with
-    their real squad; finish above the champions every season.
-20. **Mixed bag**: one player from each of 11 different countries.
-
-Score each challenge with the normal legacy score (optionally a challenge
-target, e.g. "top half" or "above the champions", shown as pass/fail in
-the result text). Keep the rules shown in one short line on the draft.
+1. **Only Portugal** (2015-2020): Every player is Portuguese.
+2. **Kids only** (2015-2020): Every player is 21 or under at the start.
+3. **Old guard** (2010-2015): Every player is 30 or over at the start.
+4. **Galácticos in England** (2015-2020): Real Madrid's squad only, in the Premier League.
+5. **The underdog** (2010-2015): Draft from the five weakest squads. No re-drafts. Target: top half every season.
+6. **Only Brazil** (2010-2015): Every player is Brazilian.
+7. **Bargain bin** (2015-2020): Every player is valued under €5m.
+8. **Two choices** (2010-2015): Two candidates per pick, not five.
+9. **Blind draft** (2015-2020): Ratings hidden in every draft.
+10. **Bundesliga XI** (2015-2020): Every player plays in Germany.
+11. **Park the Bus or bust** (2010-2015): Park the Bus all career. Target: win the league.
+12. **One club men** (2015-2020): Defence from Juventus, midfield from Bayern, attack from PSG.
+13. **Only Spain** (2010-2015): Every player is Spanish.
+14. **No re-drafts** (2015-2020): The XI you draft is the XI you keep.
+15. **Star system** (2010-2015): Through the Star, with a star under 23.
+16. **Home-grown** (2015-2020): Every player is English.
+17. **Serie A XI** (2010-2015): Every player plays in Italy.
+18. **Rated 75-80** (2015-2020): Every player is rated 75 to 80 when offered.
+19. **The rival** (2010-2015): Arsenal's squad only. Target: above Chelsea every season.
+20. **Mixed bag** (2015-2020): Every player from a different country.
 
 ### Later ideas (agreed, not started)
 

@@ -62,7 +62,7 @@ export function Stage({ tone = 'dark', children }: { tone?: 'dark' | 'light' | '
   );
 }
 
-export type KeyName = 'Enter' | 'Escape' | 'Space' | 'Up' | 'Down' | 'Left' | 'Right' | 'Q' | 'E' | 'T' | 'A' | 'H' | 'R' | 'S' | 'F' | 'V' | 'P';
+export type KeyName = 'Enter' | 'Escape' | 'Space' | 'Up' | 'Down' | 'Left' | 'Right' | 'Q' | 'E' | 'T' | 'A' | 'H' | 'R' | 'S' | 'F' | 'V' | 'P' | 'C';
 
 export interface Command {
   keys: KeyName[];
@@ -77,7 +77,7 @@ export interface Command {
 
 const KEY_OF: Record<string, KeyName> = {
   Enter: 'Enter', Escape: 'Escape', ' ': 'Space', ArrowUp: 'Up', ArrowDown: 'Down', ArrowLeft: 'Left', ArrowRight: 'Right',
-  q: 'Q', e: 'E', t: 'T', a: 'A', h: 'H', r: 'R', s: 'S', f: 'F', v: 'V', p: 'P',
+  q: 'Q', e: 'E', t: 'T', a: 'A', h: 'H', r: 'R', s: 'S', f: 'F', v: 'V', p: 'P', c: 'C',
 };
 
 const ARROWS: Partial<Record<KeyName, string>> = { Up: 'M3 10l5-5 5 5', Down: 'M3 6l5 5 5-5', Left: 'M10 3l-5 5 5 5', Right: 'M6 3l5 5-5 5' };
@@ -208,6 +208,30 @@ export function Overlay({ title, children, wide }: { title: ReactNode; children:
       </div>
     </OnStage>
   );
+}
+
+/** A Daily Challenge result as it reads on screen: its first lines, a small gold cup for each trophy (no emoji). */
+export function ResultLines({ text, lines = 3 }: { text: string; lines?: number }) {
+  return (
+    <pre className="result-lines">
+      {text.split('\n').slice(0, lines).map((line, k) => (
+        <span key={k}>
+          {line.split('\u{1F3C6}').map((part, j) => (j ? <span key={j}><i className="cup" aria-label="trophy" />{part}</span> : part))}
+          {'\n'}
+        </span>
+      ))}
+    </pre>
+  );
+}
+
+/** Copies text to the clipboard; false if the browser refuses. */
+export async function copyText(text: string): Promise<boolean> {
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 export function money(k: number): string {

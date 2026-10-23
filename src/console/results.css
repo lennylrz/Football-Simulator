@@ -48,3 +48,15 @@
 .bracket .bt.lost { color: #7d8086; }
 .bracket .bt.me { background: linear-gradient(180deg, #ffe45c, #f2c200); color: #2b2300; }
 .bracket .bt.me.lost { background: linear-gradient(180deg, #c9b04a, #a08a2a); }
+
+/* Career summary of a Daily Challenge: the result to share and the day's board. */
+.daily-end { flex: 1; min-height: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 14px; padding: 12px 14px; }
+.daily-end pre { margin: 0 0 10px; padding: 10px 12px; font: 700 14px/1.55 ui-monospace, Menlo, monospace; white-space: pre-wrap; color: #fff; background: #0c0c0d; box-shadow: inset 0 0 0 1px #2a2b2e; }
+.daily-end .brow { display: grid; grid-template-columns: 28px 1fr auto; gap: 8px; padding: 5px 8px; font-size: 16px; border-bottom: 1px solid #262729; }
+.daily-end .brow .cl { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.daily-end .brow.me { background: rgba(255,217,0,.16); }
+.daily-end .sub { padding: 8px; font-size: 14px; color: #8f9297; }
+.daily-end .empty { padding: 8px; }
+.stage.sl .daily-end pre { background: rgba(0,0,0,.25); box-shadow: none; font-family: var(--cond); font-size: 16px; letter-spacing: .02em; }
+.stage.sl .daily-end .brow { border-bottom: 1px solid var(--line); font-family: var(--body); }
+.stage.sl .daily-end .brow.me { background: rgba(232,160,76,.16); }
