@@ -1,4 +1,4 @@
-import { createContext, type ReactNode, useContext, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { createContext, type ReactNode, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { CLUBS, type ClubInfo } from '../game/clubs';
 import type { GameData } from '../game/data';
 
@@ -9,27 +9,39 @@ import type { GameData } from '../game/data';
 export const ThemeContext = createContext<'' | 'sl'>('');
 export const useTheme = () => useContext(ThemeContext);
 
-/** Scales the fixed 1280x720 stage to fit the window. */
+/** The stage's size in stage pixels: at least 1280x720, as much more as the window's shape adds. */
+export const StageSize = createContext({ w: 1280, h: 720 });
+
+/**
+ * Scales the fixed 1280x720 stage to fit the window. The screen's background
+ * fills the whole window; the 1280x720 content stays centred in it.
+ */
 export function Stage({ tone = 'dark', children }: { tone?: 'dark' | 'light' | 'home'; children: ReactNode }) {
   const theme = useTheme();
-  const [scale, setScale] = useState(1);
+  const [fit, setFit] = useState({ s: 1, w: 1280, h: 720 });
   useLayoutEffect(() => {
-    const fit = () => setScale(Math.min(window.innerWidth / 1280, window.innerHeight / 720));
-    fit();
-    window.addEventListener('resize', fit);
-    return () => window.removeEventListener('resize', fit);
+    const resize = () => {
+      const s = Math.min(window.innerWidth / 1280, window.innerHeight / 720);
+      setFit({ s, w: Math.max(1280, Math.ceil(window.innerWidth / s)), h: Math.max(720, Math.ceil(window.innerHeight / s)) });
+    };
+    resize();
+    window.addEventListener('resize', resize);
+    return () => window.removeEventListener('resize', resize);
   }, []);
+  const size = useMemo(() => ({ w: fit.w, h: fit.h }), [fit.w, fit.h]);
   return (
     <div className="stage-wrap">
       <div
         className={`stage ${tone} ${tone === 'home' ? '' : theme}`}
-        style={{ '--s': scale } as React.CSSProperties}
+        style={{ '--s': fit.s, width: fit.w, height: fit.h, '--bx': `${(fit.w - 1280) / 2}px`, '--by': `${(fit.h - 720) / 2}px` } as React.CSSProperties}
         // Clicking a button never focuses it, so Enter and Space afterwards only run the screen's command.
         onMouseDown={(e) => {
           if ((e.target as Element).closest('button')) e.preventDefault();
         }}
       >
-        {children}
+        <div className="stage-in">
+          <StageSize.Provider value={size}>{children}</StageSize.Provider>
+        </div>
       </div>
     </div>
   );

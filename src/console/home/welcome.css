@@ -1,6 +1,6 @@
 /* The welcome screen: the era home's clean look (paper, ink, one blue) with a game menu. */
 .welcome { position: absolute; inset: 0; }
-.welcome .w-grid { position: absolute; inset: 0; pointer-events: none;
+.welcome .w-grid { position: absolute; inset: var(--bleed); pointer-events: none;
   background-image: linear-gradient(rgba(18,20,24,.045) 1px, transparent 1px), linear-gradient(90deg, rgba(18,20,24,.045) 1px, transparent 1px); background-size: 32px 32px; }
 .welcome .w-fine { position: absolute; right: 80px; top: 34px; font-size: 13px; color: #8a9099; letter-spacing: .04em; }
 

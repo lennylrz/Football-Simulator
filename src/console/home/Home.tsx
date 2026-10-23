@@ -2,7 +2,7 @@ import { useState } from 'react';
 import type { Era } from '../../game/data';
 import { useCommands } from '../ui';
 import './home.css';
-import { Preview, PREVIEWS } from './Previews';
+import { PREVIEWS } from './Previews';
 
 type EraKey = keyof typeof PREVIEWS;
 
@@ -32,11 +32,14 @@ export function Home({ onPlay, onBack }: { onPlay: (era: Era) => void; onBack: (
   return (
     <div className={`home ${era ? `themed t${era.key}` : ''}`}>
       {/* Every era's full-screen look, cross-faded in on hover. */}
-      {ERAS.map((e, i) => (
-        <div key={e.key} className={`layer ${i === index ? 'shown' : ''}`} aria-hidden>
-          <Preview era={e.key} width={1280} />
-        </div>
-      ))}
+      {ERAS.map((e, i) => {
+        const Look = PREVIEWS[e.key];
+        return (
+          <div key={e.key} className={`layer l${e.key} ${i === index ? 'shown' : ''}`} aria-hidden>
+            <div className="pv-box"><Look /></div>
+          </div>
+        );
+      })}
 
       <button className="back" onClick={onBack} tabIndex={-1}>‹ Main menu</button>
 

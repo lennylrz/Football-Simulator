@@ -41,7 +41,7 @@
 .stage.sl .f-body.full { top: 18px; }
 
 /* Button hints along the bottom, controller style. */
-.stage.sl .cmdbar { left: 44px; right: 44px; height: 50px; background: transparent; box-shadow: none; color: var(--soft); }
+.stage.sl .cmdbar { left: 44px; right: 44px; bottom: 0; height: 50px; padding: 0; background: transparent; box-shadow: none; color: var(--soft); }
 .stage.sl .cmdbar .hints { padding-left: 0; gap: 6px; }
 .stage.sl .hint { font: 500 16px var(--body); padding: 0 12px 0 0; gap: 8px; border-radius: 3px; }
 .stage.sl .hint + .hint::before { display: none; }
@@ -49,7 +49,7 @@
 .stage.sl .hint:hover:not(:disabled) .key { box-shadow: inset 0 0 0 1px var(--cream); }
 .stage.sl .key { height: 24px; min-width: 24px; padding: 0 7px; border-radius: 12px; background: rgba(255,255,255,.12); box-shadow: none; color: var(--text); font: 700 12px var(--cond); letter-spacing: .04em; text-shadow: none; }
 .stage.sl .key.primary { background: var(--green); color: var(--ink); }
-.stage.sl .cmdbar .info { padding: 0; background: none; clip-path: none; color: var(--text); font: 700 20px var(--cond); letter-spacing: .04em; text-shadow: none; }
+.stage.sl .cmdbar .info { margin: 0 0 0 auto; padding: 0; background: none; clip-path: none; color: var(--text); font: 700 20px var(--cond); letter-spacing: .04em; text-shadow: none; }
 .stage.sl .cmdbar .info span { font: 600 14px var(--cond); color: var(--mute); letter-spacing: .08em; }
 .stage.sl .cmdbar .info b.timer.low { color: var(--red); }
 
