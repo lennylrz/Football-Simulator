@@ -48,6 +48,15 @@ describe('draft mode', () => {
     expect(s.draft!.reveal.length).toBeGreaterThan(8);
   });
 
+  it("keeps a real club's name for the real club", () => {
+    const real = data.meta.gameClubs[3];
+    const s = newGame(data, REAL_CLUBS, 5, 'draft', '4-3-3', { name: real, short: real, code: 'XXX', primary: '#000000', secondary: '#ffffff', rep: 72, budget: 0 });
+    expect(s.user).toBe(REAL_CLUBS);
+    expect(data.meta.gameClubs[3]).toBe(real);
+    expect(data.meta.gameClubs[REAL_CLUBS]).toBe(`${real} 2`);
+    expect(new Set(s.clubs.map((c) => c.id)).size).toBe(s.clubs.length);
+  });
+
   it('lets the user gamble on the re-drafts the rules allow', () => {
     const s = newGame(data, REAL_CLUBS, 4, 'draft', '4-4-2', undefined, { redrafts: 3, choices: 3 });
     expect(s.draft!.candidates).toHaveLength(3);

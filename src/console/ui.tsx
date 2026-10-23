@@ -182,10 +182,10 @@ export function useScrollIntoView(index: number) {
   return ref;
 }
 
-export function Overlay({ title, children }: { title: ReactNode; children: ReactNode }) {
+export function Overlay({ title, children, wide }: { title: ReactNode; children: ReactNode; wide?: boolean }) {
   return (
     <div className="overlay">
-      <div className="win">
+      <div className={`win ${wide ? 'wide' : ''}`}>
         <div className="win-title">{title}</div>
         <div className="body">{children}</div>
       </div>

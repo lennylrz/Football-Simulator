@@ -25,9 +25,11 @@
 .review .score { font-weight: 700; text-align: center; }
 .review .cuptbl { table-layout: fixed; font-size: 16px; }
 .review .cuptbl td { overflow: hidden; text-overflow: ellipsis; padding: 4px 8px; }
-.review .cuptbl td:nth-child(1) { width: 26%; }
-.review .cuptbl td:nth-child(2) { width: 32%; }
-.review .cuptbl td:nth-child(3) { width: 10%; }
+.review .cuptbl td:nth-child(1) { width: 74px; }
+.review .cuptbl td:nth-child(3) { width: 82px; white-space: nowrap; }
+.review .cuptbl td:nth-child(4) { width: 96px; }
+.review .cuptbl .tag { font-size: 13px; }
+.review .cuptbl .score small { font-size: 12px; font-weight: 700; opacity: .7; }
 
 /* Knockout bracket: each round a column, ties centred between the two they came from. */
 .bracket { flex: 1; min-height: 0; display: grid; gap: 14px; padding: 6px 14px 8px; }
@@ -38,6 +40,9 @@
 .bracket .btie.mine { box-shadow: 0 0 0 2px #ffd900; }
 .bracket .bt { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center; padding: 1px 7px; font-size: 14px; line-height: 19px; }
 .bracket .bt + .bt { border-top: 1px solid #333539; }
+/* A round of sixteen has to fit sixteen rows. */
+.bracket .bcol.dense .bties { gap: 2px; }
+.bracket .bcol.dense .bt { font-size: 13px; line-height: 15px; }
 .bracket .bt .nm { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .bracket .bt.won { color: #fff; font-weight: 700; }
 .bracket .bt.lost { color: #7d8086; }

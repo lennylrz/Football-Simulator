@@ -49,7 +49,7 @@ export function HallOfFame({ game, data }: { game: GameState; data: GameData }) 
     ...(h.ballon ?? []).flatMap((b, i) => (b.club === game.user ? [{ season: h.season, label: `Ballon d'Or ${['winner', '2nd', '3rd'][i]}`, id: b.player }] : [])),
   ]);
   return (
-    <Overlay title="Hall of Fame">
+    <Overlay title="Hall of Fame" wide>
       <div className="office" style={{ height: 120 }}>
         <div className="col">
           <span className="cap">Trophy Cabinet</span>
@@ -71,10 +71,10 @@ export function HallOfFame({ game, data }: { game: GameState; data: GameData }) 
           )}
         </div>
       </div>
-      <div className="panes" style={{ height: 340 }}>
+      <div className="panes" style={{ height: 340, gridTemplateColumns: '1fr 1.4fr' }}>
         <div className="pane dpanel">
           <div className="ph gbar">Season by Season</div>
-          <div className="kvlist">
+          <div className="kvlist scroll">
             {c.seasons.length === 0 && <div><span>Play a season to start your legacy.</span></div>}
             {c.seasons.map((s) => (
               <div key={s.season}>
@@ -204,7 +204,7 @@ export function SeasonReport({ game, data, season }: { game: GameState; data: Ga
         <div className="col">
           <span className="cap">Cups</span>
           <span className="kv"><span>FA Cup</span><b>{reachedText(h.faReached[game.user])}</b></span>
-          <span className="kv"><span>Champions League</span><b>{reachedText(h.clReached[game.user])}</b></span>
+          <span className="kv"><span>Europe</span><b>{reachedText(h.clReached[game.user])}</b></span>
         </div>
         <div className="sep" />
         <div className="col">

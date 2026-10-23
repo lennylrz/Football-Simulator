@@ -298,14 +298,23 @@ export function transfer(state: GameState, data: GameData, player: number, to: n
  * and colours are registered alongside the 20 real clubs.
  */
 export function registerUserClub(data: GameData, info: ClubInfo, slot = REAL_CLUBS): number {
-  const at = data.meta.gameClubs.indexOf(info.name);
-  const index = at >= 0 && at <= slot ? at : slot;
-  data.meta.gameClubs[index] = info.name;
+  data.meta.gameClubs[slot] = info.name;
   data.meta.gameClubs.length = slot + 1;
   const existing = CLUBS.findIndex((c) => c.name === info.name);
   if (existing >= 0) CLUBS[existing] = info;
   else CLUBS.push(info);
-  return index;
+  return slot;
+}
+
+/**
+ * Clubs are told apart by name, so a user's club can't share one with a real
+ * club of the era (or with another manager's): it gets a number.
+ */
+export function uniqueClub(data: GameData, info: ClubInfo, others: string[] = []): ClubInfo {
+  const taken = new Set([...data.meta.gameClubs.slice(0, REAL_CLUBS), ...others]);
+  let club = info;
+  for (let n = 2; taken.has(club.name); n++) club = { ...info, name: `${info.name} ${n}` };
+  return club;
 }
 
 /** The era's 20 real clubs come first; a draft club is number 20. */
@@ -347,7 +356,7 @@ export function newGame(
   });
   for (const c of state.clubs) applyAutoLineup(state, c.id);
   if (mode === 'draft') {
-    const id = registerUserClub(data, own ?? { name: 'Five Seasons FC', short: 'Five Seasons', code: 'FSF', primary: '#1d4f91', secondary: '#ffffff', rep: 72, budget: 0 });
+    const id = registerUserClub(data, uniqueClub(data, own ?? { name: 'Five Seasons FC', short: 'Five Seasons', code: 'FSF', primary: '#1d4f91', secondary: '#ffffff', rep: 72, budget: 0 }));
     state.user = id;
     state.clubs.push({ id, rep: own?.rep ?? 72, cash: 0, squad: [], formation, xi: [], bench: [], style: 'tiki' });
     if (rival) {

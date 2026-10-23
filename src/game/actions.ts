@@ -4,7 +4,7 @@
 import type { ClubInfo } from './clubs';
 import type { GameData } from './data';
 import { chooseSlot, emptySlots, pickCandidate, playDraftSeason, startRedraft, swapSpots } from './draft';
-import { asUser, endSeason, type GameState, newGame, REAL_CLUBS, type Stage } from './game';
+import { asUser, endSeason, type GameState, newGame, REAL_CLUBS, type Stage, uniqueClub } from './game';
 import type { Formation } from './positions';
 import { type PlayStyle, STYLES } from './styles';
 
@@ -39,11 +39,10 @@ export const GUEST = REAL_CLUBS + 1;
 
 /** A two-player career, started when the guest joins. */
 export function newRoomGame(data: GameData, seed: number, rules: GameState['rules'], host: RoomManager, guest: RoomManager): GameState {
-  // Two clubs can't share a name: the guest's gets a suffix.
-  const taken = new Set([...data.meta.gameClubs.slice(0, REAL_CLUBS), host.club.name]);
-  let club = guest.club;
-  for (let n = 2; taken.has(club.name); n++) club = { ...guest.club, name: `${guest.club.name} ${n}` };
-  const state = newGame(data, HOST, seed, 'draft', host.formation, host.club, rules, [], { club, formation: guest.formation });
+  // Two clubs can't share a name: a real club's, or each other's.
+  const own = uniqueClub(data, host.club);
+  const club = uniqueClub(data, guest.club, [own.name]);
+  const state = newGame(data, HOST, seed, 'draft', host.formation, own, rules, [], { club, formation: guest.formation });
   if (host.style && STYLES[host.style]) state.clubs[HOST].style = host.style;
   if (guest.style && STYLES[guest.style]) state.clubs[GUEST].style = guest.style;
   return state;

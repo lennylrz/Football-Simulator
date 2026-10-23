@@ -14,6 +14,17 @@ import { clubOf, type Command, Frame, KeyCap, ordinal } from '../ui';
 
 const TABS = ['Story', 'Table', 'Your Matches', 'Champions League', 'FA Cup', 'Leaders', 'Squad'] as const;
 
+/** Rounds as cup runs list them, short so the opponent has room. */
+const ROUND_SHORT: Record<string, string> = {
+  'Third round': 'Round 3', 'Fourth round': 'Round 4', 'Fifth round': 'Round 5', 'Round of 16': 'Last 16', 'Quarter-final': 'Quarter', 'Semi-final': 'Semi', Final: 'Final',
+};
+
+/** What a season's trophies are called, as the review's headline. */
+const HONOURS: Record<string, string> = {
+  league: 'League Champions', fa: 'FA Cup Winners', cl: 'Champions League Winners',
+  'league fa': 'The Double', 'league cl': 'League and Champions League', 'fa cl': 'FA Cup and Champions League', 'league fa cl': 'The Treble',
+};
+
 export function Results() {
   const { data, game, send, settings, quit, room } = useGame();
   const [rival, setRival] = useState(false);
@@ -89,9 +100,9 @@ export function Results() {
       const [f, a] = home ? [t.ga, t.gb] : [t.gb, t.ga];
       return (
         <tr key={t.round}>
-          <td className="comp">{t.round}</td>
+          <td className="comp" title={t.round}>{ROUND_SHORT[t.round] ?? t.round}</td>
           <td className="ellip">{t.legs.length > 1 ? 'vs' : home ? 'vs' : 'at'} {ent(opp)}</td>
-          <td className="score">{f}–{a}{t.pens ? ' p' : ''}{t.legs.length > 1 ? ' agg' : ''}</td>
+          <td className="score">{f}–{a}{t.pens ? <small> p</small> : ''}{t.legs.length > 1 ? <small> agg</small> : ''}</td>
           <td className="c"><span className={`tag ${won ? 'g' : 'r'}`}>{won ? (t.round === 'Final' ? 'WON' : 'THROUGH') : 'OUT'}</span></td>
         </tr>
       );
@@ -106,7 +117,7 @@ export function Results() {
       commands={commands}
     >
       <div className="win review">
-        <div className="win-title">{won.length === 3 ? 'THE TREBLE' : `Season Review ${seasonLabel(game.season)}`}</div>
+        <div className={`win-title ${won.length ? 'won' : ''}`}>{won.length ? `${HONOURS[won.join(' ')]} · ${seasonLabel(game.season)}` : `Season Review ${seasonLabel(game.season)}`}</div>
         <div className={`office ${won.length === 3 ? 'treble' : ''}`} style={{ height: 132 }}>
           <div className="col">
             <span className="cap">League · Your Finish</span>
@@ -115,7 +126,6 @@ export function Results() {
             {h.predicted !== undefined && (
               <span className="kv"><span>On paper</span><b className={finish < h.predicted ? 'good' : finish > h.predicted ? 'bad' : ''}>Predicted {ordinal(h.predicted)}{finish < h.predicted ? ', beat it' : finish > h.predicted ? ', fell short' : ', spot on'}</b></span>
             )}
-            {won.length > 0 && <span className="kv"><span>Trophies</span><b className="gold">{won.map((t) => ({ league: 'League', fa: 'FA Cup', cl: 'Champions League' })[t]).join(' · ')}</b></span>}
           </div>
           <div className="sep" />
           <div className="col">

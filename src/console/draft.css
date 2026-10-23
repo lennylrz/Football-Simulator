@@ -13,7 +13,7 @@
 .dplate.done { opacity: .75; }
 .dplate.done em::after { content: " · re-drafted"; color: #ffe45c; }
 .dplate.sel b { background: linear-gradient(180deg, #fff, #dcdcdc); color: #111; }
-.dplate .delta { position: absolute; right: 2px; top: -12px; font-size: 13px; font-weight: 900; padding: 1px 5px; border-radius: 3px; opacity: 0; animation: pop .35s ease-out forwards; animation-delay: var(--d, 0ms); box-shadow: 0 2px 4px rgba(0,0,0,.5); }
+.dplate .delta { position: absolute; left: calc(50% + 14px); top: -11px; z-index: 1; font-size: 13px; font-weight: 900; padding: 1px 5px; border-radius: 3px; opacity: 0; animation: pop .35s ease-out forwards; animation-delay: var(--d, 0ms); box-shadow: 0 2px 4px rgba(0,0,0,.5); }
 .dplate .delta.up { background: #4a9a0b; color: #fff; }
 .dplate .delta.down { background: #b3141c; color: #fff; }
 .dplate .delta.same { background: #3e4044; color: #fff; }
@@ -44,7 +44,7 @@
 .ccard .meta { padding: 10px 12px; display: grid; gap: 6px; font-size: 15px; }
 .ccard .meta .line { border-bottom: 1px solid #c4c4c4; padding-bottom: 5px; color: #3b3d41; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .ccard .meta .line b { color: #111; }
-.ccard .meta .club { font-weight: 700; color: #111; }
+.ccard .meta .club { font-weight: 700; color: #111; white-space: normal; }
 .ccard .tagline { margin-top: auto; padding: 8px 12px 12px; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: #5b5e63; }
 .ccard.on .tagline { color: #9a6b00; }
 
@@ -61,6 +61,7 @@
 .newclub .sw { width: 46px; height: 30px; border: 2px solid #fff; box-shadow: 0 0 0 1px #000; }
 .newclub .sw.on { outline: 3px solid #f2c200; outline-offset: 2px; }
 .newclub input.name { width: 100%; height: 46px; font: 700 28px Arial, sans-serif; padding: 0 12px; background: #fff; color: #111; border: 2px solid #4f74ad; }
+.newclub input.name.taken { border-color: #b3141c; }
 
 /* Pick timer (settings). */
 .pick-timer { flex: none; height: 6px; background: #26272a; }
@@ -72,4 +73,9 @@
 .summer .tbl .offpos { font-size: 13px; font-weight: 700; color: #ff9f43; }
 .summer .tbl tr.from td { box-shadow: inset 0 0 0 9999px rgba(242,194,0,.18); }
 .summer .tbl td.acts { text-align: right; }
+.summer .office { height: 122px; }
+.summer .tbl { font-size: 16px; }
+.summer .tbl thead th { font-size: 15px; padding: 4px 8px; }
+.summer .tbl td { padding: 3px 8px; }
+.summer .tbl .rowbtn { font-size: 12px; padding: 2px 7px; }
 .summer .tbl td.acts .rowbtn + .rowbtn { margin-left: 6px; }

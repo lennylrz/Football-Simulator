@@ -196,12 +196,16 @@
 /* Summer and new club. */
 .stage.sl .summer { gap: 14px; grid-template-columns: 380px 1fr; }
 .stage.sl .summer .tbl tr.gap td { color: var(--amber); }
+.stage.sl .summer .tbl td { padding: 3px 9px; }
+.stage.sl .summer .tbl thead th { padding: 5px 9px; }
+.stage.sl .summer .office { height: 104px; }
 .stage.sl .summer .tbl tr.from td { box-shadow: inset 0 0 0 9999px rgba(232,160,76,.16); }
 .stage.sl .summer .tbl .offpos { color: var(--amber); font: 600 13px var(--cond); }
 .stage.sl .draft { gap: 14px; grid-template-columns: 380px 1fr; }
 .stage.sl .newclub .sw { border: 0; border-radius: 2px; box-shadow: 0 0 0 1px rgba(0,0,0,.2); }
 .stage.sl .newclub .sw.on { outline: 2px solid var(--cream); outline-offset: 3px; }
 .stage.sl input.name { background: rgba(0,0,0,.18); color: var(--text); border: 0; border-bottom: 2px solid var(--amber); font: 700 30px var(--cond); letter-spacing: .02em; padding: 0 10px; }
+.stage.sl input.name.taken { border-bottom-color: var(--red); }
 
 /* Settings. */
 .stage.sl .setup { gap: 14px; }
@@ -266,6 +270,7 @@
 /* Season review. */
 .stage.sl .review .office { height: 112px !important; }
 .stage.sl .review .office.treble { background: linear-gradient(90deg, rgba(232,196,92,.3), var(--panel)); }
+.stage.sl .win-title.won { color: var(--ink); background: var(--yellow); border-bottom-color: transparent; }
 .stage.sl .review .office .gold, .stage.sl .review .office.treble .gold { color: var(--yellow); }
 .stage.sl .review .tabsbar { background: transparent; box-shadow: none; padding: 0; margin-top: 10px; }
 .stage.sl .review .content { gap: 10px; padding-top: 10px; }
@@ -337,5 +342,7 @@
 .stage.sl .sq-notes { border-top: 1px solid var(--line); background: rgba(30,34,42,.5); }
 .stage.sl .sq-notes .cap { font: 600 13px var(--cond); letter-spacing: .1em; color: var(--amber); }
 .stage.sl .sq-notes p { font: 400 15px/1.4 var(--body); color: var(--soft); }
-.stage.sl .sq-notes p::before { background: var(--amber); border-radius: 50%; }
+.stage.sl .sq-notes .cap::before { background: var(--amber); border-radius: 50%; }
+.stage.sl .sq-notes .dots i { background: rgba(255,255,255,.18); }
+.stage.sl .sq-notes .dots i.on { background: var(--amber); }
 .stage.sl .startag { background: var(--amber); color: var(--ink); border-radius: 2px; font-family: var(--cond); }

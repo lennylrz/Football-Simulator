@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import type { ClubInfo } from '../../game/clubs';
+import { CLUBS, type ClubInfo } from '../../game/clubs';
 import { seasonLabel } from '../../game/data';
+import { REAL_CLUBS } from '../../game/game';
 import { FORMATION_NAMES, type Formation } from '../../game/positions';
 import { type PlayStyle, STYLE_ORDER, STYLES } from '../../game/styles';
 import { Pitch } from '../Pitch';
@@ -39,8 +40,11 @@ export function NewClub({ onStart, onBack, settings, room, busy }: {
   const [c0, c1, c2] = COLOURS[colour];
   const clubName = name.trim() || 'Five Seasons FC';
   const info: ClubInfo = { name: clubName, short: clubName.length > 16 ? codeOf(clubName) : clubName, code: codeOf(clubName), primary: c1, secondary: c2, rep: 72, budget: 0 };
+  // The era's real clubs keep their names.
+  const taken = CLUBS.slice(0, REAL_CLUBS).find((c) => [c.name, c.short].some((n) => n.toLowerCase() === clubName.toLowerCase()));
 
   const start = () => {
+    if (taken) return;
     const parsed = Number.parseInt(seedText, 10);
     onStart(info, formation, Number.isFinite(parsed) ? parsed >>> 0 : Math.floor(Math.random() * 2 ** 32), Number.isFinite(parsed), style);
   };
@@ -51,7 +55,7 @@ export function NewClub({ onStart, onBack, settings, room, busy }: {
         { keys: ['Escape'], label: 'Clear', onPress: () => { setSeedText(''); setSeedOpen(false); } },
       ]
     : [
-        { keys: ['Enter'], label: busy ? 'Connecting…' : room === 'host' ? 'Create the Room' : room === 'guest' ? 'Join the Room' : 'Start the Draft', primary: true, disabled: busy, onPress: start },
+        { keys: ['Enter'], label: busy ? 'Connecting…' : taken ? 'Name Taken' : room === 'host' ? 'Create the Room' : room === 'guest' ? 'Join the Room' : 'Start the Draft', primary: true, disabled: busy || !!taken, onPress: start },
         { keys: ['Q', 'E'], label: 'Colours', onPress: (k) => setColour((colour + (k === 'Q' ? -1 : 1) + COLOURS.length) % COLOURS.length) },
         browse('Formation', () => setFormation(FORMATION_NAMES[(fIndex + 4) % 5]), () => setFormation(FORMATION_NAMES[(fIndex + 1) % 5]), true),
         { keys: ['A'], label: `Style · ${STYLES[style].name}`, onPress: () => setStyle(STYLE_ORDER[(STYLE_ORDER.indexOf(style) + 1) % STYLE_ORDER.length]) },
@@ -70,13 +74,13 @@ export function NewClub({ onStart, onBack, settings, room, busy }: {
             <div className="col" style={{ gap: 8 }}>
               <span className="cap">Club name</span>
               <input
-                className="name"
+                className={`name ${taken ? 'taken' : ''}`}
                 value={name}
                 maxLength={24}
                 onChange={(e) => setName(e.target.value)}
                 onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); if (!busy) start(); } }}
               />
-              <span className="kv"><span>Colours · {c0}</span>
+              <span className="kv">{taken ? <span className="bad">{taken.short} are in this league already</span> : <span>Colours · {c0}</span>}
                 <span className="swatches">
                   {COLOURS.map(([n, a, b], i) => (
                     <button key={n} className={`sw ${i === colour ? 'on' : ''}`} style={{ background: `linear-gradient(90deg, ${a} 60%, ${b} 60%)` }} onClick={() => setColour(i)} tabIndex={-1} aria-label={n} />
