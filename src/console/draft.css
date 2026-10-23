@@ -17,6 +17,13 @@
 .dplate .delta.up { background: #4a9a0b; color: #fff; }
 .dplate .delta.down { background: #b3141c; color: #fff; }
 .dplate .delta.same { background: #3e4044; color: #fff; }
+/* A big glow-up: the plate lights up as its rating lands. */
+.dplate.glow b { animation: plate-glow 1.5s ease-out both; animation-delay: var(--land, 0ms); }
+@keyframes plate-glow {
+  0% { box-shadow: 0 0 0 0 rgba(255,217,0,0); }
+  20% { transform: scale(1.22); box-shadow: 0 0 0 3px #ffd900, 0 0 26px 8px rgba(255,217,0,.75); }
+  100% { transform: none; box-shadow: 0 0 0 0 rgba(255,217,0,0); }
+}
 @keyframes pop { 0% { opacity: 0; transform: scale(.4); } 70% { opacity: 1; transform: scale(1.25); } 100% { opacity: 1; transform: scale(1); } }
 
 /* Draft: five candidate cards. */
@@ -73,6 +80,7 @@
 .summer .tbl .offpos { font-size: 13px; font-weight: 700; color: #ff9f43; }
 .summer .tbl tr.from td { box-shadow: inset 0 0 0 9999px rgba(242,194,0,.18); }
 .summer .tbl td.acts { text-align: right; }
+.summer .tbl .lands { display: inline-block; animation: pop .35s ease-out both; animation-delay: var(--land, 0ms); }
 .summer .office { height: 122px; }
 .summer .tbl { font-size: 16px; }
 .summer .tbl thead th { font-size: 15px; padding: 4px 8px; }

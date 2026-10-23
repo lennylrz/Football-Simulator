@@ -1,4 +1,5 @@
 import { createContext, type ReactNode, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { CLUBS, type ClubInfo } from '../game/clubs';
 import type { GameData } from '../game/data';
 
@@ -9,8 +10,19 @@ import type { GameData } from '../game/data';
 export const ThemeContext = createContext<'' | 'sl'>('');
 export const useTheme = () => useContext(ThemeContext);
 
+/** Whether the player turned on Reduce Motion (settings put .calm on <html>). */
+export const reducedMotion = () => document.documentElement.classList.contains('calm');
+
 /** The stage's size in stage pixels: at least 1280x720, as much more as the window's shape adds. */
 export const StageSize = createContext({ w: 1280, h: 720 });
+/** The stage's content box, where overlays go so they cover the whole screen. */
+const StageLayer = createContext<HTMLElement | null>(null);
+
+/** Puts its children straight on the stage, above the screen's header and body. */
+export function OnStage({ children }: { children: ReactNode }) {
+  const layer = useContext(StageLayer);
+  return layer ? createPortal(children, layer) : children;
+}
 
 /**
  * Scales the fixed 1280x720 stage to fit the window. The screen's background
@@ -29,6 +41,7 @@ export function Stage({ tone = 'dark', children }: { tone?: 'dark' | 'light' | '
     return () => window.removeEventListener('resize', resize);
   }, []);
   const size = useMemo(() => ({ w: fit.w, h: fit.h }), [fit.w, fit.h]);
+  const [layer, setLayer] = useState<HTMLDivElement | null>(null);
   return (
     <div className="stage-wrap">
       <div
@@ -39,8 +52,10 @@ export function Stage({ tone = 'dark', children }: { tone?: 'dark' | 'light' | '
           if ((e.target as Element).closest('button')) e.preventDefault();
         }}
       >
-        <div className="stage-in">
-          <StageSize.Provider value={size}>{children}</StageSize.Provider>
+        <div className="stage-in" ref={setLayer}>
+          <StageSize.Provider value={size}>
+            <StageLayer.Provider value={layer}>{children}</StageLayer.Provider>
+          </StageSize.Provider>
         </div>
       </div>
     </div>
@@ -184,12 +199,14 @@ export function useScrollIntoView(index: number) {
 
 export function Overlay({ title, children, wide }: { title: ReactNode; children: ReactNode; wide?: boolean }) {
   return (
-    <div className="overlay">
-      <div className={`win ${wide ? 'wide' : ''}`}>
-        <div className="win-title">{title}</div>
-        <div className="body">{children}</div>
+    <OnStage>
+      <div className="overlay">
+        <div className={`win ${wide ? 'wide' : ''}`}>
+          <div className="win-title">{title}</div>
+          <div className="body">{children}</div>
+        </div>
       </div>
-    </div>
+    </OnStage>
   );
 }
 

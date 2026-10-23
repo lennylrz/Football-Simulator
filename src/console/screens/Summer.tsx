@@ -9,10 +9,13 @@ import { squadNotes } from '../../game/squadStories';
 import { AroundTheLeague, closeCommand, HallOfFame, LeaveCareer, leaveCommands } from '../overlays';
 import { rivalCommand, RivalOverlay, rivalStatus } from '../room';
 import { STYLE_ORDER, STYLES } from '../../game/styles';
-import { BenchStrip, Pitch, type PlateInfo } from '../Pitch';
+import { BenchStrip, landsAt, Pitch, type PlateInfo, Tick } from '../Pitch';
 import { browse, clubOf, type Command, Frame, ordinal, Overlay, useListNav } from '../ui';
 
 const TROPHY = { league: 'League', fa: 'FA Cup', cl: 'Champions League' } as const;
+
+/** Summers whose new ratings have been revealed already (seed, club, season): they only tick up once. */
+const revealed = new Set<string>();
 
 export function Summer() {
   const { data, game, send, quit, room, settings } = useGame();
@@ -40,6 +43,13 @@ export function Summer() {
   }, [notes.length, noteHeld, settings.reduceMotion]);
   const info = clubOf(data, game.user);
   const reveal = new Map(d.reveal.map((r) => [r.player, r]));
+  // The first look at a summer: every rating ticks from last season's to the new one.
+  const seen = `${game.seed}:${game.user}:${game.season}`;
+  const [ticking] = useState(() => game.season > 0 && !revealed.has(seen));
+  useEffect(() => {
+    revealed.add(seen);
+  }, [seen]);
+  const tickDelay = (i: number) => 300 + i * 140;
   const empty = emptySlots(game);
   const last = game.history[game.history.length - 1];
   const score = useMemo(() => career(game).score, [game]);
@@ -65,7 +75,7 @@ export function Summer() {
     const r = reveal.get(id);
     return {
       rating: p.ovr, name: data.names[id][0], label: isBench(i) ? homeOf(id) : slots[i], state: mark ?? (id === star ? 'star' : done(i) ? 'done' : undefined),
-      delta: r && game.season > 0 ? r.to - r.from : undefined, delay: 300 + i * 140,
+      delta: r && game.season > 0 ? r.to - r.from : undefined, delay: ticking ? tickDelay(i) : 0, from: ticking && r ? r.from : undefined,
     };
   };
   const plates = club.xi.map((id, i) => plate(id, i));
@@ -214,9 +224,13 @@ export function Summer() {
                             <td className={`n ${r?.boost === undefined ? '' : r.boost >= 0.5 ? 'up' : r.boost <= -0.5 ? 'down' : ''}`}>{r?.avg?.toFixed(2) ?? (p ? '–' : '')}</td>
                           )}
                           <td className="n">{r && game.season > 0 ? r.from : ''}</td>
-                          <td className="n"><b>{p?.ovr ?? ''}</b></td>
+                          <td className="n"><b>{p ? <Tick key={id} from={ticking && r ? r.from : undefined} to={p.ovr} delay={tickDelay(i)} /> : ''}</b></td>
                           <td className={`n ${delta === null ? '' : delta > 0 ? 'up' : delta < 0 ? 'down' : ''}`}>
-                            {delta === null ? '' : delta >= 3 ? `+${delta} GLOW UP` : delta <= -3 ? `${delta} BUST` : delta > 0 ? `+${delta}` : delta}
+                            {delta !== null && (
+                              <span className={ticking ? 'lands' : ''} style={{ '--land': `${p ? landsAt(ticking && r ? r.from : undefined, p.ovr, tickDelay(i)) : 0}ms` } as React.CSSProperties}>
+                                {delta >= 3 ? `+${delta} GLOW UP` : delta <= -3 ? `${delta} BUST` : delta > 0 ? `+${delta}` : delta}
+                              </span>
+                            )}
                           </td>
                           <td className="c acts">
                             {starStyle && p && !isBench(i) && id !== star && swapFrom === null && (

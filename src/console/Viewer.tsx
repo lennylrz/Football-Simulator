@@ -2,8 +2,10 @@ import { useEffect, useMemo, useState } from 'react';
 import type { CupMatch, Entrant } from '../game/cups';
 import type { GameData } from '../game/data';
 import { type GameState, type HeadToHead, seasonLabel } from '../game/game';
+import { FinalDay, titleRace } from './FinalDay';
+import { Burst } from './moments';
 import { LiveMatch } from './room';
-import { clubOf, type Command, Frame } from './ui';
+import { clubOf, type Command, Frame, OnStage } from './ui';
 import './viewer.css';
 
 type Score = { home: Entrant; away: Entrant; hg: number; ag: number; pens?: 0 | 1; leg?: 1 | 2 };
@@ -89,28 +91,51 @@ export function SeasonViewer({ game, data, onDone, fastStart, rival }: { game: G
   const [watched, setWatched] = useState<Set<number>>(() => new Set());
   const live = !watched.has(i) ? meeting(step) : undefined;
 
-  useEffect(() => {
-    if (paused || live) return;
-    if (i >= steps.length - 1) {
-      const t = setTimeout(onDone, fast ? 900 : 2200);
-      return () => clearTimeout(t);
-    }
-    const mine = step.matches.some((m) => m.home === game.user || m.away === game.user);
-    const wait = step.kind === 'cup' ? (fast ? 650 : 1700) : fast ? 380 : mine ? 1250 : 900;
-    const t = setTimeout(() => setI((x) => x + 1), wait);
-    return () => clearTimeout(t);
-  }, [i, paused, fast, steps.length, step, game.user, onDone, live]);
-
   const outcome = (m: Score) => {
     const mine = m.home === game.user ? m.hg - m.ag : m.ag - m.hg;
     if (mine !== 0) return mine > 0 ? 'w' : 'l';
     if (m.pens === undefined) return 'd';
     return (m.pens === 0) === (m.home === game.user) ? 'w' : 'l';
   };
+
+  // The matchday the title is won: the first after which nobody can catch the user.
+  const clinched = useMemo(() => {
+    if (standings[leagueDays - 1][0].club !== game.user) return -1;
+    return standings.findIndex((t, k) => t[0].club === game.user && (k === leagueDays - 1 || t[0].pts - t[1].pts > 3 * (leagueDays - 1 - k))) + 1;
+  }, [standings, leagueDays, game.user]);
+  // Still open going into the last matchday: that one is played out live.
+  const lastLeague = steps.findIndex((s) => s.kind === 'league' && s.matchday === leagueDays);
+  const decider = leagueDays > 1 && (clinched === -1 || clinched === leagueDays) && titleRace(standings[leagueDays - 2], game.user);
+  const [decided, setDecided] = useState(false);
+  const deciding = decider && i === lastLeague && !decided;
+  /** The screen lights up: the title won on this matchday, or a final won on this cup day. */
+  const burst = (() => {
+    if (deciding) return null;
+    if (step.kind === 'league') return step.matchday === clinched ? { title: 'Champions', sub: `League · Matchday ${step.matchday}` } : null;
+    const final = step.round === 'Final' && step.leg !== 2 ? step.matches.find((m) => m.home === game.user || m.away === game.user) : undefined;
+    return final && outcome(final) === 'w' ? { title: step.comp === 'FA Cup' ? 'Cup Winners' : 'Kings of Europe', sub: `${step.comp} · Final` } : null;
+  })();
+  const bursting = !!burst;
+
+  useEffect(() => {
+    if (paused || live || deciding) return;
+    if (i >= steps.length - 1) {
+      const t = setTimeout(onDone, bursting ? 3400 : fast ? 900 : 2200);
+      return () => clearTimeout(t);
+    }
+    const mine = step.matches.some((m) => m.home === game.user || m.away === game.user);
+    const wait = bursting ? (fast ? 2000 : 3400) : step.kind === 'cup' ? (fast ? 650 : 1700) : fast ? 380 : mine ? 1250 : 900;
+    const t = setTimeout(() => setI((x) => x + 1), wait);
+    return () => clearTimeout(t);
+  }, [i, paused, fast, steps.length, step, game.user, onDone, live, deciding, bursting]);
   const WORD = { w: 'WIN', d: 'DRAW', l: 'LOSS' } as const;
 
   const commands: Command[] = live ? [
     { keys: ['Enter'], label: 'Skip to Full Time', primary: true, onPress: () => setWatched((w) => new Set(w).add(i)) },
+    { keys: ['F'], label: fast ? 'Normal Speed' : 'Fast', onPress: () => setFast(!fast) },
+  ] : deciding ? [
+    { keys: ['Enter'], label: 'Skip to Full Time', primary: true, onPress: () => setDecided(true) },
+    { keys: ['Space'], label: paused ? 'Resume' : 'Pause', onPress: () => setPaused(!paused) },
     { keys: ['F'], label: fast ? 'Normal Speed' : 'Fast', onPress: () => setFast(!fast) },
   ] : [
     { keys: ['Enter'], label: 'Skip to Results', primary: true, onPress: onDone },
@@ -125,47 +150,57 @@ export function SeasonViewer({ game, data, onDone, fastStart, rival }: { game: G
     : `${step.round}${step.leg ? ` · ${step.leg === 1 ? 'first' : 'second'} leg` : ''}`;
   const mine = step.matches.find((m) => m.home === game.user || m.away === game.user);
 
-  return (
-    <Frame club={info} title={info.name} sub={step.kind === 'league' ? `Live · Matchday ${step.matchday} of ${leagueDays}` : `Live · ${step.comp}`}
-      right={<><small>Season {game.season + 1} of 5</small>{seasonLabel(game.season)}</>} commands={commands}
-      info={<><span>League position</span><b>{table.findIndex((r) => r.club === game.user) + 1}</b></>}>
-      <div className="viewer">
-        <div className="left">
-          <div className="prog"><i style={{ width: `${((i + 1) / steps.length) * 100}%` }} /></div>
-          <div className={`dpanel md ${step.kind === 'cup' ? (step.comp === 'FA Cup' ? 'fa' : 'cl') : ''}`} key={i}>
-            <div className="ph gbar">{title}<small>{step.kind === 'league' ? 'League' : step.comp}</small></div>
-            {mine && (
-              <div className={`mine ${outcome(mine)}`}>
-                <span className="h">{name(mine.home)}</span>
-                <span className="sc">{mine.hg}–{mine.ag}{mine.pens !== undefined ? ' p' : ''}</span>
-                <span>{name(mine.away)}</span>
-                <span className="word">{WORD[outcome(mine)]}</span>
-              </div>
-            )}
-            {!mine && step.kind === 'league' && <div className="mine bye"><span className="h">{info.short}</span><span className="sc">–</span><span>No match this week</span><span className="word">BYE</span></div>}
-            <div className="others">
-              {step.matches.filter((m) => m !== mine).map((m, k) => (
-                <div key={k} className={`res ${rival !== undefined && (m.home === rival || m.away === rival) ? 'rivalrow' : ''}`}>
-                  <span className="h">{name(m.home)}</span>
-                  <span className="sc">{m.hg}–{m.ag}{m.pens !== undefined ? ' p' : ''}</span>
-                  <span>{name(m.away)}</span>
-                </div>
-              ))}
+  // The matchday: the user's match on top, the rest below, the table beside.
+  const board = (
+    <>
+      <div className="left">
+        <div className="prog"><i style={{ width: `${((i + 1) / steps.length) * 100}%` }} /></div>
+        <div className={`dpanel md ${step.kind === 'cup' ? (step.comp === 'FA Cup' ? 'fa' : 'cl') : ''}`} key={i}>
+          <div className="ph gbar">{title}<small>{step.kind === 'league' ? 'League' : step.comp}</small></div>
+          {mine && (
+            <div className={`mine ${outcome(mine)}`}>
+              <span className="h">{name(mine.home)}</span>
+              <span className="sc">{mine.hg}–{mine.ag}{mine.pens !== undefined ? ' p' : ''}</span>
+              <span>{name(mine.away)}</span>
+              <span className="word">{WORD[outcome(mine)]}</span>
             </div>
-          </div>
-        </div>
-        <div className="live dpanel">
-          <div className="ph gbar">League Table<small>P · Pts</small></div>
-          <div className="rows">
-            {table.map((r, k) => (
-              <div key={r.club} className={`row ${k < 4 ? 'cl' : k >= table.length - 3 ? 'rel' : ''} ${r.club === game.user ? 'me' : ''}`}>
-                <span>{k + 1}</span><span>{clubOf(data, r.club).short}</span><span className="r">{r.p}</span><span className="r">{r.pts}</span>
+          )}
+          {!mine && step.kind === 'league' && <div className="mine bye"><span className="h">{info.short}</span><span className="sc">–</span><span>No match this week</span><span className="word">BYE</span></div>}
+          <div className="others">
+            {step.matches.filter((m) => m !== mine).map((m, k) => (
+              <div key={k} className={`res ${rival !== undefined && (m.home === rival || m.away === rival) ? 'rivalrow' : ''}`}>
+                <span className="h">{name(m.home)}</span>
+                <span className="sc">{m.hg}–{m.ag}{m.pens !== undefined ? ' p' : ''}</span>
+                <span>{name(m.away)}</span>
               </div>
             ))}
           </div>
         </div>
+      </div>
+      <div className="live dpanel">
+        <div className="ph gbar">League Table<small>P · Pts</small></div>
+        <div className="rows">
+          {table.map((r, k) => (
+            <div key={r.club} className={`row ${k < 4 ? 'cl' : k >= table.length - 3 ? 'rel' : ''} ${r.club === game.user ? 'me' : ''}`}>
+              <span>{k + 1}</span><span>{clubOf(data, r.club).short}</span><span className="r">{r.p}</span><span className="r">{r.pts}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </>
+  );
+
+  return (
+    <Frame club={info} title={info.name} sub={step.kind === 'league' ? `Live · Matchday ${step.matchday} of ${leagueDays}` : `Live · ${step.comp}`}
+      right={<><small>Season {game.season + 1} of 5</small>{seasonLabel(game.season)}</>} commands={commands}
+      info={deciding ? <><span>The title</span><b>Final day</b></> : <><span>League position</span><b>{table.findIndex((r) => r.club === game.user) + 1}</b></>}>
+      <div className="viewer">
+        {deciding ? (
+          <FinalDay game={game} data={data} before={standings[leagueDays - 2]} fast={fast} paused={paused || !!live} onDone={() => setDecided(true)} />
+        ) : board}
         {paused && <div className="paused gbar">PAUSED</div>}
       </div>
+      {burst && <OnStage><Burst key={i} title={burst.title} sub={burst.sub} club={info} /></OnStage>}
       {live && <LiveMatch game={game} data={data} match={live} season={game.season} fast={fast} onDone={() => setWatched((w) => new Set(w).add(i))} />}
     </Frame>
   );

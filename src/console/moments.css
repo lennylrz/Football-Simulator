@@ -1,0 +1,130 @@
+/* Celebrations. The console years: gold gloss, light rays and ticker tape.
+   The career-hub years (.stage.sl): an amber light sweep, condensed caps that
+   settle into place, and slow gold flakes. */
+
+/* Both sit in a layer that already covers the whole window. */
+.confetti { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 3; }
+.flash { position: absolute; inset: 0; background: #fff; pointer-events: none; z-index: 4; animation: m-flash .7s ease-out forwards; }
+@keyframes m-flash { from { opacity: .85; } to { opacity: 0; } }
+
+/* ---------- In the season viewer: the moment it is won ---------- */
+.burst { position: absolute; inset: var(--bleed); z-index: 4; pointer-events: none; display: grid; place-items: center; }
+.burst .stamp { position: relative; z-index: 5; display: grid; justify-items: center; gap: 12px; margin-bottom: 40px; }
+.burst .stamp small { font: 700 18px Arial, sans-serif; letter-spacing: .3em; text-transform: uppercase; color: #ffe98f; text-shadow: 0 2px 6px #000; }
+.burst .stamp b { display: block; padding: 8px 56px; font: italic 900 92px/1 Arial, sans-serif; letter-spacing: -.01em; text-transform: uppercase; color: #2b2300;
+  background: linear-gradient(180deg, #fff6c8 0%, #f5c623 48%, #dda600 52%, #f0c020 100%); clip-path: polygon(28px 0, 100% 0, calc(100% - 28px) 100%, 0 100%);
+  filter: drop-shadow(0 10px 18px rgba(0,0,0,.6)); animation: m-slam .5s cubic-bezier(.2, 1.5, .4, 1) both; }
+@keyframes m-slam { from { opacity: 0; transform: scale(1.7); } to { opacity: 1; transform: none; } }
+
+/* ---------- Between the season and the review ---------- */
+.moments { position: absolute; inset: var(--bleed); z-index: 4; overflow: hidden; display: grid; place-items: center; cursor: pointer;
+  background: #0b0b0c radial-gradient(ellipse at 50% 42%, #33302a 0%, #151413 45%, #0b0b0c 75%); }
+.moments .rays { position: absolute; left: 50%; top: 46%; width: 2600px; height: 2600px; margin: -1300px 0 0 -1300px; opacity: 0; pointer-events: none;
+  background: repeating-conic-gradient(from 0deg, rgba(255,214,90,.13) 0deg 5deg, transparent 5deg 15deg);
+  -webkit-mask-image: radial-gradient(circle, #000 0%, transparent 45%); mask-image: radial-gradient(circle, #000 0%, transparent 45%);
+  animation: m-rays 60s linear infinite; transition: opacity .6s; }
+.moments.big .rays { opacity: 1; }
+@keyframes m-rays { to { transform: rotate(360deg); } }
+.moments .sweep { display: none; }
+
+.m-box { position: relative; z-index: 5; width: 1200px; display: grid; justify-items: center; text-align: center; gap: 12px; margin-bottom: 30px; }
+.m-box .kick { font: 700 20px Arial, sans-serif; letter-spacing: .3em; text-transform: uppercase; color: #ffe98f; text-shadow: 0 2px 6px #000; animation: m-up .5s .1s ease-out both; }
+.m-box .title { padding: 10px 70px 12px; font: italic 900 120px/1 Arial, sans-serif; letter-spacing: -.01em; text-transform: uppercase; color: #2b2300; white-space: nowrap;
+  background: linear-gradient(180deg, #fff6c8 0%, #f5c623 48%, #dda600 52%, #f0c020 100%); clip-path: polygon(34px 0, 100% 0, calc(100% - 34px) 100%, 0 100%);
+  filter: drop-shadow(0 14px 24px rgba(0,0,0,.65)); animation: m-slam .55s cubic-bezier(.2, 1.5, .4, 1) both; }
+.m-box .line { font: 700 26px Arial, sans-serif; color: #fff; text-shadow: 0 2px 4px #000; animation: m-up .5s .35s ease-out both; }
+@keyframes m-up { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+.m-box .plates { display: flex; gap: 10px; margin-top: 18px; animation: m-up .5s .5s ease-out both; }
+.m-box .plate { padding: 10px 24px; font: 700 17px Arial, sans-serif; text-transform: uppercase; letter-spacing: .04em; color: #6c6f74;
+  background: linear-gradient(180deg, #3d3f43, #26272a); box-shadow: inset 0 1px 0 rgba(255,255,255,.12), 0 1px 0 #000; }
+.m-box .plate.on { color: #2b2300; background: linear-gradient(180deg, #ffe98f 0%, #f5c623 48%, #dda600 52%, #ebb90f 100%); box-shadow: inset 0 1px 0 #fff8d0, 0 0 22px rgba(245,198,35,.45); }
+
+/* Quieter moments: a podium place, the player of the season. */
+.moments:not(.big) { background: #0d0d0e radial-gradient(ellipse at 50% 40%, #2c2d30 0%, #111213 65%); }
+.moments:not(.big) .m-box .title { color: #fff; background: linear-gradient(180deg, #4d8fd6 0%, #23609f 48%, #164a83 52%, #1d5a9b 100%); text-shadow: 0 2px 3px #000; }
+.moments.m-pots .m-box .kick { color: #c9cbcf; }
+.moments.m-pots .m-box .title { background: none; color: #fff; clip-path: none; padding: 0; }
+.moments.m-pots .m-box .kick::after { content: ""; display: block; width: 120px; height: 6px; margin: 14px auto 0; background: var(--club-bar); }
+.moments.treble .m-box .title { font-size: 150px !important; }
+
+.m-dots { position: absolute; z-index: 5; left: 50%; bottom: calc(var(--by, 0px) + 86px); transform: translateX(-50%); display: flex; gap: 8px; }
+.m-dots i { width: 9px; height: 9px; border-radius: 50%; background: rgba(255,255,255,.18); }
+.m-dots i.past { background: rgba(255,255,255,.45); }
+.m-dots i.on { background: #f5c623; }
+.m-prog { position: absolute; z-index: 5; left: 50%; bottom: calc(var(--by, 0px) + 72px); width: 160px; margin-left: -80px; height: 3px; background: rgba(255,255,255,.1); }
+.m-prog i { display: block; height: 100%; background: #f5c623; animation: m-fill linear both; transform-origin: 0 50%; }
+@keyframes m-fill { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+
+/* ---------- 2015-2020: the career hub ---------- */
+.stage.sl .burst .stamp small, .stage.sl .m-box .kick { font: 600 18px var(--cond); letter-spacing: .32em; color: var(--amber); text-shadow: none; }
+.stage.sl .burst .stamp b, .stage.sl .m-box .title { padding: 0; background: none; clip-path: none; filter: none; color: var(--text); font-family: var(--cond); font-style: normal; font-weight: 700;
+  letter-spacing: .03em; text-shadow: 0 6px 30px rgba(0,0,0,.35); animation: sl-settle 1s cubic-bezier(.2, .8, .2, 1) both; }
+.stage.sl .burst .stamp b { font-size: 104px; padding: 4px 40px; background: rgba(29,32,39,.82); }
+@keyframes sl-settle { from { opacity: 0; letter-spacing: .4em; } to { opacity: 1; } }
+.stage.sl .burst .stamp b::before, .stage.sl .burst .stamp b::after { content: none; }
+.stage.sl .flash { background: #ece6d8; animation-duration: .9s; }
+
+.stage.sl .moments { background: radial-gradient(120% 95% at 50% 38%, #4e5667 0%, #353b47 55%, #22262e 100%); }
+.stage.sl .moments .rays { display: none; }
+.stage.sl .moments .sweep { display: block; position: absolute; inset: -30%; pointer-events: none; opacity: 0;
+  background: linear-gradient(112deg, transparent 42%, rgba(232,160,76,.16) 49%, rgba(236,230,216,.22) 50%, rgba(232,160,76,.16) 51%, transparent 58%);
+  animation: sl-sweep 2.2s .1s cubic-bezier(.3, .6, .3, 1) both; }
+.stage.sl .moments.big .sweep { opacity: 1; }
+@keyframes sl-sweep { from { transform: translateX(-45%); } to { transform: translateX(45%); } }
+.stage.sl .m-box .title::after { content: ""; display: block; height: 3px; margin: 18px auto 0; width: 60%; background: var(--amber); animation: sl-rule .9s .3s ease-out both; }
+@keyframes sl-rule { from { transform: scaleX(0); } }
+.stage.sl .m-box .line { font: 500 24px var(--body); color: var(--soft); text-shadow: none; }
+.stage.sl .m-box .plate { border-radius: 2px; font: 600 16px var(--cond); letter-spacing: .12em; color: var(--dim); background: var(--panel); box-shadow: inset 0 0 0 1px var(--line); }
+.stage.sl .m-box .plate.on { color: var(--ink); background: var(--cream); box-shadow: 0 0 24px rgba(232,196,92,.3); }
+.stage.sl .moments:not(.big) { background: radial-gradient(120% 95% at 50% 38%, #4a5263 0%, #353b47 60%, #2a2f39 100%); }
+.stage.sl .moments:not(.big) .m-box .title { background: none; text-shadow: none; }
+.stage.sl .moments.m-pots .m-box .kick { color: var(--mute); }
+.stage.sl .moments.m-pots .m-box .kick::after { width: 6px; height: 30px; margin-top: 16px; }
+.stage.sl .moments.m-ballon .m-box .kick, .stage.sl .moments.treble .m-box .kick { color: var(--yellow); }
+.stage.sl .m-dots i.on, .stage.sl .m-prog i { background: var(--amber); }
+
+/* Final day: the title decided live. */
+.viewer .fd { gap: 0; }
+.fd .clock { flex: none; display: flex; align-items: center; justify-content: space-between; gap: 20px; height: 64px; padding: 0 18px;
+  background: linear-gradient(180deg, #4a4c50, #2a2b2e 50%, #1b1c1e 51%, #121314); color: #fff; box-shadow: inset 0 1px 0 rgba(255,255,255,.2); }
+.fd .clock .lbl { display: grid; }
+.fd .clock .lbl small { font: 700 13px Arial, sans-serif; letter-spacing: .2em; text-transform: uppercase; color: #ffd900; }
+.fd .clock .lbl b { font: 700 24px Arial, sans-serif; }
+.fd .clock .min { font: 700 38px ui-monospace, Menlo, monospace; min-width: 140px; text-align: right; }
+.fd .bar { flex: none; height: 6px; background: #26272a; }
+.fd .bar i { display: block; height: 100%; background: linear-gradient(180deg, #ffe45c, #f2c200); transition: width .2s linear; }
+.fd .games { flex: none; display: flex; flex-direction: column; }
+.fd .game { display: grid; grid-template-columns: 1fr 104px 1fr 90px; align-items: center; gap: 12px; height: 60px; padding: 0 16px; font: 700 23px Arial, sans-serif;
+  background: linear-gradient(180deg, #24395f, #18294a); border-bottom: 1px solid #000; }
+.fd .game.ours { box-shadow: inset 6px 0 0 #ffd900; }
+.fd .game.them { background: linear-gradient(180deg, #2a2c30, #1e1f22); font-size: 20px; height: 52px; }
+.fd .game .h { text-align: right; }
+.fd .game .sc { text-align: center; padding: 5px 0; font-size: 26px; color: #fff; text-shadow: 0 1px 1px #000; background: linear-gradient(180deg, #8a8c90, #5b5d61); }
+.fd .game .sc.scored { animation: fd-goal 1.6s ease-out; }
+@keyframes fd-goal { 0%, 30% { background: #ffd900; color: #2b2300; text-shadow: none; } }
+.fd .game .tag { justify-self: end; font-size: 13px; letter-spacing: .1em; padding: 4px 9px; border-radius: 3px; background: #3e4044; }
+.fd .feed { flex: 1; min-height: 0; overflow: hidden; display: flex; flex-direction: column; gap: 4px; padding: 10px 0 0; }
+.fd .ev { display: flex; gap: 14px; padding: 8px 14px; font-size: 18px; color: #e6e6e6; background: rgba(255,255,255,.05); animation: lm-in .3s ease-out; }
+.fd .ev .m { font-family: ui-monospace, Menlo, monospace; color: #9fb4d0; min-width: 52px; }
+.fd .ev.ours { background: linear-gradient(90deg, rgba(255,217,0,.22), rgba(255,217,0,.04)); font-weight: 700; color: #fff; }
+.fd .ev.lead { background: linear-gradient(90deg, #1d5a9b, #23609f); font-weight: 700; color: #fff; }
+.viewer .live .row.them { outline: 2px solid #ffd900; outline-offset: -2px; }
+
+.stage.sl .fd .clock { background: var(--panel2); box-shadow: inset 0 -1px 0 var(--line); }
+.stage.sl .fd .clock .lbl small { font: 600 13px var(--cond); color: var(--amber); }
+.stage.sl .fd .clock .lbl b { font: 700 24px var(--cond); letter-spacing: .04em; text-transform: uppercase; }
+.stage.sl .fd .clock .min { font: 700 40px var(--cond); }
+.stage.sl .fd .bar { background: rgba(0,0,0,.25); height: 3px; }
+.stage.sl .fd .bar i { background: var(--amber); }
+.stage.sl .fd .game { background: var(--panel); border-bottom: 1px solid var(--line); font: 600 22px var(--cond); letter-spacing: .02em; }
+.stage.sl .fd .game.ours { box-shadow: inset 4px 0 0 var(--amber); }
+.stage.sl .fd .game.them { background: rgba(30,34,42,.5); font-size: 20px; }
+.stage.sl .fd .game .sc { background: #22262e; text-shadow: none; font: 700 26px var(--cond); }
+.stage.sl .fd .game .tag { background: rgba(255,255,255,.1); font: 600 13px var(--cond); }
+@keyframes fd-goal-sl { 0%, 30% { background: var(--amber); color: var(--ink); } }
+.stage.sl .fd .game .sc.scored { animation-name: fd-goal-sl; }
+.stage.sl .fd .ev { background: var(--panel); color: var(--soft); font-size: 16px; }
+.stage.sl .fd .ev .m { color: var(--mute); font-family: var(--cond); }
+.stage.sl .fd .ev.ours { background: linear-gradient(90deg, rgba(232,160,76,.22), var(--panel)); color: var(--text); }
+.stage.sl .fd .ev.lead { background: var(--cream); color: var(--ink); }
+.stage.sl .viewer .live .row.them { outline: 1px solid var(--amber); outline-offset: -1px; }

@@ -10,6 +10,7 @@ import { SortTable } from '../SortTable';
 import '../results.css';
 import { SeasonViewer } from '../Viewer';
 import { PlayerCard, SeasonStory } from '../awards';
+import { HONOURS, SeasonMoments } from '../moments';
 import { clubOf, type Command, Frame, KeyCap, ordinal } from '../ui';
 
 const TABS = ['Story', 'Table', 'Your Matches', 'Champions League', 'FA Cup', 'Leaders', 'Squad'] as const;
@@ -19,11 +20,6 @@ const ROUND_SHORT: Record<string, string> = {
   'Third round': 'Round 3', 'Fourth round': 'Round 4', 'Fifth round': 'Round 5', 'Round of 16': 'Last 16', 'Quarter-final': 'Quarter', 'Semi-final': 'Semi', Final: 'Final',
 };
 
-/** What a season's trophies are called, as the review's headline. */
-const HONOURS: Record<string, string> = {
-  league: 'League Champions', fa: 'FA Cup Winners', cl: 'Champions League Winners',
-  'league fa': 'The Double', 'league cl': 'League and Champions League', 'fa cl': 'FA Cup and Champions League', 'league fa cl': 'The Treble',
-};
 
 export function Results() {
   const { data, game, send, settings, quit, room } = useGame();
@@ -32,6 +28,8 @@ export function Results() {
   const waiting = !!room?.full.mp?.views[game.user]?.done;
   const [leaving, setLeaving] = useState(false);
   const [revealing, setRevealing] = useState(settings.matchSpeed !== 'instant');
+  // Then the season's moments: trophies, the Ballon d'Or, the player of the season.
+  const [celebrating, setCelebrating] = useState(true);
   const [tab, setTab] = useState(0);
   const [hall, setHall] = useState(false);
   const h = game.history[game.history.length - 1];
@@ -43,6 +41,7 @@ export function Results() {
   const ent = (e: Entrant) => (typeof e === 'number' ? clubOf(data, e).short : e);
 
   if (revealing) return <SeasonViewer game={game} data={data} onDone={() => setRevealing(false)} fastStart={settings.matchSpeed === 'fast'} rival={room?.rival} />;
+  if (celebrating) return <SeasonMoments game={game} data={data} onDone={() => setCelebrating(false)} />;
 
   const commands: Command[] = leaving
     ? leaveCommands(quit, () => setLeaving(false))

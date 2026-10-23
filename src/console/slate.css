@@ -135,6 +135,12 @@
 .stage.sl .dplate.star b { background: var(--amber); color: var(--ink); }
 .stage.sl .dplate.star span::before { content: "★ "; color: var(--amber); }
 .stage.sl .dplate.done em::after { color: var(--amber); }
+.stage.sl .dplate.glow b { animation-name: sl-plate-glow; }
+@keyframes sl-plate-glow {
+  0% { box-shadow: 0 0 0 0 rgba(232,160,76,0); }
+  20% { transform: scale(1.18); background: var(--amber); color: var(--ink); box-shadow: 0 0 0 2px var(--cream), 0 0 22px 6px rgba(232,160,76,.6); }
+  100% { transform: none; box-shadow: 0 0 0 0 rgba(232,160,76,0); }
+}
 .stage.sl .dplate .delta { border-radius: 2px; font: 700 12px var(--cond); box-shadow: 0 2px 4px rgba(0,0,0,.35); }
 .stage.sl .dplate .delta.up { background: var(--green); color: var(--ink); }
 .stage.sl .dplate .delta.down { background: var(--red); color: var(--ink); }

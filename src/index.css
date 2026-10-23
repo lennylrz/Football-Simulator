@@ -155,7 +155,7 @@ input { font: inherit; }
 .overlay .body { background: linear-gradient(180deg, #1d1e20, #141516); min-height: 0; overflow: hidden; display: flex; flex-direction: column; }
 
 /* Settings: reduce motion. */
-.calm *, .calm *::before, .calm *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+.calm *, .calm *::before, .calm *::after { animation-duration: .01ms !important; animation-delay: 0s !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
 
 /* A player's name that opens his card. */
 .plink { cursor: pointer; }
