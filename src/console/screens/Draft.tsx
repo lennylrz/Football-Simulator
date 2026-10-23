@@ -219,20 +219,6 @@ function ChooseFirst() {
 
 const tier = (r: number) => (r >= 85 ? 'r-a' : r >= 80 ? 'r-b' : r >= 74 ? 'r-c' : 'r-d');
 
-// Club-type words that say nothing about which club it is.
-const NOISE = new Set(['VfL', 'VfB', 'TSG', 'de', 'del', 'da', 'do', 'di', 'the', 'and', 'Club', 'Calcio', 'Unión', 'Union', 'Deportiva', 'Deportivo', 'Futebol', 'Fútbol', 'Football', 'Sport', 'Sporting']);
-
-/** A short badge code for any club: "Paris Saint-Germain" -> "PSG", "U.C. Sampdoria" -> "SAM". */
-function badge(name: string, code?: string): string {
-  if (code) return code;
-  const plain = name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[.']/g, '').replace(/-/g, ' ');
-  // Short all-caps tokens (FC, AC, SL, UC) and numbers are club types, not names.
-  const words = plain.split(/\s+/).filter((w) => w && !NOISE.has(w) && !/^[A-Z0-9]{1,3}$/.test(w) && !/^\d+$/.test(w));
-  if (!words.length) return plain.replace(/\s/g, '').slice(0, 3).toUpperCase();
-  if (words.length === 1) return words[0].slice(0, 3).toUpperCase();
-  return words.slice(0, 3).map((w) => w[0]).join('').toUpperCase();
-}
-
 /** The 2015-2020 draft: the five as a transfer-hub list, the highlighted one in an overview with a scout's note. */
 function SlHub({ ids, index, setIndex, onPick, hidden, title, timer, note }: {
   ids: number[]; index: number; setIndex: (i: number) => void; onPick: (i: number) => void; hidden: boolean;
@@ -243,16 +229,11 @@ function SlHub({ ids, index, setIndex, onPick, hidden, title, timer, note }: {
   const p = game.players[id];
   if (!p) return null;
   const row = data.seasons[game.season][id];
-  // Every club gets the same neutral badge, so no candidate looks special.
-  const clubOfPlayer = (pid: number): { name: string; code: string } => {
+  const clubOfPlayer = (pid: number): { name: string } => {
     const q = game.players[pid];
-    if (q.club >= 0) {
-      const c = clubOf(data, q.club);
-      return { name: c.short, code: badge(c.name, c.code) };
-    }
+    if (q.club >= 0) return { name: clubOf(data, q.club).short };
     const r = data.seasons[game.season][pid];
-    const name = r ? data.meta.clubNames[r[6]] : 'Free agent';
-    return { name, code: r ? badge(name) : 'FA' };
+    return { name: r ? data.meta.clubNames[r[6]] : 'Free agent' };
   };
   const [first, last] = splitName(data.names[id][0]);
   const blurb = draftBlurb(data, game, id, hidden);
@@ -271,7 +252,6 @@ function SlHub({ ids, index, setIndex, onPick, hidden, title, timer, note }: {
             <button key={cid} className={`sl-row ${i === index ? 'on' : ''}`} style={{ '--d': `${i * 60}ms` } as React.CSSProperties}
               onClick={() => (i === index ? onPick(i) : setIndex(i))} onMouseEnter={() => setIndex(i)} tabIndex={-1}>
               <span className="who">
-                <i className="crest">{cc.code}</i>
                 <span className="nm"><b>{data.names[cid][0]}</b><small>{cc.name} · {data.names[cid][1]}</small></span>
               </span>
               <span className="age">{c.age}</span>
@@ -288,7 +268,7 @@ function SlHub({ ids, index, setIndex, onPick, hidden, title, timer, note }: {
             <div>
               <div className="first">{first || ' '}</div>
               <div className="last">{last}</div>
-              <div className="club"><i className="crest">{club.code}</i>{club.name} · {pos} · {p.age}</div>
+              <div className="club">{club.name} · {pos} · {p.age}</div>
             </div>
             <div className="ovr"><small>OVR</small><b className={hidden ? '' : tier(p.ovr)}>{hidden ? '?' : p.ovr}</b></div>
           </div>

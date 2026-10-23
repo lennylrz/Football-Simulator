@@ -159,9 +159,6 @@
 .sl-row { height: 64px; border-bottom: 1px solid var(--line); text-align: left; color: var(--text); opacity: 0; animation: sl-in .3s ease-out forwards; animation-delay: var(--d, 0ms); }
 .sl-row:hover { background: rgba(255,255,255,.05); }
 .sl-row .who { display: flex; align-items: center; gap: 12px; min-width: 0; }
-.sl-row .crest, .sl-ov .club .crest { width: 34px; height: 24px; flex: none; display: grid; place-items: center; border-radius: 2px; font: 700 12px var(--cond); font-style: normal; letter-spacing: .04em;
-  background: rgba(255,255,255,.1); color: var(--soft); }
-.sl-row.on .crest { background: rgba(0,0,0,.1); color: #3a3d44; }
 .sl-row .nm { display: flex; flex-direction: column; min-width: 0; }
 .sl-row .nm b { font: 600 18px var(--body); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .sl-row .nm small { font: 500 13px var(--body); color: var(--mute); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
