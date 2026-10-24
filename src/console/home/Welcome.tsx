@@ -3,7 +3,7 @@ import { dailyChallenge, dailyNumber, untilNextDaily } from '../../game/daily';
 import { dailyBoard, type DailyScore } from '../../net/daily';
 import type { Settings } from '../../settings';
 import { dailyRecord } from '../../storage';
-import { copyText, ordinal, ResultLines, useCommands } from '../ui';
+import { canShareText, copyText, onHover, ordinal, ResultLines, shareText, touchTap, useCommands } from '../ui';
 import './welcome.css';
 
 type ItemId = 'single' | 'daily' | 'multi' | 'how' | 'settings' | 'about' | 'legal';
@@ -24,10 +24,12 @@ type Board = Awaited<ReturnType<typeof dailyBoard>>;
 
 const hm = (ms: number) => `${Math.floor(ms / 3_600_000)}h ${Math.floor((ms % 3_600_000) / 60_000)}m`;
 
-export function Welcome({ settings, onSettings, onPlay, onMulti, onDaily }: {
+export function Welcome({ settings, onSettings, onPlay, onMulti, onDaily, daily: openOnDaily }: {
   settings: Settings; onSettings: (s: Settings) => void; onPlay: () => void; onMulti: () => void; onDaily: () => void;
+  /** opened from the daily link: start on today's challenge */
+  daily?: boolean;
 }) {
-  const [index, setIndex] = useState(0);
+  const [index, setIndex] = useState(() => (openOnDaily ? ITEMS.findIndex((i) => i.id === 'daily') : 0));
   // Today's challenge, how it went here, and the day's board.
   const day = dailyNumber();
   const challenge = dailyChallenge(day);
@@ -47,6 +49,9 @@ export function Welcome({ settings, onSettings, onPlay, onMulti, onDaily }: {
   }, [onDailyItem, board, day]);
   const copy = async () => {
     if (record?.text && (await copyText(record.text))) setCopied(true);
+  };
+  const share = async () => {
+    if (record?.text && (await shareText(record.text)) === 'copied') setCopied(true);
   };
   const choose = (id: ItemId) => {
     if (id === 'single') onPlay();
@@ -98,6 +103,9 @@ export function Welcome({ settings, onSettings, onPlay, onMulti, onDaily }: {
         <div className="w-rule">{challenge.rule}{challenge.target ? <> <b>Target:</b> {challenge.target.label[0].toLowerCase()}{challenge.target.label.slice(1)}.</> : null}</div>
         {!record ? (
           <>
+            {board && board !== 'error' && board.total > 0 && (
+              <p className="w-played"><b>{board.total.toLocaleString('en-GB')}</b> {board.total === 1 ? 'manager has' : 'managers have'} played today · best <b>{board.top[0].score.toLocaleString('en-GB')}</b></p>
+            )}
             <p className="muted">The same challenge and seed for everyone today, and one attempt: leaving the career ends it.</p>
             <button className="w-cta" onClick={onDaily} tabIndex={-1}>Play today's challenge <span className="kbd">Enter</span></button>
           </>
@@ -107,7 +115,9 @@ export function Welcome({ settings, onSettings, onPlay, onMulti, onDaily }: {
               {record.text ? (
                 <>
                   <ResultLines text={record.text} />
-                  <button className="w-copy" onClick={() => void copy()} tabIndex={-1}>{copied ? 'Copied' : 'Copy result'} <span className="kbd">C</span></button>
+                  <button className="w-copy" onClick={() => void share()} tabIndex={-1}>
+                    {copied ? 'Copied' : canShareText() ? 'Share result' : 'Copy result'}{!canShareText() && <span className="kbd">C</span>}
+                  </button>
                 </>
               ) : (
                 <p>You started today's challenge and left it. One attempt a day.</p>
@@ -208,11 +218,13 @@ export function Welcome({ settings, onSettings, onPlay, onMulti, onDaily }: {
           <button
             key={it.id}
             className={`w-item ${i === index ? 'on' : ''} ${focus === 'panel' && i === index ? 'held' : ''}`}
-            onMouseEnter={() => focus === 'menu' && select(i)}
+            onPointerEnter={onHover(() => focus === 'menu' && select(i))}
             onClick={() => {
               if (focus === 'panel' && i !== index) setFocus('menu');
+              // A tap shows the item's panel first; the panel's button, or a second tap, goes on.
+              const first = touchTap() && i !== index;
               select(i);
-              choose(it.id);
+              if (!first) choose(it.id);
             }}
             tabIndex={-1}
           >

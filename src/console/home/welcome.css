@@ -70,6 +70,7 @@
 /* Daily Challenge: today's rule, then the result and the board. */
 .welcome .w-rule { margin: 4px 0 14px; padding: 12px 16px; border-radius: 10px; background: #f1f3f6; color: #121418; font-size: 16px; font-weight: 700; }
 .welcome .w-rule b { color: #2a55e6; }
+.welcome .w-played { margin: 0 0 10px; font-size: 15px; color: #3d424a; }
 .welcome .w-daily { display: grid; grid-template-columns: 1.15fr 1fr; gap: 22px; }
 .welcome .w-result pre { margin: 0 0 12px; padding: 12px 14px; border-radius: 10px; background: #121418; color: #fff; font: 700 14px/1.55 ui-monospace, Menlo, monospace; white-space: pre-wrap; }
 .welcome .w-copy { display: inline-flex; align-items: center; gap: 10px; padding: 8px 14px; border-radius: 8px; background: #2a55e6; color: #fff; font-weight: 800; font-size: 14px; }

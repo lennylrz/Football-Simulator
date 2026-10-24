@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { Era } from '../../game/data';
-import { useCommands } from '../ui';
+import { onHover, touchTap, useCommands } from '../ui';
 import './home.css';
 import { PREVIEWS } from './Previews';
 
@@ -49,18 +49,18 @@ export function Home({ onPlay, onBack }: { onPlay: (era: Era) => void; onBack: (
         <p className="hint">Hover an era to step into it.</p>
       </div>
 
-      <div className="eras" onMouseLeave={() => setIndex(null)}>
+      <div className="eras" onPointerLeave={onHover(() => setIndex(null))}>
         {ERAS.map((e, i) => (
           <button
             key={e.key}
             className={`era ${i === index ? 'on' : ''} ${e.live ? 'live' : ''}`}
-            onMouseEnter={() => setIndex(i)}
-            onClick={() => (e.live ? onPlay(e.key as Era) : setIndex(i))}
+            onPointerEnter={onHover(() => setIndex(i))}
+            onClick={() => (e.live && (i === index || !touchTap()) ? onPlay(e.key as Era) : setIndex(i))}
             tabIndex={-1}
           >
             <span className="years">{e.years}</span>
             <span className="style">{e.style}</span>
-            <span className="state">{e.live ? (i === index ? 'Click or Enter to play' : 'Playable now') : 'Coming later'}</span>
+            <span className="state">{e.live ? (i === index ? (touchTap() ? 'Tap again to play' : 'Click or Enter to play') : 'Playable now') : 'Coming later'}</span>
           </button>
         ))}
       </div>

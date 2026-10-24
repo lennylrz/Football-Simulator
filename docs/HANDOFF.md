@@ -162,6 +162,28 @@ the exceptions; best Park the Bus defender ~91-92, up to 94-96.
    `daily.test.ts` drafts every challenge, by best rating and by first
    candidate, and plays it through.
 
+## Done after PR #10 (making it shareable)
+
+- **Phones.** The stage is centred by its middle (`.stage-wrap > .stage`),
+  which also fixed windows smaller than 1280x720 (the stage used to sit
+  off-centre and clipped). On a phone held upright (`phoneUpright` in
+  `ui.tsx`) the stage is turned 90 degrees after a card (`TurnPhone.tsx`)
+  asks to turn the phone; Play tries full screen and a landscape lock
+  (Android). Safe-area insets keep content clear of the notch. On touch, a
+  first tap selects where hovering would preview (`touchTap`, `onHover`).
+  The confetti canvas sizes itself through the stage's scale.
+- **`/daily`** opens the welcome screen on today's challenge (`DAILY_LINK`
+  in `App.tsx`); `vercel.json` rewrites it to `daily.html`, which
+  `vite.config.ts` writes at build with the Daily Challenge's link preview.
+  The result text ends with that link; on phones the result button opens
+  the share sheet (`shareText`). Before playing, the panel shows how many
+  have played today and the best score.
+- **Link previews and icons**: Open Graph and Twitter tags in `index.html`
+  (absolute URLs on five-seasons-football.vercel.app), `public/og.png`,
+  `public/og-daily.png`, icons and `manifest.webmanifest` (no emoji
+  favicon any more). The images were rendered from an HTML design with
+  Playwright from `scripts/og.html` (`node scripts/render_og.cjs`).
+
 ## Next tasks
 
 None set by the owner yet. Open points worth raising:
