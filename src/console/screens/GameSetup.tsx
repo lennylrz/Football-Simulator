@@ -1,7 +1,7 @@
 import { eraYears } from '../../game/data';
 import { DEFAULT_SETTINGS, OPTIONS, type Settings, step } from '../../settings';
 import '../setup.css';
-import { browse, type Command, Frame, KeyCap, useListNav } from '../ui';
+import { browse, type Command, Frame, KeyCap, onHover, useListNav } from '../ui';
 
 /** Game settings, shown when the era is chosen and from its main menu. */
 export function GameSetup({
@@ -35,7 +35,7 @@ export function GameSetup({
               return (
                 <div key={o.key} className="srow-wrap">
                   {head && <div className="shead">{head}</div>}
-                  <div className={`srow ${i === nav.index ? 'on' : ''}`} onMouseEnter={() => nav.setIndex(i)} onClick={() => nav.setIndex(i)}>
+                  <div className={`srow ${i === nav.index ? 'on' : ''}`} onPointerEnter={onHover(() => nav.setIndex(i))} onClick={() => nav.setIndex(i)}>
                     <span className="sl">{o.label}</span>
                     <span className="sv">
                       <button className="arr" disabled={at <= 0} onClick={() => change(i, -1)} tabIndex={-1} aria-label="Previous"><KeyCap k="Left" /></button>

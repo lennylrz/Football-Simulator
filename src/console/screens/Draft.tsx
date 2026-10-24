@@ -10,7 +10,7 @@ import { useGame } from '../../ui/context';
 import { closeCommand, LeaveCareer, leaveCommands } from '../overlays';
 import { rivalCommand, RivalOverlay } from '../room';
 import { BenchStrip, Pitch, type PlateInfo } from '../Pitch';
-import { browse, clubOf, type Command, Frame, moneyShort, primaryPos, useTheme } from '../ui';
+import { browse, clubOf, type Command, Frame, moneyShort, onHover, primaryPos, touchTap, useTheme } from '../ui';
 
 const SLOT_NAMES: Record<string, string> = {
   GK: 'Goalkeeper', CB: 'Centre-back', LB: 'Left-back', RB: 'Right-back', LWB: 'Left wing-back', RWB: 'Right wing-back',
@@ -164,8 +164,8 @@ export function Draft() {
                         key={id}
                         className={`ccard ${i === index ? 'on' : ''} ${hidden ? 'hid' : ''}`}
                         style={{ '--d': `${i * 110}ms` } as React.CSSProperties}
-                        onMouseEnter={() => setIndex(i)}
-                        onClick={() => pick(i)}
+                        onPointerEnter={onHover(() => setIndex(i))}
+                        onClick={() => (i === index || !touchTap() ? pick(i) : setIndex(i))}
                         tabIndex={-1}
                       >
                         <div className="top">
@@ -254,7 +254,7 @@ function SlHub({ ids, index, setIndex, onPick, hidden, title, timer, note }: {
           const cc = clubOfPlayer(cid);
           return (
             <button key={cid} className={`sl-row ${i === index ? 'on' : ''}`} style={{ '--d': `${i * 60}ms` } as React.CSSProperties}
-              onClick={() => (i === index ? onPick(i) : setIndex(i))} onMouseEnter={() => setIndex(i)} tabIndex={-1}>
+              onClick={() => (i === index ? onPick(i) : setIndex(i))} onPointerEnter={onHover(() => setIndex(i))} tabIndex={-1}>
               <span className="who">
                 <span className="nm"><b>{data.names[cid][0]}</b><small>{cc.name} · {data.names[cid][1]}</small></span>
               </span>

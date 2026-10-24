@@ -1,0 +1,14 @@
+{
+  "name": "Five Seasons",
+  "short_name": "Five Seasons",
+  "description": "A football draft game: draft real players, live with five seasons of how they turned out.",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "landscape",
+  "background_color": "#eef0f3",
+  "theme_color": "#121418",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

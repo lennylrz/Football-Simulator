@@ -3,15 +3,21 @@
 
 * { box-sizing: border-box; }
 html, body, #root { height: 100%; margin: 0; }
+/* On touch screens: no double-tap zoom, no pull-to-refresh, no grey flash on tap. */
+html, body { overscroll-behavior: none; touch-action: manipulation; -webkit-tap-highlight-color: transparent; -webkit-text-size-adjust: 100%; }
 body { background: #000; color: #fff; font-family: Arial, "Helvetica Neue", Helvetica, sans-serif; -webkit-font-smoothing: antialiased; overflow: hidden; }
 button { font: inherit; color: inherit; border: 0; background: none; padding: 0; cursor: pointer; }
 button:disabled { cursor: default; }
 input { font: inherit; }
 
-.stage-wrap { position: fixed; inset: 0; display: grid; place-items: center; overflow: hidden; background: #000; }
+.stage-wrap { position: fixed; inset: 0; overflow: hidden; background: #000; }
 /* The stage fills the window (Stage sets its size); its 1280x720 content sits centred in .stage-in.
-   --bx and --by are the extra room on each side; --bleed takes a full-screen layer out to the window's edges. */
-.stage { position: relative; width: 1280px; height: 720px; flex: none; transform: scale(var(--s, 1)); overflow: hidden; user-select: none;
+   --bx and --by are the extra room on each side; --bleed takes a full-screen layer out to the window's edges.
+   It is centred by its middle, so a stage bigger than the window (any window under 1280x720) stays centred. */
+.stage-wrap > .stage { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%) scale(var(--s, 1)); }
+/* A phone held upright: the game turns sideways (see Stage). */
+.stage-wrap.turned > .stage { transform: translate(-50%, -50%) rotate(90deg) scale(var(--s, 1)); }
+.stage { position: relative; width: 1280px; height: 720px; flex: none; overflow: hidden; user-select: none; -webkit-user-select: none;
   --bleed: calc(-1 * var(--by, 0px)) calc(-1 * var(--bx, 0px));
   background: #0d0d0e radial-gradient(ellipse at 50% 0%, #2c2d30 0%, #111213 60%); }
 .stage-in { position: absolute; left: 50%; top: 50%; width: 1280px; height: 720px; margin: -360px 0 0 -640px; }

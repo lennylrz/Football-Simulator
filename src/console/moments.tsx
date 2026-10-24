@@ -24,12 +24,14 @@ export function Confetti({ colors, kind, count = 180, seconds = 4.5 }: { colors:
     const canvas = ref.current;
     const ctx = canvas?.getContext('2d');
     if (!canvas || !ctx || reducedMotion()) return;
+    // Its size on screen: the stage's scale applied to its layout size (the stage may be turned sideways).
     const box = canvas.getBoundingClientRect();
+    const scale = Math.sqrt((box.width * box.height) / (canvas.offsetWidth * canvas.offsetHeight)) || 1;
     const dpr = Math.min(2, window.devicePixelRatio || 1);
-    canvas.width = Math.round(box.width * dpr);
-    canvas.height = Math.round(box.height * dpr);
-    const W = box.width;
-    const H = box.height;
+    const W = canvas.offsetWidth * scale;
+    const H = canvas.offsetHeight * scale;
+    canvas.width = Math.round(W * dpr);
+    canvas.height = Math.round(H * dpr);
     // One unit scales with the window, so the confetti looks the same at any size.
     const u = W / 1400;
     const cols = palette.split(' ');

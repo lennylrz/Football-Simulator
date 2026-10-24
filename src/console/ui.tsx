@@ -2,6 +2,7 @@ import { createContext, type ReactNode, useContext, useEffect, useLayoutEffect, 
 import { createPortal } from 'react-dom';
 import { CLUBS, type ClubInfo } from '../game/clubs';
 import type { GameData } from '../game/data';
+import { TurnPhone, useTurnCard } from './TurnPhone';
 
 /**
  * The era's look for every screen past the era picker: '' is the 2010s
@@ -9,6 +10,21 @@ import type { GameData } from '../game/data';
  */
 export const ThemeContext = createContext<'' | 'sl'>('');
 export const useTheme = () => useContext(ThemeContext);
+
+/** How the last press came: a finger, a pen or the mouse. */
+let lastPointer = 'mouse';
+window.addEventListener('pointerdown', (e) => (lastPointer = e.pointerType), true);
+
+/**
+ * Whether a click came from a finger. A touch screen has no hover, so where
+ * hovering previews something, the first tap selects and the second acts.
+ */
+export const touchTap = () => lastPointer !== 'mouse';
+
+/** Hover handler that only the mouse triggers (a tap fires mouse events too). */
+export const onHover = (f: () => void) => (e: React.PointerEvent) => {
+  if (e.pointerType === 'mouse') f();
+};
 
 /** Whether the player turned on Reduce Motion (settings put .calm on <html>). */
 export const reducedMotion = () => document.documentElement.classList.contains('calm');
@@ -24,26 +40,55 @@ export function OnStage({ children }: { children: ReactNode }) {
   return layer ? createPortal(children, layer) : children;
 }
 
+/** A phone held upright: the stage is a landscape screen, so it is drawn sideways. */
+export function phoneUpright(): boolean {
+  return window.matchMedia('(pointer: coarse)').matches && window.innerHeight > window.innerWidth && window.innerWidth < 600;
+}
+
+/** The notch and home bar's room (CSS safe-area insets), in CSS pixels. */
+function safeArea(): { x: number; y: number } {
+  const probe = document.createElement('div');
+  probe.style.cssText = 'position:fixed;visibility:hidden;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)';
+  document.body.appendChild(probe);
+  const cs = getComputedStyle(probe);
+  const px = (v: string) => parseFloat(v) || 0;
+  const out = { x: Math.max(px(cs.paddingLeft), px(cs.paddingRight)), y: Math.max(px(cs.paddingTop), px(cs.paddingBottom)) };
+  probe.remove();
+  return out;
+}
+
 /**
  * Scales the fixed 1280x720 stage to fit the window. The screen's background
- * fills the whole window; the 1280x720 content stays centred in it.
+ * fills the whole window; the 1280x720 content stays centred in it, clear of
+ * a phone's notch. On a phone held upright the stage turns sideways.
  */
 export function Stage({ tone = 'dark', children }: { tone?: 'dark' | 'light' | 'home'; children: ReactNode }) {
   const theme = useTheme();
-  const [fit, setFit] = useState({ s: 1, w: 1280, h: 720 });
+  const [fit, setFit] = useState({ s: 1, w: 1280, h: 720, turned: false });
   useLayoutEffect(() => {
     const resize = () => {
-      const s = Math.min(window.innerWidth / 1280, window.innerHeight / 720);
-      setFit({ s, w: Math.max(1280, Math.ceil(window.innerWidth / s)), h: Math.max(720, Math.ceil(window.innerHeight / s)) });
+      const turned = phoneUpright();
+      const pad = safeArea();
+      // Turned, the window's height is the stage's width.
+      const [W, H] = turned ? [window.innerHeight, window.innerWidth] : [window.innerWidth, window.innerHeight];
+      const [padW, padH] = turned ? [2 * pad.y, 2 * pad.x] : [2 * pad.x, 2 * pad.y];
+      const s = Math.min((W - padW) / 1280, (H - padH) / 720);
+      setFit({ s, w: Math.max(1280, Math.ceil(W / s)), h: Math.max(720, Math.ceil(H / s)), turned });
     };
     resize();
     window.addEventListener('resize', resize);
-    return () => window.removeEventListener('resize', resize);
+    window.addEventListener('orientationchange', resize);
+    return () => {
+      window.removeEventListener('resize', resize);
+      window.removeEventListener('orientationchange', resize);
+    };
   }, []);
   const size = useMemo(() => ({ w: fit.w, h: fit.h }), [fit.w, fit.h]);
   const [layer, setLayer] = useState<HTMLDivElement | null>(null);
+  const [card, cardDone] = useTurnCard();
   return (
-    <div className="stage-wrap">
+    <div className={`stage-wrap ${fit.turned ? 'turned' : ''}`}>
+      {fit.turned && card && <TurnPhone onPlay={cardDone} />}
       <div
         className={`stage ${tone} ${tone === 'home' ? '' : theme}`}
         style={{ '--s': fit.s, width: fit.w, height: fit.h, '--bx': `${(fit.w - 1280) / 2}px`, '--by': `${(fit.h - 720) / 2}px` } as React.CSSProperties}
@@ -222,6 +267,25 @@ export function ResultLines({ text, lines = 3 }: { text: string; lines?: number 
       ))}
     </pre>
   );
+}
+
+/** The address that opens today's Daily Challenge, for results and shares. */
+export const dailyLink = () => `${window.location.origin}/daily`;
+
+/** Phones and tablets share through the system sheet (WhatsApp, Messages...); computers copy. */
+export const canShareText = () => typeof navigator.share === 'function' && window.matchMedia('(pointer: coarse)').matches;
+
+/** Opens the share sheet with the text; 'copied' where there is none. */
+export async function shareText(text: string): Promise<'shared' | 'copied' | 'failed'> {
+  if (canShareText()) {
+    try {
+      await navigator.share({ text });
+      return 'shared';
+    } catch (e) {
+      if ((e as DOMException).name === 'AbortError') return 'shared';
+    }
+  }
+  return (await copyText(text)) ? 'copied' : 'failed';
 }
 
 /** Copies text to the clipboard; false if the browser refuses. */

@@ -42,6 +42,8 @@ type Mode = 'welcome' | 'home' | 'setup' | 'clubs' | 'play' | 'lobby' | 'roomclu
 
 /** An invite link: ?room=CODE */
 const INVITE = normalizeCode(new URLSearchParams(location.search).get('room') ?? '');
+/** The daily link, /daily: the welcome screen opens on today's challenge. */
+const DAILY_LINK = /\/daily\/?$/.test(location.pathname);
 
 /** Each era's data, fetched the first time it is picked. */
 const eraData = new Map<Era, Promise<GameData>>();
@@ -202,6 +204,7 @@ export default function App() {
           <Welcome
             settings={settings}
             onSettings={changeSettings}
+            daily={DAILY_LINK}
             onPlay={() => {
               setHostNeedsEra(false);
               setDaily(null);

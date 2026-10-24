@@ -1,0 +1,76 @@
+<!doctype html>
+<!-- The link preview images (#main, #daily) and the app icon (#icon); scripts/render_og.cjs renders them into public/. -->
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  * { box-sizing: border-box; margin: 0; }
+  body { width: 1200px; height: 630px; overflow: hidden; font-family: Inter, "Helvetica Neue", Arial, sans-serif; color: #121418; background: #eef0f3;
+    background-image: linear-gradient(rgba(18,20,24,.05) 1px, transparent 1px), linear-gradient(90deg, rgba(18,20,24,.05) 1px, transparent 1px); background-size: 30px 30px; }
+  .page { position: relative; width: 1200px; height: 630px; padding: 58px 64px; display: none; }
+  .mark { font-weight: 900; font-size: 104px; letter-spacing: -.05em; line-height: .95; }
+  .mark span { color: #2a55e6; }
+  .tag { margin-top: 14px; font-size: 32px; color: #3d424a; letter-spacing: -.01em; }
+
+  /* Default: five candidates for one position. */
+  .cap { position: absolute; left: 64px; top: 312px; font-size: 17px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: #2a55e6; }
+  .cards { position: absolute; left: 64px; right: 64px; bottom: 54px; display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px; }
+  .card { height: 214px; padding: 18px 20px; border-radius: 16px; background: #fff; box-shadow: 0 0 0 1px rgba(18,20,24,.1), 0 18px 34px -22px rgba(18,20,24,.55); display: flex; flex-direction: column; }
+  .card .top { display: flex; justify-content: space-between; align-items: flex-start; }
+  .card .r { font-size: 62px; font-weight: 900; letter-spacing: -.04em; line-height: 1; }
+  .card .pos { font-size: 16px; font-weight: 800; color: #2a55e6; padding-top: 6px; }
+  .card .nm { margin-top: auto; font-size: 23px; font-weight: 800; letter-spacing: -.02em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .card .meta { margin-top: 4px; font-size: 17px; color: #6b717b; }
+  .card .pot { margin-top: 12px; padding-top: 10px; border-top: 1px solid #e7e9ec; font-size: 15px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: #8a9099; }
+  .card .pot b { color: #2a55e6; }
+  .card.on { background: #121418; color: #fff; box-shadow: 0 0 0 3px #fff, 0 22px 40px -18px rgba(0,0,0,.7); transform: translateY(-10px); }
+  .card.on .meta { color: rgba(255,255,255,.7); }
+  .card.on .pot { border-top-color: rgba(255,255,255,.15); color: rgba(255,255,255,.6); }
+  .card.on .pot b, .card.on .pos { color: #8fb0ff; }
+  .side { position: absolute; right: 64px; top: 70px; text-align: right; font-size: 19px; line-height: 1.5; color: #3d424a; }
+  .side b { color: #121418; }
+
+  /* Daily. */
+  .pill { display: inline-block; margin-top: 26px; padding: 9px 18px; border-radius: 99px; background: #2a55e6; color: #fff; font-size: 22px; font-weight: 800; letter-spacing: .02em; }
+  .head { margin-top: 18px; font-size: 54px; font-weight: 900; letter-spacing: -.035em; line-height: 1.05; }
+  .rules { position: absolute; left: 64px; bottom: 58px; width: 470px; display: flex; flex-wrap: wrap; gap: 10px; }
+  .rules span { padding: 9px 15px; border-radius: 10px; background: #fff; box-shadow: 0 0 0 1px rgba(18,20,24,.1); font-size: 19px; font-weight: 700; }
+  .result { position: absolute; right: 64px; bottom: 58px; width: 560px; padding: 28px 30px; border-radius: 18px; background: #121418; color: #fff;
+    font: 700 26px/1.6 "JetBrains Mono", ui-monospace, monospace; box-shadow: 0 24px 50px -24px rgba(0,0,0,.6); }
+  .result .cup { display: inline-block; width: 15px; height: 19px; margin: 0 2px 0 5px; vertical-align: -2px; background: #f5c623; border-radius: 2px 2px 9px 9px; box-shadow: 0 4px 0 -2px #f5c623; }
+  .result .dim { color: #8fb0ff; }
+</style>
+</head>
+<body>
+  <div class="page" id="main">
+    <div class="mark">Five Seasons<span>.</span></div>
+    <div class="tag">Draft a team. Live with how they turned out.</div>
+    <div class="side">Pick 1 of 5 real players per position.<br><b>Potential stays hidden.</b><br>Five seasons decide who was right.</div>
+    <div class="cap">Choose your striker · 2015/16</div>
+    <div class="cards">
+      <div class="card"><div class="top"><span class="r">85</span><span class="pos">ST</span></div><div class="nm">E. Cavani</div><div class="meta">28 · Uruguay</div><div class="pot">Potential <b>?</b></div></div>
+      <div class="card"><div class="top"><span class="r">80</span><span class="pos">ST</span></div><div class="nm">R. Lukaku</div><div class="meta">22 · Belgium</div><div class="pot">Potential <b>?</b></div></div>
+      <div class="card on"><div class="top"><span class="r">78</span><span class="pos">ST</span></div><div class="nm">H. Kane</div><div class="meta">21 · England</div><div class="pot">Potential <b>?</b></div></div>
+      <div class="card"><div class="top"><span class="r">80</span><span class="pos">ST</span></div><div class="nm">Paco Alcácer</div><div class="meta">21 · Spain</div><div class="pot">Potential <b>?</b></div></div>
+      <div class="card"><div class="top"><span class="r">77</span><span class="pos">ST</span></div><div class="nm">A. Milik</div><div class="meta">21 · Poland</div><div class="pot">Potential <b>?</b></div></div>
+    </div>
+  </div>
+
+  <div class="page" id="daily">
+    <div class="mark" style="font-size: 76px">Five Seasons<span>.</span></div>
+    <div class="pill">Daily Challenge</div>
+    <div class="head">A new rule every day.<br>One attempt each.</div>
+    <div class="rules"><span>Only Portugal</span><span>Kids only</span><span>Blind draft</span><span>Park the Bus or bust</span><span>Bargain bin</span></div>
+    <div class="result">Five Seasons Daily #12<br><span class="dim">3rd 1st</span><i class="cup"></i><span class="dim"> 2nd 1st</span><i class="cup"></i><i class="cup"></i><span class="dim"> 4th</span><br>Legacy 11,250</div>
+  </div>
+
+  <div class="page" id="icon" style="width:512px;height:512px;padding:0;background:#121418;display:none">
+    <div style="position:absolute;inset:0;display:grid;place-items:center;font:900 330px/1 Inter,sans-serif;letter-spacing:-.06em;color:#fff;padding-right:40px">5<span style="position:absolute;width:62px;height:62px;border-radius:50%;background:#2a55e6;right:118px;bottom:132px"></span></div>
+  </div>
+<script>
+  const which = location.hash.slice(1) || 'main';
+  document.getElementById(which).style.display = 'block';
+  if (which === 'icon') { document.body.style.width = '512px'; document.body.style.height = '512px'; document.body.style.background = '#121418'; }
+</script>
+</body>
+</html>

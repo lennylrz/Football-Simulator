@@ -9,7 +9,7 @@ import { useGame } from '../../ui/context';
 import { downloadBlob, drawShareCard, shareOrDownload } from '../../ui/shareCard';
 import { careerColumns, closeCommand, HallOfFame, SeasonReport } from '../overlays';
 import { SortTable } from '../SortTable';
-import { browse, clubOf, type Command, copyText, Frame, ordinal, ResultLines, useListNav, useTheme } from '../ui';
+import { browse, canShareText, clubOf, type Command, copyText, dailyLink, Frame, ordinal, ResultLines, shareText, useListNav, useTheme } from '../ui';
 
 const TROPHY = { league: 'League', fa: 'FA Cup', cl: 'Europe' } as const;
 
@@ -28,7 +28,7 @@ export function Summary({ onNewCareer }: { onNewCareer: () => void }) {
   // A Daily Challenge: the result to share, kept here and sent to the day's leaderboard once.
   const challenge = challengeOf(game.daily?.challenge);
   const met = targetMet(game, data);
-  const text = challenge && game.daily ? resultText(game.daily.day, challenge, c.seasons, c.score, met, window.location.host) : null;
+  const text = challenge && game.daily ? resultText(game.daily.day, challenge, c.seasons, c.score, met, dailyLink()) : null;
   const [board, setBoard] = useState<Awaited<ReturnType<typeof dailyBoard>> | 'error' | null>(null);
   const [copied, setCopied] = useState(false);
   const sent = useRef(false);
@@ -44,6 +44,9 @@ export function Summary({ onNewCareer }: { onNewCareer: () => void }) {
   }, [game.daily, text, info.name, c, met]);
   const copy = async () => {
     if (text && (await copyText(text))) setCopied(true);
+  };
+  const shareResult = async () => {
+    if (text && (await shareText(text)) === 'copied') setCopied(true);
   };
 
   useEffect(() => {
@@ -117,7 +120,7 @@ export function Summary({ onNewCareer }: { onNewCareer: () => void }) {
                 <div className="daily-end">
                   <div className="res">
                     <ResultLines text={text} />
-                    <button className="rowbtn" onClick={() => void copy()} tabIndex={-1}>{copied ? 'Copied' : 'Copy result'}</button>
+                    <button className="rowbtn" onClick={() => void shareResult()} tabIndex={-1}>{copied ? 'Copied' : canShareText() ? 'Share result' : 'Copy result'}</button>
                   </div>
                   <div className="board">
                     {board === null && <div className="empty">Sending your score…</div>}

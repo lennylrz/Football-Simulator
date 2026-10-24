@@ -123,7 +123,15 @@ See [docs/DATA.md](docs/DATA.md) for what is extracted and a summary.
 ## Deploy
 
 Static site: on Vercel, import the repository with the Vite preset (build
-`npm run build`, output `dist`).
+`npm run build`, output `dist`). The build also writes `dist/daily.html`, the
+same page with the Daily Challenge's link preview, and `vercel.json` serves it
+at `/daily`, the link the daily result ends with. Link preview images and app
+icons are in `public/` (`og.png`, `og-daily.png`, `icon-*.png`).
+
+On phones the game is the same 1280x720 screen: held sideways it fills the
+screen; held upright a card asks to turn the phone, then the game is drawn
+sideways (Android also goes full screen in landscape). On touch screens the
+first tap on a draft card, era or menu item selects it and the second acts.
 
 ## Legal
 
