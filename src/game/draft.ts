@@ -16,11 +16,11 @@ export const CANDIDATES = 5;
 /**
  * How far an era's draft bands sit above 2015-2020's. The bands below (a
  * star 84+, established 79-83, ...) were tuned on 2015-2020; 2020/21's best
- * sides are two to three points stronger (Liverpool's and City's XIs average
+ * sides are about two points stronger (Liverpool's and City's XIs average
  * 87-88 against Chelsea's 85 in 2015/16), so its bands move up with them and a
  * drafted club keeps about the same chance of the title.
  */
-export const ERA_LIFT: Record<number, number> = { 2020: 3 };
+export const ERA_LIFT: Record<number, number> = { 2020: 2 };
 export const REDRAFTS_PER_SUMMER = 2;
 /** Substitutes the user drafts, unless the rules say otherwise. */
 export const BENCH = 3;

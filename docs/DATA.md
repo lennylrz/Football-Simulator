@@ -99,7 +99,7 @@ FIFA 20 to FC 25.
 
 Best XI average rating, 2020/21: Liverpool 87.6, Manchester City 86.9,
 Tottenham 85.5, Chelsea 84.6 (2015/16's best was Chelsea, 84.7). The
-draft's rating bands sit three points higher in this era (`ERA_LIFT` in
+draft's rating bands sit two points higher in this era (`ERA_LIFT` in
 `src/game/draft.ts`) so a drafted club keeps the same chances.
 
 ## Invented players
