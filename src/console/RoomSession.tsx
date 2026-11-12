@@ -4,7 +4,7 @@ import type { GameData } from '../game/data';
 import type { GameState } from '../game/game';
 import { applyEntry, clubOfPid, type RoomReplay } from '../net/replay';
 import { playerId, type Room, sendEntry, watchRoom } from '../net/room';
-import type { Settings } from '../settings';
+import { roomSettings, type Settings } from '../settings';
 import { GameContext, type RoomContext } from '../ui/context';
 import { Draft } from './screens/Draft';
 import { RoomWaiting } from './screens/Lobby';
@@ -18,13 +18,15 @@ import { Stage } from './ui';
  * shows this manager's view of it. Moves go into the log, not straight into
  * the game, so both browsers apply them in the same order.
  */
-export function RoomSession({ room, data, settings, joinAs, onLeave }: {
+export function RoomSession({ room, data, settings: own, joinAs, onLeave }: {
   room: Room; data: GameData; settings: Settings;
   /** the club to join with, when this browser is the guest and hasn't joined yet */
   joinAs?: RoomManager;
   onLeave: () => void;
 }) {
   const me = playerId();
+  // Both managers play by the host's settings.
+  const settings = useMemo(() => roomSettings(own, room.rules), [own, room.rules]);
   const replay = useRef<RoomReplay>({ state: null, guest: null });
   const [game, setGame] = useState<GameState | null>(null);
   const [loaded, setLoaded] = useState(false);
