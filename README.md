@@ -54,7 +54,9 @@ bend for that pick.
 
 ## Play a Friend
 
-Two-player rooms (main menu, Play a Friend). The host creates a club and gets
+Two-player rooms (main menu, Play a Friend). The host picks the era and the
+settings (both managers play by them: ratings shown or hidden, pick timer,
+choices, bench, re-drafts, match speed), creates a club and gets
 a five-letter code (or an invite link, `?room=CODE`); the guest joins with
 their own club. Both draft in their own time and are never offered the same
 player, then press Ready; the host plays the season. Both clubs join the

@@ -3,7 +3,7 @@
 // and replay it, so they always agree on the game.
 import type { RealtimeChannel, SupabaseClient } from '@supabase/supabase-js';
 import type { Action, RoomManager } from '../game/actions';
-import type { GameState } from '../game/game';
+import type { RoomRules } from '../settings';
 
 const URL = 'https://ehmghfdaagfgzhglrifm.supabase.co';
 // The public (anon) key: rooms and actions can only be read and added to.
@@ -21,7 +21,8 @@ export interface Room {
   code: string;
   era: number;
   seed: number;
-  rules: NonNullable<GameState['rules']>;
+  /** the host's settings: the career's rules, and the draft's and season's */
+  rules: RoomRules;
   host: RoomManager & { pid: string };
 }
 

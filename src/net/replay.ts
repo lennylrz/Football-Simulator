@@ -22,7 +22,8 @@ export function applyEntry(replay: RoomReplay, room: Room, data: GameData, e: Lo
     // The first other browser to join is the guest; later ones are turned away.
     if (replay.state || e.pid === room.host.pid) return;
     replay.guest = e.pid;
-    replay.state = newRoomGame(data, room.seed, room.rules, room.host, { club: a.club, formation: a.formation, style: a.style });
+    const { redrafts, choices, bench } = room.rules;
+    replay.state = newRoomGame(data, room.seed, { redrafts, choices, bench }, room.host, { club: a.club, formation: a.formation, style: a.style });
     return;
   }
   const club = clubOfPid(room, replay, e.pid);
