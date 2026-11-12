@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { career as computeCareer } from '../../game/career';
 import { challengeOf, resultText, targetMet } from '../../game/daily';
 import { dailyBoard, submitDaily } from '../../net/daily';
@@ -9,13 +9,14 @@ import { useGame } from '../../ui/context';
 import { downloadBlob, drawShareCard, shareOrDownload } from '../../ui/shareCard';
 import { careerColumns, closeCommand, HallOfFame, SeasonReport } from '../overlays';
 import { SortTable } from '../SortTable';
-import { browse, canShareText, clubOf, type Command, copyText, dailyLink, Frame, ordinal, ResultLines, shareText, useListNav, useTheme } from '../ui';
+import { browse, canShareText, clubOf, type Command, copyText, dailyLink, Frame, ordinal, ResultLines, shareText, SkinContext, useListNav, useTheme } from '../ui';
 
 const TROPHY = { league: 'League', fa: 'FA Cup', cl: 'Europe' } as const;
 
 export function Summary({ onNewCareer }: { onNewCareer: () => void }) {
   const { data, game } = useGame();
   const theme = useTheme();
+  const modern = useContext(SkinContext) === 'md';
   const info = clubOf(data, game.user);
   const c = useMemo(() => computeCareer(game), [game]);
   const canvas = useRef<HTMLCanvasElement>(null);
@@ -53,13 +54,13 @@ export function Summary({ onNewCareer }: { onNewCareer: () => void }) {
     if (!canvas.current) return;
     const draw = () => {
       if (!canvas.current) return;
-      drawShareCard(canvas.current, { club: info, career: c, name: (id) => data.names[id][0], seed: game.seed, site: window.location.host, theme });
+      drawShareCard(canvas.current, { club: info, career: c, name: (id) => data.names[id][0], seed: game.seed, site: window.location.host, theme, modern });
       setPreview(canvas.current.toDataURL('image/png'));
     };
     draw();
     // Redraw once the era's web fonts have loaded.
     document.fonts?.ready.then(draw);
-  }, [info, c, data, game.seed, theme]);
+  }, [info, c, data, game.seed, theme, modern]);
 
   const file = `five-seasons-${info.code.toLowerCase()}.png`;
   const share = async () => {

@@ -196,8 +196,10 @@ the exceptions; best Park the Bus defender ~91-92, up to 94-96.
   title, 0% CL; 2020 now 7.2% title, 0.7% CL. 100+ point champions stay
   more common in 2020 (27% vs 10%): Liverpool and City really were that
   strong in FIFA 21-22. A lift of 3 gives 11.2% / 1.9%.
-- The era is still "Coming later" (`live: false` in `Home.tsx`): its data is
-  ready; the modern look is the remaining piece.
+- The era is open, with a placeholder modern skin: the Slate layout
+  (theme 'sl') plus `SkinContext` 'md' and `src/console/modern.css` (indigo
+  screen, frosted rounded panels, Sofia Sans, sky-blue accent). A proper
+  modern design can replace it later.
 
 ## Next tasks
 
