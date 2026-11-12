@@ -19,7 +19,7 @@ import { activateEra, type GameState, newGame, REAL_CLUBS } from './game/game';
 import { type Challenge, challengeOf, dailyChallenge, dailyNumber, dailySeed } from './game/daily';
 import type { Formation } from './game/positions';
 import type { PlayStyle } from './game/styles';
-import { applySettings, loadSettings, rulesOf, saveSettings, type Settings } from './settings';
+import { applySettings, loadSettings, roomRulesOf, roomSettings, rulesOf, saveSettings, type Settings } from './settings';
 import { recentPlayers, rememberShown, saveDailyRecord } from './storage';
 import { GameContext } from './ui/context';
 
@@ -65,8 +65,8 @@ export default function App() {
   const [pendingRoom, setPendingRoom] = useState<Room | null>(null);
   const [joinAs, setJoinAs] = useState<RoomManager | undefined>(undefined);
   const [lobby, setLobby] = useState<{ busy: boolean; error: string | null; code: string }>({ busy: false, error: null, code: INVITE });
-  /** whether a host still has to pick an era */
-  const [hostNeedsEra, setHostNeedsEra] = useState(false);
+  /** hosting a room: era, settings and club come next */
+  const [hosting, setHosting] = useState(false);
   /** today's Daily Challenge, while its club is being created */
   const [daily, setDaily] = useState<{ day: number; challenge: Challenge } | null>(null);
 
@@ -176,7 +176,7 @@ export default function App() {
     }
     setLobby((l) => ({ ...l, busy: true, error: null }));
     try {
-      const r = await createRoom(era!, rulesOf(settings), { club, formation, style });
+      const r = await createRoom(era!, roomRulesOf(settings), { club, formation, style });
       setLobby((l) => ({ ...l, busy: false }));
       setJoinAs(undefined);
       setRoom(r);
@@ -187,6 +187,7 @@ export default function App() {
     }
   };
   const leaveRoom = () => {
+    setHosting(false);
     setRoom(null);
     setPendingRoom(null);
     setJoinAs(undefined);
@@ -206,7 +207,7 @@ export default function App() {
             onSettings={changeSettings}
             daily={DAILY_LINK}
             onPlay={() => {
-              setHostNeedsEra(false);
+              setHosting(false);
               setDaily(null);
               setMode('home');
             }}
@@ -228,11 +229,10 @@ export default function App() {
           <Home
             onPlay={(e) => {
               setEra(e);
-              // A host from the welcome screen's Multiplayer goes on to make the room's club.
-              setMode(hostNeedsEra ? 'roomclub' : 'setup');
-              setHostNeedsEra(false);
+              // A host sets the room's settings next too: both managers play by them.
+              setMode('setup');
             }}
-            onBack={() => setMode(hostNeedsEra ? 'lobby' : 'welcome')}
+            onBack={() => setMode(hosting ? 'lobby' : 'welcome')}
           />
         </Stage>
       );
@@ -241,19 +241,19 @@ export default function App() {
       return (
         <Stage>
           <Lobby
-            era={era !== null}
             initialCode={lobby.code}
             busy={lobby.busy}
             error={lobby.error}
             onHost={() => {
               setPendingRoom(null);
-              if (era === null) {
-                setHostNeedsEra(true);
-                setMode('home');
-              } else setMode('roomclub');
+              setHosting(true);
+              setMode('home');
             }}
             onJoin={(code) => void joinRoom(code)}
-            onBack={() => setMode('welcome')}
+            onBack={() => {
+              setHosting(false);
+              setMode('welcome');
+            }}
           />
         </Stage>
       );
@@ -263,14 +263,15 @@ export default function App() {
     if (mode === 'setup') {
       return (
         <Stage>
-          <GameSetup settings={settings} onChange={changeSettings} onDone={() => setMode('clubs')} onBack={() => setMode('home')} />
+          <GameSetup settings={settings} onChange={changeSettings} room={hosting} onDone={() => setMode(hosting ? 'roomclub' : 'clubs')} onBack={() => setMode('home')} />
         </Stage>
       );
     }
     if (mode === 'roomclub') {
       return (
         <Stage>
-          <NewClub room={pendingRoom ? 'guest' : 'host'} busy={lobby.busy} onStart={(club, formation, _seed, _shared, style) => void roomClub(club, formation, style)} onBack={() => setMode('lobby')} settings={settings} />
+          <NewClub room={pendingRoom ? 'guest' : 'host'} busy={lobby.busy} onStart={(club, formation, _seed, _shared, style) => void roomClub(club, formation, style)}
+            onBack={() => setMode(pendingRoom ? 'lobby' : 'setup')} settings={pendingRoom ? roomSettings(settings, pendingRoom.rules) : settings} />
         </Stage>
       );
     }

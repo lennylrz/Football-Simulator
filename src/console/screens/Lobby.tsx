@@ -1,13 +1,10 @@
 import { useState } from 'react';
-import { eraYears } from '../../game/data';
 import { normalizeCode } from '../../net/room';
 import '../room.css';
 import { type Command, Frame } from '../ui';
 
 /** Play a Friend: host a room, or join one with its code. */
-export function Lobby({ onHost, onJoin, onBack, error, busy, initialCode = '', era }: {
-  /** the era chosen already, if any: a host without one picks it next */
-  era?: boolean;
+export function Lobby({ onHost, onJoin, onBack, error, busy, initialCode = '' }: {
   onHost: () => void; onJoin: (code: string) => void; onBack: () => void; error?: string | null; busy?: boolean; initialCode?: string;
 }) {
   const [code, setCode] = useState(initialCode);
@@ -18,11 +15,11 @@ export function Lobby({ onHost, onJoin, onBack, error, busy, initialCode = '', e
     { keys: ['Escape'], label: 'Back', onPress: onBack },
   ];
   return (
-    <Frame title="Play a Friend" sub={era ? `${eraYears()} · two managers, one league` : 'Two managers, one league'} commands={commands}>
+    <Frame title="Play a Friend" sub="Two managers, one league" commands={commands}>
       <div className="lobby">
         <div className="win card">
           <h3>Host a room</h3>
-          <p>{era ? 'Create your club' : 'Pick an era, create your club'} and get a five-letter code. Send it to a friend: they join with their own club, and the room uses your era and settings.</p>
+          <p>Pick the era and the settings, create your club and get a five-letter code. Send it to a friend: they join with their own club and play by your era and settings.</p>
           <p>You each draft in your own time and never get offered the same player. When you're both ready, you play the season.</p>
           <button className="go" onClick={onHost} disabled={busy} tabIndex={-1}>Host a Room</button>
         </div>

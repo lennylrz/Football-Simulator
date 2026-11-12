@@ -106,6 +106,31 @@ export function rulesOf(s: Settings): { redrafts: number; choices: number; bench
   return { redrafts: s.redrafts, choices: s.choices, bench: s.bench };
 }
 
+/** A room's rules: the career's, plus how its draft and season play, the same for both managers. */
+export interface RoomRules {
+  redrafts: number;
+  choices: number;
+  bench?: number;
+  hiddenRatings?: boolean;
+  pickTimer?: number;
+  matchSpeed?: MatchSpeed;
+}
+
+/** What a host's settings make of a room. Reduce Motion stays each player's own. */
+export function roomRulesOf(s: Settings): RoomRules {
+  return { ...rulesOf(s), hiddenRatings: s.hiddenRatings, pickTimer: s.pickTimer, matchSpeed: s.matchSpeed };
+}
+
+/** A manager's settings in a room: the host's rules over their own (rooms from before carry only the career's). */
+export function roomSettings(s: Settings, rules: RoomRules): Settings {
+  const pick = <K extends keyof Settings>(k: K, v: Settings[K] | undefined) => (v === undefined ? s[k] : v);
+  return {
+    ...s,
+    redrafts: rules.redrafts, choices: rules.choices, bench: rules.bench ?? DEFAULT_SETTINGS.bench,
+    hiddenRatings: pick('hiddenRatings', rules.hiddenRatings), pickTimer: pick('pickTimer', rules.pickTimer), matchSpeed: pick('matchSpeed', rules.matchSpeed),
+  };
+}
+
 /** The next or previous value of an option. */
 export function step<K extends keyof Settings>(s: Settings, key: K, dir: 1 | -1): Settings {
   const opt = OPTIONS.find((o) => o.key === key) as unknown as Option<K>;

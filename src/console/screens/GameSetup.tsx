@@ -5,15 +5,19 @@ import { browse, type Command, Frame, KeyCap, onHover, useListNav } from '../ui'
 
 /** Game settings, shown when the era is chosen and from its main menu. */
 export function GameSetup({
-  settings, onChange, onDone, onBack,
-}: { settings: Settings; onChange: (s: Settings) => void; onDone: () => void; onBack: () => void }) {
+  settings, onChange, onDone, onBack, room,
+}: {
+  settings: Settings; onChange: (s: Settings) => void; onDone: () => void; onBack: () => void;
+  /** setting up a room: the settings are both managers' */
+  room?: boolean;
+}) {
   const nav = useListNav(OPTIONS.length);
   const opt = OPTIONS[nav.index];
   const change = (i: number, dir: 1 | -1) => onChange(step(settings, OPTIONS[i].key, dir));
   const isDefault = OPTIONS.every((o) => settings[o.key] === DEFAULT_SETTINGS[o.key]);
 
   const commands: Command[] = [
-    { keys: ['Enter'], label: 'New Career', primary: true, onPress: onDone },
+    { keys: ['Enter'], label: room ? 'Create Your Club' : 'New Career', primary: true, onPress: onDone },
     browse('Setting', nav.up, nav.down),
     browse('Change', () => change(nav.index, -1), () => change(nav.index, 1), true),
     { keys: ['R'], label: 'Defaults', disabled: isDefault, onPress: () => onChange({ ...DEFAULT_SETTINGS }) },
@@ -22,7 +26,7 @@ export function GameSetup({
 
   let group = '';
   return (
-    <Frame title="Game Settings" sub={`${eraYears()} · Five Seasons`} commands={commands} info={<>{isDefault ? 'Default settings' : 'Custom settings'}</>}>
+    <Frame title={room ? 'Room Settings' : 'Game Settings'} sub={room ? `${eraYears()} · both managers play by these` : `${eraYears()} · Five Seasons`} commands={commands} info={<>{isDefault ? 'Default settings' : 'Custom settings'}</>}>
       <div className="setup">
         <div className="win">
           <div className="win-title">Settings</div>
