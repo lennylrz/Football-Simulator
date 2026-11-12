@@ -31,6 +31,7 @@ RAW = os.path.join(ROOT, "data", "raw")
 LEGACY = os.path.join(RAW, "male_players (legacy).csv")
 FC24 = os.path.join(RAW, "fc24", "male_players.csv")
 FC25 = os.path.join(RAW, "fc25", "male_players.csv")
+SOFIFA25 = os.path.join(RAW, "sofifa25", "player-data-full-2025-june.csv")
 ESD = os.path.join(RAW, "esd", "database.sqlite")
 TM = os.path.join(RAW, "tm", "players.csv")
 OUT = os.path.join(ROOT, "public", "data")
@@ -60,9 +61,27 @@ def pool_mask(d):
     return (top5 & good) | (~top5 & elsewhere)
 
 
+# Leagues EA had no player licence for (Brazil's Série A and B, Chile's
+# Primera División, generic "Rest of World" teams) were filled with made-up
+# players, all born on 29 February and without a real face.
+UNLICENSED_LEAGUES = {7, 2025, 335, 76}
+
+
+def made_up(path):
+    """Ids of EA's invented players in one of Stefano Leone's files."""
+    d = pd.read_csv(path, usecols=["player_id", "dob", "league_id", "real_face"], low_memory=False)
+    leap = d[d.dob.astype(str).str.endswith("-02-29")]
+    g = leap.groupby("player_id").agg(
+        face=("real_face", lambda s: (s == "Yes").any()),
+        league=("league_id", lambda s: s.isin(UNLICENSED_LEAGUES).any()))
+    return set(int(i) for i in g[~g.face & g.league].index)
+
+
 def read_fifa(path, versions):
-    """FIFA editions from one of Stefano Leone's files: version -> frame."""
+    """FIFA editions from one of Stefano Leone's files: version -> frame,
+    without EA's invented players."""
     df = pd.read_csv(path, usecols=COLS, low_memory=False)
+    df = df[~df.player_id.isin(made_up(path))]
     df = df[df.fifa_version.isin(versions)].copy()
     df["value_eur"] = df.value_eur.fillna(0)
     df["wage_eur"] = df.wage_eur.fillna(0)
@@ -91,18 +110,77 @@ def era_2015():
 
 # --- 2020/21-2024/25 -----------------------------------------------------------
 
+def money(s):
+    """SoFIFA's "€115.5M" / "€440K" / "€0" in euros."""
+    s = str(s).replace("€", "").strip()
+    if not s or s == "nan":
+        return 0.0
+    mult = {"M": 1e6, "K": 1e3}.get(s[-1], 1)
+    return float(s.rstrip("MK")) * mult
+
+
+def value_fit(frames):
+    """log(value €k) on the game's value features (see build), for moving a
+    value from one rating to another."""
+    fit = pd.concat(frames)
+    fit = fit[(fit.value_eur > 0) & (fit.overall >= 55)]
+    X = value_features(fit.overall, fit.age, fit.potential)
+    coef, *_ = np.linalg.lstsq(X, np.log(fit.value_eur.to_numpy(float) / 1000), rcond=None)
+    return lambda ovr, age, pot: value_features(ovr, age, pot) @ coef
+
+
+def value_features(ovr, age, pot):
+    o = np.asarray(ovr, float) - 70
+    a = np.asarray(age, float) - 25
+    h = np.asarray(pot, float) - np.asarray(ovr, float)
+    return np.column_stack([np.ones_like(o), o, o * o, a, a * a, h])
+
+
+def tm_nationality_by_dob(people):
+    """Nationality from Transfermarkt for players no FIFA file names one: same
+    birthday and a shared name word. people: id -> (name, dob)."""
+    tm = pd.read_csv(TM, usecols=["name", "date_of_birth", "country_of_citizenship"]).dropna()
+    by_dob = {}
+    for r in tm.itertuples():
+        by_dob.setdefault(r.date_of_birth[:10], []).append((set(fold(r.name)), r.country_of_citizenship))
+    found = {}
+    for pid, (name, dob) in people.items():
+        words = set(fold(name))
+        hits = {c for w, c in by_dob.get(str(dob)[:10], []) if words & w}
+        if len(hits) == 1:
+            found[pid] = hits.pop()
+    return found
+
+
 def fc25_frame(fc24):
-    """EA FC 25 ratings (2024/25) in the same shape. The EA ratings URL ends in
-    the player id, which is the id the FIFA datasets use. The file has no
-    potential, value or wage: potential carries over from FC 24 (or the
-    typical headroom for the age), value is left to the game's value model."""
+    """EA FC 25 (2024/25) in the same shape, from two files:
+
+    - the EA ratings scrape (nyagami), taken at launch in September 2024 like
+      every other season's ratings: overall, age, club, positions. Its URL
+      ends in the player id the FIFA datasets use;
+    - SoFIFA in June 2025 (aniss7), keyed by the same id: potential, value
+      and wage for everyone, and the players the scrape missed (about 4,700,
+      e.g. Hermoso, Reus, Szczęsny). Their overall is the June one less the
+      usual in-season rise for their age; club and league are June's.
+
+    June's potential and value are moved back to the launch overall: potential
+    by half the change (as FC 24 to FC 25 does for players without a SoFIFA
+    row), value along the value model."""
+    last = fc24[24]
     d = pd.read_csv(FC25)
     d["player_id"] = d.url.str.extract(r"/(\d+)$")[0].astype(int)
     d = d.drop_duplicates("player_id").set_index("player_id")
-    last = fc24[24]
-    known = d.index.intersection(last.index)
+    sf = pd.read_csv(SOFIFA25, low_memory=False).drop_duplicates("player_id").set_index("player_id")
+    sf = sf[sf.overall_rating.notna()]
+    invented = made_up(FC24) | set(sf.index[
+        sf.dob.astype(str).str.endswith("-02-29") & sf.club_league_id.isin(UNLICENSED_LEAGUES)
+        & (sf.real_face != "Yes")])
+    sf = sf[~sf.index.isin(invented)]
+    d = d[~d.index.isin(invented)]
+
     # League and club names: map EA's names to the dataset's through the
     # players they share (EA writes "Spurs", the dataset "Tottenham Hotspur").
+    known = d.index.intersection(last.index)
     both = d.loc[known, ["League", "Team"]].join(last.loc[known, ["league_id", "league_name", "club_name"]])
     league_map = both.groupby("League").league_id.agg(lambda s: s.value_counts().index[0])
     team_map = both.groupby("Team").club_name.agg(lambda s: s.value_counts().index[0])
@@ -110,25 +188,95 @@ def fc25_frame(fc24):
     # A club whose players mostly came from elsewhere keeps EA's name.
     share = both.groupby("Team").apply(lambda g: (g.club_name == team_map[g.name]).mean(), include_groups=False)
     team_map = team_map[share >= 0.4]
+    # SoFIFA's club ids are EA's team ids, which the FIFA datasets carry.
+    raw = pd.read_csv(FC24, usecols=["club_team_id", "club_name", "fifa_version"], low_memory=False).dropna()
+    fifa_club = raw.sort_values("fifa_version").groupby("club_team_id").club_name.last()
 
-    head = last.assign(h=last.potential - last.overall).groupby("age").h.median()
+    # Names: the FIFA files' short name where the player is in them, else the
+    # common name SoFIFA's description opens with ("Josh King (Joshua David
+    # Steven King, born ..."), else EA's.
+    short = {}
+    for v in sorted(fc24):
+        short.update(fc24[v].short_name.dropna().to_dict())
+    common = sf.description.str.extract(r"^(.+?) \((?:born|[^)]*?, born)")[0].dropna()
+    common = common[common.str.len() <= 30]
+
+    def name(i, fallback):
+        return short.get(i) or common.get(i) or str(fallback).rstrip(" -")
+
     out = pd.DataFrame(index=d.index)
-    out["short_name"] = [last.short_name.get(i, n) for i, n in zip(d.index, d.Name)]
+    out["short_name"] = [name(i, n) for i, n in zip(d.index, d.Name)]
     out["nationality_name"] = d.Nation
     alt = d["Alternative positions"].fillna("").str.replace(" ", "")
     out["player_positions"] = (d.Position + "," + alt).str.strip(",").str.replace(",", ", ")
     out["overall"] = d.OVR.astype(int)
     out["age"] = d.Age.astype(int)
-    prev_pot = last.potential.reindex(d.index)
-    prev_ovr = last.overall.reindex(d.index)
-    carried = prev_pot + ((out.overall - prev_ovr) / 2).round()
-    typical = out.overall + out.age.map(head).fillna(0)
-    out["potential"] = np.maximum(out.overall, carried.fillna(typical)).astype(int)
-    out["value_eur"] = 0
-    out["wage_eur"] = 0
     out["club_name"] = [team_map.get(t, t) for t in d.Team]
     out["league_id"] = d.League.map(league_map).fillna(-1).astype(int)
-    out["league_name"] = [league_names.get(i, l) for i, l in zip(out.league_id, d.League)]
+    # A league the FIFA datasets know under another name: SoFIFA's league id
+    # of the club's players.
+    sf_league = sf.club_league_id.reindex(out.index)
+    by_team = pd.DataFrame({"t": d.Team, "l": sf_league}).dropna().groupby("t").l.agg(lambda s: s.value_counts().index[0])
+    unknown = out.league_id < 0
+    out.loc[unknown, "league_id"] = d.Team[unknown].map(by_team).fillna(-1).astype(int)
+
+    # Players only SoFIFA has.
+    extra = sf.loc[sf.index.difference(d.index)]
+    dob = pd.to_datetime(extra.dob, errors="coerce")
+    age = ((pd.Timestamp("2024-09-01") - dob).dt.days // 365.25).fillna(25).astype(int)
+    shared = sf.index.intersection(d.index)
+    rise = (sf.loc[shared, "overall_rating"] - d.loc[shared, "OVR"]).groupby(d.loc[shared, "Age"]).mean()
+    ex = pd.DataFrame(index=extra.index)
+    ex["short_name"] = [name(i, n) for i, n in zip(extra.index, extra.name)]
+    ex["nationality_name"] = extra.country_name.reindex(extra.index)
+    ex["player_positions"] = extra.positions.str.replace(",", ", ")
+    ex["age"] = age
+    ex["overall"] = (extra.overall_rating - age.map(rise).fillna(0).clip(lower=0).round()).astype(int)
+    ex["club_name"] = [fifa_club.get(c, n) if pd.notna(n) else "Free agent"
+                       for c, n in zip(extra.club_id, extra.club_name)]
+    ex["league_id"] = extra.club_league_id.fillna(-1).astype(int)
+    out = pd.concat([out, ex])
+
+    # Nationality: the FIFA files where the player is in them, else SoFIFA's
+    # national team, else Transfermarkt.
+    nat = {}
+    for v in sorted(fc24):
+        nat.update(fc24[v].nationality_name.dropna().to_dict())
+    out["nationality_name"] = [nat.get(i, n) for i, n in zip(out.index, out.nationality_name)]
+    missing = out.nationality_name.isna() | (out.nationality_name == "")
+    people = {i: (sf.name.get(i, out.short_name[i]), sf.dob.get(i)) for i in out.index[missing] if i in sf.index}
+    out.loc[missing, "nationality_name"] = out.index[missing].map(tm_nationality_by_dob(people))
+    # Last resort: the description's "is a Colombian footballer", read through
+    # the players whose nationality is known.
+    demonym = sf.description.str.extract(r" is an? ([A-Z][^ ]+) (?:professional )?footballer")[0]
+    pairs = pd.DataFrame({"dem": demonym.reindex(out.index), "nat": out.nationality_name}).dropna()
+    dem_map = pairs.groupby("dem").nat.agg(lambda s: s.value_counts().index[0])
+    missing = out.nationality_name.isna() | (out.nationality_name == "")
+    out.loc[missing, "nationality_name"] = demonym.reindex(out.index[missing]).map(dem_map).to_numpy()
+    out["nationality_name"] = out.nationality_name.fillna("")
+
+    # Potential, value and wage from SoFIFA, moved back to the launch overall.
+    head = last.assign(h=last.potential - last.overall).groupby("age").h.median()
+    jun = sf.reindex(out.index)
+    moved = (jun.potential - ((jun.overall_rating - out.overall) / 2).round())
+    prev_pot = last.potential.reindex(out.index)
+    prev_ovr = last.overall.reindex(out.index)
+    carried = prev_pot + ((out.overall - prev_ovr) / 2).round()
+    typical = out.overall + out.age.map(head).fillna(0)
+    out["potential"] = np.maximum(out.overall, moved.fillna(carried).fillna(typical)).astype(int)
+
+    model = value_fit([fc24[v] for v in range(21, 25)])
+    has = jun.overall_rating.notna().to_numpy()
+    shift = np.zeros(len(out))
+    shift[has] = (model(out.overall[has], out.age[has], out.potential[has])
+                  - model(jun.overall_rating[has], out.age[has], jun.potential[has]))
+    out["value_eur"] = (jun.value.map(money).fillna(0) * np.exp(shift)).round(-3)
+    out["wage_eur"] = jun.wage.map(money).fillna(0)
+
+    out["league_name"] = [league_names.get(i, "") for i in out.league_id]
+    out.loc[out.league_name == "", "league_name"] = [
+        sf.club_league_name.get(i, "") if isinstance(sf.club_league_name.get(i, ""), str) else ""
+        for i in out.index[out.league_name == ""]]
     return out[FRAME_COLS]
 
 

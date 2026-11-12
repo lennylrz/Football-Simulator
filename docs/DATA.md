@@ -8,7 +8,7 @@ the same in every source, so a player keeps his id across eras.
 |---|---|---|---|
 | 2010 | 2010/11-2014/15 | FIFA 11-15 | European Soccer Database, FIFA 15 from the FC 24 dataset |
 | 2015 | 2015/16-2019/20 | FIFA 16-20 | FIFA 23 complete player dataset, legacy file |
-| 2020 | 2020/21-2024/25 | FIFA 21-FC 25 | EA Sports FC 24 complete player dataset, EA FC 25 database |
+| 2020 | 2020/21-2024/25 | FIFA 21-FC 25 | EA Sports FC 24 complete player dataset, EA FC 25 database, SoFIFA FC 25 |
 
 Sources (all on Kaggle):
 
@@ -25,6 +25,8 @@ Sources (all on Kaggle):
   a grid, of 26,000 league matches in 11 European top divisions, 2008/09 to
   2015/16. No nationality, value, wage or English lower leagues. The 2010
   era's files are a derived database and fall under the ODbL too.
+- "Fifa/EA FC 25 player data from Sofifa (2025-06-03)" by aniss7 (MIT): FC 25
+  as SoFIFA showed it in June 2025, with potential, value and wage.
 - "Football Data from Transfermarkt" by davidcariboo (CC0), `players.csv`:
   only for nationalities missing from the FIFA data.
 
@@ -75,16 +77,38 @@ potential >= 84 at 21 or under. 5,795 players in total.
 ## 2020 era
 
 FIFA 21 to FC 24 come from the FC 24 dataset, read exactly like the 2015 era.
-2024/25 comes from the FC 25 database:
+2024/25 joins two FC 25 files on the player id:
 
-- clubs and leagues: EA's names ("Spurs", "LALIGA EA SPORTS") are mapped to
-  the dataset's through the players both files share;
-- potential: FC 24 potential moved by half the change in overall, or for new
-  players the median headroom for their age;
-- value and wage: none, so the game's value model prices 2024/25 alone.
+- the EA ratings scrape (nyagami), taken at launch in September 2024 like
+  every other season: overall, age, club, league and positions. EA's names
+  ("Spurs", "LALIGA EA SPORTS") are mapped to the dataset's through the
+  players both files share;
+- SoFIFA in June 2025 (aniss7, MIT): potential, value and wage for everyone,
+  and about 4,700 players the scrape missed (Hermoso, Reus, Szczęsny...).
+  For those, the overall is June's less the average in-season rise for their
+  age, and club and league are June's (SoFIFA's club ids are EA's team ids).
+  June's potential is moved back to the launch overall by half the change,
+  June's value along the value model;
+- names: the FIFA files' short name where the player is in them, else the
+  common name SoFIFA's description opens with ("Josh King"); nationality from
+  the FIFA files, SoFIFA, Transfermarkt (birthday and a shared name), or the
+  description's "is a Colombian footballer".
 
 The value model is fitted on 2020/21-2023/24 and the development curves on
 FIFA 20 to FC 25.
+
+Best XI average rating, 2020/21: Liverpool 87.6, Manchester City 86.9,
+Tottenham 85.5, Chelsea 84.6 (2015/16's best was Chelsea, 84.7). The
+draft's rating bands sit three points higher in this era (`ERA_LIFT` in
+`src/game/draft.ts`) so a drafted club keeps the same chances.
+
+## Invented players
+
+EA had no player licence for Brazil's Série A and B, Chile's Primera División
+(FIFA 17-18) and its "Rest of World" teams, and filled them with made-up
+players ("Ronaldo Cabrais", "Lafortiscinho"), all born on 29 February and
+without a real face. The pipeline drops them (`made_up` in
+`scripts/process_data.py`): 94 from 2015-2020, about 80 from 2020-2025.
 
 ## 2010 era
 
