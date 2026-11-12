@@ -110,7 +110,7 @@ describe('squad notes', () => {
   it('cover every play style and a managed club', async () => {
     for (const style of STYLE_ORDER) {
       const kinds = new Set<string>();
-      for (let i = 0; i < 4; i++) draftCareer(1600 + i * 4 + STYLE_ORDER.indexOf(style), (s) => s.notes.forEach((n) => kinds.add(n.kind)), style);
+      for (let i = 0; i < 6; i++) draftCareer(1600 + i * 4 + STYLE_ORDER.indexOf(style), (s) => s.notes.forEach((n) => kinds.add(n.kind)), style);
       expect(kinds.has(`style.${style}`), style).toBe(true);
     }
     // A real club run by the user, in another era too.

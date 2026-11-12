@@ -93,7 +93,9 @@ Player data comes from Kaggle datasets: FIFA 11-15 ratings from the European
 Soccer Database (Hugo Mathien, ODbL) and FIFA 15, FIFA 16-20 from the "FIFA 23
 complete player dataset" (Stefano Leone, CC0), FIFA 21-FC 24 from his "EA
 Sports FC 24 complete player dataset" (CC0) and FC 25 from the "EA Sports FC
-25 database" (nyagami, Apache 2.0).
+25 database" (nyagami, Apache 2.0) with potential, values and missing players
+from SoFIFA's June 2025 data (aniss7, MIT). EA's invented players for
+unlicensed leagues are left out.
 
 ```sh
 scripts/fetch_data.sh                  # Kaggle CLI -> data/raw/ (gitignored)

@@ -185,7 +185,7 @@ export function Welcome({ settings, onSettings, onPlay, onMulti, onDaily, daily:
         <h2>About & Credits</h2>
         <p className="lead">Five Seasons is a football draft game for people with ball knowledge: you only see how good a player is today, and history decides the rest.</p>
         <dl className="w-credits">
-          <dt>Player data</dt><dd>FIFA 11 to EA FC 25 ratings. 2010–2015: the "European Soccer Database" by Hugo Mathien (ODbL) and FIFA 15. 2015–2020: the "FIFA 23 complete player dataset" by Stefano Leone (CC0). 2020–2025: his "EA Sports FC 24 complete player dataset" (CC0) and the "EA Sports FC 25 database" by nyagami (Apache 2.0). Some nationalities from the Transfermarkt dataset by davidcariboo (CC0). All on Kaggle.</dd>
+          <dt>Player data</dt><dd>FIFA 11 to EA FC 25 ratings. 2010–2015: the "European Soccer Database" by Hugo Mathien (ODbL) and FIFA 15. 2015–2020: the "FIFA 23 complete player dataset" by Stefano Leone (CC0). 2020–2025: his "EA Sports FC 24 complete player dataset" (CC0) and the "EA Sports FC 25 database" by nyagami (Apache 2.0) and FC 25 from SoFIFA by aniss7 (MIT). Some nationalities from the Transfermarkt dataset by davidcariboo (CC0). All on Kaggle.</dd>
           <dt>Built with</dt><dd>React, TypeScript and Vite.</dd>
         </dl>
       </>

@@ -3,6 +3,7 @@
 #   male_players (legacy).csv  FIFA 23 complete player dataset (FIFA 15-23)
 #   fc24/male_players.csv      EA Sports FC 24 complete player dataset (15-24)
 #   fc25/male_players.csv      EA Sports FC 25 database, ratings and stats
+#   sofifa25/player-data-full-2025-june.csv  FC 25 from SoFIFA, June 2025
 #   esd/database.sqlite        European Soccer Database (FIFA ratings 2007-2016)
 #   tm/players.csv             Transfermarkt players (nationalities)
 #
@@ -46,6 +47,7 @@ fetch() {
 fetch stefanoleone992/fifa-23-complete-player-dataset "male_players (legacy).csv" .
 fetch stefanoleone992/ea-sports-fc-24-complete-player-dataset male_players.csv fc24
 fetch nyagami/ea-sports-fc-25-database-ratings-and-stats male_players.csv fc25
+fetch aniss7/fifa-player-data-from-sofifa-2025-06-03 player-data-full-2025-june.csv sofifa25
 fetch hugomathien/soccer database.sqlite esd
 fetch davidcariboo/player-scores players.csv tm
 ls -laR "$RAW"

@@ -184,6 +184,21 @@ the exceptions; best Park the Bus defender ~91-92, up to 94-96.
   favicon any more). The images were rendered from an HTML design with
   Playwright from `scripts/og.html` (`node scripts/render_og.cjs`).
 
+## 2020-2025 data (branch `claude/dazzling-allen-sa7qm9`)
+
+- 2024/25 is complete: the EA launch scrape joined with SoFIFA's June 2025
+  file (real potential, value, wage; ~420 more players). See `docs/DATA.md`.
+- EA's invented players (unlicensed Brazil/Chile/Rest of World leagues) are
+  gone from 2015-2020 and 2020-2025.
+- Balance: the draft bands sit two points higher in 2020 (`ERA_LIFT`,
+  `draft.ts`). Measured over 1,000 seasons each, drafting the best-rated
+  candidate (seeds 20001-20200): 2015 title 6.8%, CL 0.2%; 2020 before 0.75%
+  title, 0% CL; 2020 now 7.2% title, 0.7% CL. 100+ point champions stay
+  more common in 2020 (27% vs 10%): Liverpool and City really were that
+  strong in FIFA 21-22. A lift of 3 gives 11.2% / 1.9%.
+- The era is still "Coming later" (`live: false` in `Home.tsx`): its data is
+  ready; the modern look is the remaining piece.
+
 ## Next tasks
 
 None set by the owner yet. Open points worth raising:

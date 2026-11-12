@@ -12,6 +12,15 @@ import { AREA, FORMATIONS, type Position, parsePositions } from './positions';
 import { type Rng, shuffle, stream } from './rng';
 
 export const CANDIDATES = 5;
+
+/**
+ * How far an era's draft bands sit above 2015-2020's. The bands below (a
+ * star 84+, established 79-83, ...) were tuned on 2015-2020; 2020/21's best
+ * sides are about two points stronger (Liverpool's and City's XIs average
+ * 87-88 against Chelsea's 85 in 2015/16), so its bands move up with them and a
+ * drafted club keeps about the same chance of the title.
+ */
+export const ERA_LIFT: Record<number, number> = { 2020: 2 };
 export const REDRAFTS_PER_SUMMER = 2;
 /** Substitutes the user drafts, unless the rules say otherwise. */
 export const BENCH = 3;
@@ -173,10 +182,11 @@ export function drawCandidates(state: GameState, data: GameData, slot: Position,
     const options = shuffle(rng, fresh.length >= n ? fresh : all);
     chosen.push(...options.slice(0, n));
   };
-  if (rng() < 0.45) take((p) => p.ovr >= 84, 1);
-  take((p) => p.ovr >= 79 && p.ovr <= 83, rng() < 0.5 ? 1 : 2);
-  take((p) => p.age <= 21 && p.pot >= 80 && p.ovr <= 77, rng() < 0.5 ? 1 : 2);
-  take((p) => p.ovr >= 70 && p.ovr <= 79, CANDIDATES - chosen.length);
+  const l = ERA_LIFT[data.era] ?? 0;
+  if (rng() < 0.45) take((p) => p.ovr >= 84 + l, 1);
+  take((p) => p.ovr >= 79 + l && p.ovr <= 83 + l, rng() < 0.5 ? 1 : 2);
+  take((p) => p.age <= 21 && p.pot >= 80 + l && p.ovr <= 77 + l, rng() < 0.5 ? 1 : 2);
+  take((p) => p.ovr >= 70 + l && p.ovr <= 79 + l, CANDIDATES - chosen.length);
   take(() => true, CANDIDATES - chosen.length);
   return shuffle(rng, chosen).slice(0, choicesOf(state)).map((p) => p.id);
 }
@@ -196,10 +206,11 @@ export function drawBenchCandidates(state: GameState, data: GameData, rng: Rng):
     const fresh = all.filter((p) => !recent.has(p.id));
     chosen.push(...shuffle(rng, fresh.length >= n ? fresh : all).slice(0, n));
   };
-  take((p) => p.age <= 20 && p.pot >= 84, 1);
-  take((p) => p.age <= 22 && p.pot >= 80 && p.ovr <= 76, 2);
-  take((p) => p.age >= 24 && p.ovr >= 74 && p.ovr <= 80, 1);
-  take((p) => p.ovr >= 70 && p.ovr <= 78, CANDIDATES - chosen.length);
+  const l = ERA_LIFT[data.era] ?? 0;
+  take((p) => p.age <= 20 && p.pot >= 84 + l, 1);
+  take((p) => p.age <= 22 && p.pot >= 80 + l && p.ovr <= 76 + l, 2);
+  take((p) => p.age >= 24 && p.ovr >= 74 + l && p.ovr <= 80 + l, 1);
+  take((p) => p.ovr >= 70 + l && p.ovr <= 78 + l, CANDIDATES - chosen.length);
   // A small pool (a Daily Challenge's) may leave the bands short: anyone else fills in. Normal draws never get here, so seeds replay as before.
   if (chosen.length < CANDIDATES) take(() => true, CANDIDATES - chosen.length);
   return shuffle(rng, chosen).slice(0, choicesOf(state)).map((p) => p.id);
