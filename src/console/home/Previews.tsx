@@ -1,6 +1,7 @@
 // Static previews of each era's look, drawn at 1280x720 (the era picker shows them full size).
 import '../draft.css';
 import '../slate.css';
+import '../modern.css';
 import { FORMATIONS } from '../../game/positions';
 import { Pitch, type PlateInfo } from '../Pitch';
 import './previews.css';
@@ -13,6 +14,14 @@ const CANDS: Cand[] = [
   [85, 'E. Cavani', 'Paris Saint-Germain', 'Uruguay', 28],
   [75, 'D. Pabón', 'CF Monterrey', 'Colombia', 27],
   [82, 'R. Sterling', 'Manchester City', 'England', 20],
+];
+
+const CANDS_2020: Cand[] = [
+  [78, 'V. Osimhen', 'Napoli', 'Nigeria', 21],
+  [88, 'H. Kane', 'Tottenham Hotspur', 'England', 27],
+  [84, 'E. Haaland', 'Borussia Dortmund', 'Norway', 20],
+  [75, 'O. Watkins', 'Aston Villa', 'England', 24],
+  [82, 'D. Vlahović', 'Fiorentina', 'Serbia', 20],
 ];
 
 function P2000() {
@@ -111,36 +120,20 @@ function Console({ season, cands }: { season: string; cands: Cand[] }) {
   );
 }
 
-function P2020() {
-  return (
-    <div className="pv pv-2020">
-      <div className="top"><i />Your Club<span>2020/21 · Draft 1 of 11</span></div>
-      <div className="body">
-        <h4>Choose your striker</h4>
-        <p>Five players, one pick. Who will be great in 2025?</p>
-        <div className="cards">
-          {[['E. Haaland', 'Borussia Dortmund · 20', 84], ['H. Kane', 'Tottenham · 27', 88], ['V. Osimhen', 'Napoli · 21', 78], ['O. Watkins', 'Aston Villa · 24', 75]].map(([n, c, o], i) => (
-            <div key={n as string} className="card">
-              <div><div className="n">{n}</div><div className="c">{c}</div></div>
-              <span className="o">{o}</span>
-              <span className="btn" style={i === 0 ? undefined : { background: '#f0f2f5', color: '#111418' }}>Pick</span>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
-
 const P2010 = () => <Console season="2010/11" cands={CANDS_2010} />;
 /** The career-hub look of 2015-2020: slate panels, a cream selection, ratings by tier (see slate.css). */
-function P2015() {
+function P2015({ md = false }: { md?: boolean }) {
   const plates: PlateInfo[] = FORMATIONS['4-3-3'].map((label) => (label === 'ST' ? { label, state: 'now' } : { label, state: 'empty' }));
   const tierOf = (r: number) => (r >= 85 ? 'r-a' : r >= 80 ? 'r-b' : r >= 74 ? 'r-c' : 'r-d');
+  const ov = md
+    ? { first: 'Erling', last: 'Haaland', club: 'Dortmund · ST · 20', ovr: 84, nat: 'Norway', value: '€90m', plays: 'ST', kick: 'The Terminator',
+        text: 'Built like a centre-half, quick as a winger and ruthless in the box. Goals seem to follow him from league to league.' }
+    : { first: 'Edinson', last: 'Cavani', club: 'Paris SG · ST · 28', ovr: 85, nat: 'Uruguay', value: '€42m', plays: 'ST · CF', kick: 'El Matador',
+        text: 'Runs until the final whistle, then runs some more. A centre-forward who presses like a full-back and finishes like a poacher.' };
   return (
-    <div className="pv stage dark sl" style={{ '--s': 1 } as React.CSSProperties}>
+    <div className={`pv stage dark sl ${md ? 'md' : ''}`} style={{ '--s': 1 } as React.CSSProperties}>
       <div className="f-head" style={{ '--club-bar': '#7a1f3d' } as React.CSSProperties}>
-        Hindsight United<span className="sub">The Draft · Pick 1 of 14</span><span className="right"><small>Season 1 of 5</small>2015/16</span>
+        Hindsight United<span className="sub">The Draft · Pick 1 of 14</span><span className="right"><small>Season 1 of 5</small>{md ? '2020/21' : '2015/16'}</span>
       </div>
       <div className="f-body">
         <div className="sl-draft">
@@ -149,7 +142,7 @@ function P2015() {
             <div className="sl-panel">
               <div className="sl-cap">Choose your striker<b>· pick one</b></div>
               <div className="sl-th"><span>PLAYER</span><span>AGE</span><span>OVR</span></div>
-              {CANDS.map(([r, n, c, nat, age], i) => (
+              {(md ? CANDS_2020 : CANDS).map(([r, n, c, nat, age], i) => (
                 <div key={n} className={`sl-row ${i === 2 ? 'on' : ''}`} style={{ opacity: 1, animation: 'none' }}>
                   <span className="who"><span className="nm"><b>{n}</b><small>{c} · {nat}</small></span></span>
                   <span className="age">{age}</span><span className={`ovr ${tierOf(r)}`}>{r}</span>
@@ -160,12 +153,12 @@ function P2015() {
               <div className="sl-cap">Overview</div>
               <div className="sl-ov">
                 <div className="top">
-                  <div><div className="first">Edinson</div><div className="last" style={{ animation: 'none' }}>Cavani</div><div className="club">Paris SG · ST · 28</div></div>
-                  <div className="ovr"><small>OVR</small><b className="r-a">85</b></div>
+                  <div><div className="first">{ov.first}</div><div className="last" style={{ animation: 'none' }}>{ov.last}</div><div className="club">{ov.club}</div></div>
+                  <div className="ovr"><small>OVR</small><b className={tierOf(ov.ovr)}>{ov.ovr}</b></div>
                 </div>
-                <div className="grid"><span>NATION<b>Uruguay</b></span><span>VALUE<b>€42m</b></span><span>PLAYS<b>ST · CF</b></span></div>
-                <div className="kick">El Matador</div>
-                <p className="text" style={{ animation: 'none' }}>Runs until the final whistle, then runs some more. A centre-forward who presses like a full-back and finishes like a poacher.</p>
+                <div className="grid"><span>NATION<b>{ov.nat}</b></span><span>VALUE<b>{ov.value}</b></span><span>PLAYS<b>{ov.plays}</b></span></div>
+                <div className="kick">{ov.kick}</div>
+                <p className="text" style={{ animation: 'none' }}>{ov.text}</p>
               </div>
             </div>
           </div>
@@ -182,5 +175,6 @@ function P2015() {
   );
 }
 
-export const PREVIEWS = { 2000: P2000, 2005: P2005, 2010: P2010, 2015: P2015, 2020: P2020 } as const;
+const P2020 = () => <P2015 md />;
+export const PREVIEWS = { 2000: P2000, 2005: P2005, 2010: P2010, 2015: () => <P2015 />, 2020: P2020 } as const;
 

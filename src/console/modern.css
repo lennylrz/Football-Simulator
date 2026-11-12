@@ -1,0 +1,63 @@
+/* 2020-2025, a placeholder: the 2015-2020 career hub (slate.css) brought up to
+   date. Same layout and building blocks; a cool indigo screen, frosted panels
+   with rounded corners, Sofia Sans, a white selection and one sky-blue accent.
+   Scoped to .stage.sl.md (the stage carries both classes in this era). */
+
+.stage.sl.md {
+  --panel: rgba(20, 30, 64, .58); --panel2: rgba(36, 50, 96, .72); --line: rgba(255, 255, 255, .08); --line2: rgba(255, 255, 255, .15);
+  --text: #f3f6fc; --soft: #cbd4e8; --mute: #97a3c0; --dim: #6f7b99; --cream: #f6f8fc; --ink: #121a33;
+  --amber: #5cb8ff; --green: #5fd49a; --lime: #b4dc6e; --yellow: #f0c95a; --red: #f06d6d; --blue: #7fb4ff;
+  --cond: 'Sofia Sans Condensed', 'Barlow Condensed', 'Arial Narrow', Arial, sans-serif;
+  --body: 'Sofia Sans', 'Barlow', 'Helvetica Neue', Arial, sans-serif;
+  --r: 12px; --r-s: 8px;
+  background:
+    radial-gradient(60% 70% at 85% 15%, rgba(120, 150, 255, .28), transparent 70%),
+    radial-gradient(55% 60% at 10% 95%, rgba(90, 200, 255, .16), transparent 70%),
+    linear-gradient(140deg, #3a4a80 0%, #2e3b6c 45%, #35336f 100%);
+}
+.stage.sl.md.light { background:
+    radial-gradient(60% 70% at 85% 15%, rgba(120, 150, 255, .28), transparent 70%),
+    radial-gradient(55% 60% at 10% 95%, rgba(90, 200, 255, .16), transparent 70%),
+    linear-gradient(140deg, #3a4a80 0%, #2e3b6c 45%, #35336f 100%); }
+/* A soft light sweep instead of the red slashes. */
+.stage.sl.md::before { background: linear-gradient(115deg, transparent 0 55%, rgba(255,255,255,.05) 55% 70%, transparent 70%); }
+.stage.sl.md .focus { box-shadow: inset 0 0 0 2px var(--amber); border-radius: var(--r-s); }
+
+/* Rounded, frosted building blocks. */
+.stage.sl.md .dpanel, .stage.sl.md .ltile, .stage.sl.md .win, .stage.sl.md .sl-panel, .stage.sl.md .office,
+.stage.sl.md .award, .stage.sl.md .mm .tab, .stage.sl.md .mm .desc, .stage.sl.md .lobby .card { border-radius: var(--r); }
+.stage.sl.md .dpanel, .stage.sl.md .sl-panel { box-shadow: inset 0 0 0 1px var(--line), 0 10px 30px rgba(10, 16, 40, .18); backdrop-filter: blur(6px); }
+.stage.sl.md .win { overflow: hidden; }
+.stage.sl.md .win-title { font-weight: 800; letter-spacing: .02em; }
+.stage.sl.md .f-head { font-weight: 800; letter-spacing: 0; }
+.stage.sl.md .f-head::before { width: 8px; height: 28px; border-radius: 4px; }
+.stage.sl.md .key { border-radius: 8px; }
+.stage.sl.md .tag, .stage.sl.md .rowbtn, .stage.sl.md .sl-btn, .stage.sl.md .place, .stage.sl.md .place .medal,
+.stage.sl.md .pc-ovr, .stage.sl.md .pc-awards span, .stage.sl.md .dplate b, .stage.sl.md .dplate span, .stage.sl.md .dplate .delta,
+.stage.sl.md .viewer .mine .sc, .stage.sl.md .viewer .mine .word, .stage.sl.md .viewer .res .sc, .stage.sl.md .lobby button.go,
+.stage.sl.md input.name, .stage.sl.md .lobby input.code { border-radius: var(--r-s); }
+.stage.sl.md .sl-btn { background: rgba(255,255,255,.12); }
+.stage.sl.md .sl-btn:hover { background: rgba(255,255,255,.2); }
+
+/* Selections: a white pill. */
+.stage.md .sl-row { border-radius: var(--r-s); margin: 2px 6px; border-bottom-color: transparent; }
+.stage.md .sl-row.on { box-shadow: 0 6px 18px rgba(10, 16, 40, .25); }
+.stage.md .sl-row.on .nm small, .stage.md .sl-row.on .age, .stage.sl.md .tbl tr.sel .pos { color: #5a6380; }
+.stage.sl.md .mm .tab.on { box-shadow: 0 0 0 3px rgba(92,184,255,.35), 0 12px 30px rgba(10,16,40,.3); }
+.stage.sl.md .tabs .t.on { box-shadow: inset 0 -3px 0 var(--amber); }
+
+/* The darker surfaces slate.css spells out. */
+.stage.sl.md .tbl thead th { background: rgba(26, 36, 72, .95); }
+.stage.sl.md .overlay .win, .stage.sl.md .overlay .body { background: #28335e; }
+.stage.sl.md .dplate b, .stage.sl.md .dplate .delta.same, .stage.sl.md .viewer .mine .sc, .stage.sl.md .viewer .mine .word,
+.stage.sl.md .viewer .res .sc { background: #1c2650; }
+.stage.sl.md .dplate span { background: rgba(22, 30, 62, .85); }
+.stage.sl.md .rchart .dot { stroke: #28335e; }
+.stage.sl.md .reveal { background:
+    radial-gradient(60% 70% at 80% 20%, rgba(120, 150, 255, .3), transparent 70%),
+    linear-gradient(140deg, #3a4a80 0%, #2c3868 55%, #312f68 100%); }
+.stage.sl.md .bracket .bt.me.lost { background: #c8cee0; }
+
+/* Rating tiers and the accent's glow, in the new blue. */
+.stage.sl.md .summer .tbl tr.from td, .stage.sl.md .review .tbl tr.me td { box-shadow: inset 0 0 0 9999px rgba(92,184,255,.16); background: none; }
+.stage.sl.md .review .office.treble { background: linear-gradient(90deg, rgba(240,201,90,.3), var(--panel)); }

@@ -11,6 +11,8 @@ export interface CardInput {
   site: string;
   /** the era's look: '' the 2010s console, 'sl' the 2015-2020 career hub */
   theme?: '' | 'sl';
+  /** 2020-2025's modern skin of the 'sl' card */
+  modern?: boolean;
 }
 
 const W = 1080;
@@ -218,16 +220,18 @@ function drawSlateCard(canvas: HTMLCanvasElement, input: CardInput): void {
   canvas.height = H;
   const ctx = canvas.getContext('2d')!;
   const pad = 60;
-  const panel = 'rgba(30,34,42,.78)';
+  const m = !!input.modern;
+  const panel = m ? 'rgba(20,30,64,.62)' : 'rgba(30,34,42,.78)';
+  const accent = m ? '#5cb8ff' : '#e8a04c';
   const bg = ctx.createRadialGradient(W * 0.78, H * 0.25, 40, W * 0.6, H * 0.4, H);
-  bg.addColorStop(0, '#535c6e');
-  bg.addColorStop(0.45, '#424a59');
-  bg.addColorStop(1, '#343a46');
+  bg.addColorStop(0, m ? '#4a5c98' : '#535c6e');
+  bg.addColorStop(0.45, m ? '#2e3b6c' : '#424a59');
+  bg.addColorStop(1, m ? '#33306a' : '#343a46');
   ctx.fillStyle = bg;
   ctx.fillRect(0, 0, W, H);
   // The red slashes.
   ctx.save();
-  ctx.strokeStyle = 'rgba(222,84,84,.22)';
+  ctx.strokeStyle = m ? 'rgba(255,255,255,.06)' : 'rgba(222,84,84,.22)';
   for (const [x, w] of [[760, 5], [820, 2], [120, 3]]) {
     ctx.lineWidth = w;
     ctx.beginPath(); ctx.moveTo(x + 500, -40); ctx.lineTo(x - 300, H + 40); ctx.stroke();
@@ -250,7 +254,7 @@ function drawSlateCard(canvas: HTMLCanvasElement, input: CardInput): void {
   const treble = career.trebles > 0;
   ctx.fillStyle = treble ? '#ece6d8' : panel;
   ctx.fillRect(pad, 200, W - pad * 2, 170);
-  ctx.fillStyle = '#e8a04c';
+  ctx.fillStyle = accent;
   ctx.fillRect(pad, 200, 6, 170);
   ctx.fillStyle = treble ? '#1d2027' : '#eef0f3';
   ctx.font = `700 ${treble ? 84 : 72}px ${COND}`;
@@ -279,7 +283,7 @@ function drawSlateCard(canvas: HTMLCanvasElement, input: CardInput): void {
     ctx.fillStyle = s.trophies.length === 3 ? '#1d2027' : s.finish === 1 ? '#e8c45c' : s.finish <= 4 ? '#6fcf8a' : s.finish >= 18 ? '#e86a5c' : '#eef0f3';
     ctx.font = `700 72px ${COND}`;
     ctx.fillText(ordinal(s.finish), x + bw / 2, top + 128);
-    ctx.fillStyle = won ? '#e8a04c' : '#6f7785';
+    ctx.fillStyle = won ? accent : '#6f7785';
     ctx.font = `700 20px ${COND}`;
     const label = s.trophies.length === 3 ? 'TREBLE' : s.trophies.map((tr) => TROPHY_LABELS[tr]).join(' + ') || '—';
     ctx.fillText(fitText(ctx, label, bw - 14), x + bw / 2, top + 172);
@@ -310,7 +314,7 @@ function drawSlateCard(canvas: HTMLCanvasElement, input: CardInput): void {
   rows.slice(0, 4).forEach(([label, who, detail]) => {
     ctx.fillStyle = 'rgba(255,255,255,.07)';
     ctx.fillRect(pad, y, W - pad * 2, 1);
-    ctx.fillStyle = '#e8a04c';
+    ctx.fillStyle = accent;
     ctx.font = `700 20px ${COND}`;
     ctx.fillText(label.toUpperCase(), pad + 24, y + 34);
     ctx.fillStyle = '#eef0f3';

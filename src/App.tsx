@@ -7,8 +7,9 @@ import { NewClub } from './console/screens/NewClub';
 import { Results } from './console/screens/Results';
 import { Summary } from './console/screens/Summary';
 import { Summer } from './console/screens/Summer';
-import { Stage, ThemeContext } from './console/ui';
+import { SkinContext, Stage, ThemeContext } from './console/ui';
 import './console/slate.css';
+import './console/modern.css';
 import { type Action, applyAction, type RoomManager } from './game/actions';
 import { RoomSession } from './console/RoomSession';
 import { Lobby } from './console/screens/Lobby';
@@ -195,7 +196,9 @@ export default function App() {
     setMode('welcome');
   };
 
-  const theme = era === 2015 ? 'sl' : '';
+  // 2020-2025 plays in the career-hub layout with its own modern skin.
+  const theme = era === 2015 || era === 2020 ? 'sl' : '';
+  const skin = era === 2020 ? 'md' : '';
   const view = (() => {
     if (error) return <Stage><div className="empty" style={{ padding: 60 }}>Couldn't load the game data. {error}</div></Stage>;
 
@@ -308,5 +311,5 @@ export default function App() {
       </GameContext.Provider>
     );
   })();
-  return <ThemeContext.Provider value={theme}>{view}</ThemeContext.Provider>;
+  return <ThemeContext.Provider value={theme}><SkinContext.Provider value={skin}>{view}</SkinContext.Provider></ThemeContext.Provider>;
 }

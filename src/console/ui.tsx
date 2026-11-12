@@ -10,6 +10,8 @@ import { TurnPhone, useTurnCard } from './TurnPhone';
  */
 export const ThemeContext = createContext<'' | 'sl'>('');
 export const useTheme = () => useContext(ThemeContext);
+/** A re-skin on top of the theme: 'md' is 2020-2025's modern take on the career hub (see modern.css). */
+export const SkinContext = createContext<'' | 'md'>('');
 
 /** How the last press came: a finger, a pen or the mouse. */
 let lastPointer = 'mouse';
@@ -64,6 +66,7 @@ function safeArea(): { x: number; y: number } {
  */
 export function Stage({ tone = 'dark', children }: { tone?: 'dark' | 'light' | 'home'; children: ReactNode }) {
   const theme = useTheme();
+  const skin = useContext(SkinContext);
   const [fit, setFit] = useState({ s: 1, w: 1280, h: 720, turned: false });
   useLayoutEffect(() => {
     const resize = () => {
@@ -90,7 +93,7 @@ export function Stage({ tone = 'dark', children }: { tone?: 'dark' | 'light' | '
     <div className={`stage-wrap ${fit.turned ? 'turned' : ''}`}>
       {fit.turned && card && <TurnPhone onPlay={cardDone} />}
       <div
-        className={`stage ${tone} ${tone === 'home' ? '' : theme}`}
+        className={`stage ${tone} ${tone === 'home' ? '' : `${theme} ${skin}`}`}
         style={{ '--s': fit.s, width: fit.w, height: fit.h, '--bx': `${(fit.w - 1280) / 2}px`, '--by': `${(fit.h - 720) / 2}px` } as React.CSSProperties}
         // Clicking a button never focuses it, so Enter and Space afterwards only run the screen's command.
         onMouseDown={(e) => {
